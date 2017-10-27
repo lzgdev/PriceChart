@@ -1,0 +1,17 @@
+
+# for Python3, use following
+sudo apt-get install python3-dev
+virtualenv -p python3 venv
+
+# for Python2, use following
+virtualenv -p python2 venv
+
+# Activate virtual environment
+. venv/bin/activate
+
+# for server
+pip install flask uwsgi
+
+# for client
+pip install requests
+
