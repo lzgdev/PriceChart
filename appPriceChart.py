@@ -81,14 +81,18 @@ def def_static_js(js_file):
 def def_static_css(css_file):
 	return send_from_directory(app.static_folder + '/css', css_file, mimetype='text/css')
 
+@app.route('/demo/<path:filename>')
+def def_static_demo(filename):
+	return send_from_directory('demo', filename, mimetype='text/html')
+
+@app.route('/depth/<path:filename>')
+def def_static_depth(filename):
+	return send_from_directory('depth', filename, mimetype='text/html')
+
 @app.route("/")
 @app.route("/index.html")
 def def_static_index():
 	return send_from_directory(app.static_folder + '/html', 'index.html')
-
-@app.route('/demo/<path:filename>')
-def def_static_demo(filename):
-	return send_from_directory('demo', filename, mimetype='text/html')
 
 if __name__ == "__main__":
 	if os.environ.get("WERKZEUG_RUN_MAIN") is None:

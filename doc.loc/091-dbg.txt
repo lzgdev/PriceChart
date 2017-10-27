@@ -1,3 +1,8 @@
 . venv/bin/activate
 
 uwsgi --http :9000 --wsgi-file wsgi.py
+
+or
+
+export FLASK_APP=appPriceChart.py
+flask run

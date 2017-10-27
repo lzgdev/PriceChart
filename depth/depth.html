@@ -1,0 +1,53 @@
+<html>
+<head>
+  <title>Price Depth</title>
+  <script src="/js/anychart-bundle.min.js"></script>
+  <script src="/js/anychart-base.min.js"></script>
+  <script src="/js/anychart-exports.min.js"></script>
+  <script src="/js/anychart-ui.min.js"></script>
+  <link rel="stylesheet" href="/css/anychart-ui.min.css">
+<body>
+  <div id="container"></div>
+<script type="text/javascript">
+anychart.onDocumentReady(function() {
+  // create a data set
+  var data = anychart.data.set([
+    ["Winter", 20000, 40000, 20000],
+    ["Spring", 20000, 40000, 40000],
+    ["Summer", 40000, 30000, 30000],
+    ["Autumn", 20000, 20000, 40000]
+  ]);
+
+  // map the data
+  var seriesData_1 = data.mapAs({x: 0, value: 1});
+  var seriesData_2 = data.mapAs({x: 0, value: 2});
+  var seriesData_3 = data.mapAs({x: 0, value: 3});
+
+  // create a chart
+  chart = anychart.area();
+
+  // enable the percent stacking mode
+  chart.yScale().stackMode("value");
+
+  // create splineArea series, set the data
+  var series1 = chart.splineArea(seriesData_1);
+  var series2 = chart.splineArea(seriesData_2);
+  var series3 = chart.splineArea(seriesData_3);
+
+  // configure tooltips
+  chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
+
+  // configure labels on the Y-axis
+  chart.yAxis().labels().format("{%Value}");
+
+  // set the chart title
+  chart.title("Stacked Spline Area Chart");
+
+  // set the container id
+  chart.container("container");
+
+  // initiate drawing the chart
+  chart.draw();
+});
+</script>
+</body>
