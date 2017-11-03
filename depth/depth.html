@@ -6,51 +6,99 @@
   <script src="/js/anychart-exports.min.js"></script>
   <script src="/js/anychart-ui.min.js"></script>
   <link rel="stylesheet" href="/css/anychart-ui.min.css">
+<style>
+.div-dep-left  {
+  float: left;
+  width: 48%;
+  background-color: green;
+}
+.div-dep-right {
+  float: right;
+  width: 48%;
+  background-color: red;
+}
+</style>
 <body>
   <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
   <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
-  <div id="container"></div>
+  <div id="container-all">
+    <div id="dep01-buy"  class="div-dep-left"></div>
+    <div id="dep01-sell" class="div-dep-right"></div>
+  </div>
 <script type="text/javascript">
-var  data = null;
-anychart.onDocumentReady(function() {
-  // create a data set
-  data = anychart.data.set([
-    ["1", 20000, 40000, ],
-    ["2", 20000, 40000, ],
-    ["3", 40000, 30000, ],
-    ["4", 20000, 20000, ],
-    ["5", 10000, 15000, ],
-    ["6", 40000, 30000, ],
-  ]);
 
-  // map the data
-  var seriesData_1 = data.mapAs({x: 0, value: 1});
-  var seriesData_2 = data.mapAs({x: 0, value: 2});
+var  gdata_dep_buy  = null;
+var  gdata_dep_sell = null;
 
+function chartDep_create(uiID, dataSet, yOrient, valMax, color1, color2)
+{
+  var chart;
+  var series, seriesData;
   // create a chart
-  chart = anychart.area();
+  chart = anychart.column();
 
   // enable the percent stacking mode
   chart.yScale().stackMode("value");
 
   // create splineArea series, set the data
-  var series1 = chart.splineArea(seriesData_1);
-  var series2 = chart.splineArea(seriesData_2);
+  seriesData = dataSet.mapAs({x: 0, value: 1});
+  series = chart.column(seriesData);
+  series.color(color1);
+  seriesData = dataSet.mapAs({x: 0, value: 2});
+  series = chart.column(seriesData);
+  series.color(color2);
 
   // configure tooltips
   chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
 
   // configure labels on the Y-axis
   chart.yAxis().labels().format("{%Value}");
+  chart.yAxis().orientation(yOrient);
+
+  chart.yScale().minimum(0);
+  chart.yScale().maximum(valMax);
 
   // set the chart title
   chart.title("Stacked Spline Area Chart");
 
   // set the container id
-  chart.container("container");
+  chart.container(uiID);
+
+  return chart;
+}
+
+anychart.onDocumentReady(function()
+{
+  var chart_buy, chart_sell;
+  // create a data set
+  gdata_dep_buy = anychart.data.set([
+    ["11", 20000, 40000, ],
+    ["12", 20000, 40000, ],
+    ["13", 40000, 30000, ],
+    ["14", 20000, 20000, ],
+    ["15", 10000, 15000, ],
+    ["16", 40000, 30000, ],
+  ]);
+
+  gdata_dep_sell = anychart.data.set([
+    ["21", 20000, 40000, ],
+    ["22", 20000, 40000, ],
+    ["23", 40000, 30000, ],
+    ["24", 20000, 20000, ],
+    ["25", 10000, 15000, ],
+    ["26", 40000, 30000, ],
+  ]);
+
+var valMax = 160000;
+//function chartDep_create(uiID, dataSet, yOrient, valMax, color1, color2)
+  chart_buy  = chartDep_create( "dep01-buy",  gdata_dep_buy,  "left", valMax, "#228B22", "#2E8B57");
+  chart_sell = chartDep_create("dep01-sell", gdata_dep_sell, "right", valMax, "#8B0000", "#DC143C");
+
+  // map the data
 
   // initiate drawing the chart
-  chart.draw();
+  chart_buy.draw();
+  chart_sell.draw();
 });
 
 var _add = 0;
@@ -58,13 +106,13 @@ var _add = 0;
 function _onUI_Test01()
 {
   console.log("Test01: ...");
-  data.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
+  gdata_dep_buy.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
 _add ++;
 }
 function _onUI_Test02()
 {
   console.log("Test02: ...");
-  data.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
+  gdata_dep_sell.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
 _add ++;
 }
 </script>
