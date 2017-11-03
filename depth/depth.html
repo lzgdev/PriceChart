@@ -21,21 +21,39 @@
 }
 </style>
 <body>
+<!-- --!>
   <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
   <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
-  <div id="container-all">
-    <div id="dep01-buy"  class="div-dep-left"></div>
-    <div id="dep01-sell" class="div-dep-right"></div>
+  <div id="container-dep">
+    <div id="dep01-book"></div>
   </div>
 <script type="text/javascript">
 
-var  gdata_dep_buy  = null;
-var  gdata_dep_sell = null;
+var  gdata_dep_book  = null;
+var  valMax = 160000;
+var  cl1Buy = "#228B22",  cl2Buy = "#2E8B57";
+var cl1Sell = "#8B0000", cl2Sell = "#DC143C";
 
-function chartDep_create(uiID, dataSet, yOrient, valMax, color1, color2)
+anychart.onDocumentReady(function()
 {
   var chart;
   var series, seriesData;
+  // create a data set
+  gdata_dep_book = anychart.data.set([
+    ["11",  cl1Buy,  cl2Buy, 20000, 40000, ],
+    ["12",  cl1Buy,  cl2Buy, 20000, 40000, ],
+    ["13",  cl1Buy,  cl2Buy, 40000, 30000, ],
+    ["14",  cl1Buy,  cl2Buy, 20000, 20000, ],
+    ["15",  cl1Buy,  cl2Buy, 10000, 15000, ],
+    ["16",  cl1Buy,  cl2Buy, 40000, 30000, ],
+    ["21", cl1Sell, cl2Sell, 20000, 40000, ],
+    ["22", cl1Sell, cl2Sell, 20000, 40000, ],
+    ["23", cl1Sell, cl2Sell, 40000, 30000, ],
+    ["24", cl1Sell, cl2Sell, 20000, 20000, ],
+    ["25", cl1Sell, cl2Sell, 10000, 15000, ],
+    ["26", cl1Sell, cl2Sell, 40000, 30000, ],
+  ]);
+
   // create a chart
   chart = anychart.column();
 
@@ -45,64 +63,29 @@ function chartDep_create(uiID, dataSet, yOrient, valMax, color1, color2)
   chart.yScale().stackMode("value");
 
   // create splineArea series, set the data
-  seriesData = dataSet.mapAs({x: 0, value: 1});
+  seriesData = gdata_dep_book.mapAs({x: 0, value: 3, fill: 1, });
   series = chart.column(seriesData);
-  series.color(color1);
-  seriesData = dataSet.mapAs({x: 0, value: 2});
+  seriesData = gdata_dep_book.mapAs({x: 0, value: 4, fill: 2, });
   series = chart.column(seriesData);
-  series.color(color2);
 
   // configure tooltips
   chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
 
   // configure labels on the Y-axis
   chart.yAxis().labels().format("{%Value}");
-  chart.yAxis().orientation(yOrient);
+  chart.yAxis().orientation("left");
+//  chart.yAxis().orientation("right");
 
   chart.yScale().minimum(0);
   chart.yScale().maximum(valMax);
 
   // set the chart title
-  chart.title("Stacked Spline Area Chart");
+  chart.title("Stacked Column Chart");
 
   // set the container id
-  chart.container(uiID);
+  chart.container("dep01-book");
 
-  return chart;
-}
-
-anychart.onDocumentReady(function()
-{
-  var chart_buy, chart_sell;
-  // create a data set
-  gdata_dep_buy = anychart.data.set([
-    ["11", 20000, 40000, ],
-    ["12", 20000, 40000, ],
-    ["13", 40000, 30000, ],
-    ["14", 20000, 20000, ],
-    ["15", 10000, 15000, ],
-    ["16", 40000, 30000, ],
-  ]);
-
-  gdata_dep_sell = anychart.data.set([
-    ["21", 20000, 40000, ],
-    ["22", 20000, 40000, ],
-    ["23", 40000, 30000, ],
-    ["24", 20000, 20000, ],
-    ["25", 10000, 15000, ],
-    ["26", 40000, 30000, ],
-  ]);
-
-var valMax = 160000;
-//function chartDep_create(uiID, dataSet, yOrient, valMax, color1, color2)
-  chart_buy  = chartDep_create( "dep01-buy",  gdata_dep_buy,  "left", valMax, "#228B22", "#2E8B57");
-  chart_sell = chartDep_create("dep01-sell", gdata_dep_sell, "right", valMax, "#8B0000", "#DC143C");
-
-  // map the data
-
-  // initiate drawing the chart
-  chart_buy.draw();
-  chart_sell.draw();
+  chart.draw();
 });
 
 var _add = 0;
@@ -110,13 +93,13 @@ var _add = 0;
 function _onUI_Test01()
 {
   console.log("Test01: ...");
-  gdata_dep_buy.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
+  gdata_dep_book.append(["E" + _add,  cl1Buy,  cl2Buy, 20000, 10000 + 5000*(_add % 10), ]);
 _add ++;
 }
 function _onUI_Test02()
 {
   console.log("Test02: ...");
-  gdata_dep_sell.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
+  gdata_dep_book.append(["E" + _add, cl1Sell, cl2Sell, 20000, 10000 + 5000*(_add % 10), ]);
 _add ++;
 }
 </script>
