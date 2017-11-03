@@ -9,12 +9,14 @@
 <style>
 .div-dep-left  {
   float: left;
-  width: 48%;
+  width: 49.8%;
+  height: 92%;
   background-color: green;
 }
 .div-dep-right {
   float: right;
-  width: 48%;
+  width: 49.8%;
+  height: 92%;
   background-color: red;
 }
 </style>
@@ -36,6 +38,8 @@ function chartDep_create(uiID, dataSet, yOrient, valMax, color1, color2)
   var series, seriesData;
   // create a chart
   chart = anychart.column();
+
+  chart.background().fill("#2F4F4F");
 
   // enable the percent stacking mode
   chart.yScale().stackMode("value");
