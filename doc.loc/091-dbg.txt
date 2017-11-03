@@ -6,3 +6,6 @@ or
 
 export FLASK_APP=appPriceChart.py
 flask run
+  or
+flask run --host=0.0.0.0
+

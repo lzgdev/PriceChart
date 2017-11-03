@@ -7,21 +7,25 @@
   <script src="/js/anychart-ui.min.js"></script>
   <link rel="stylesheet" href="/css/anychart-ui.min.css">
 <body>
+  <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
+  <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
   <div id="container"></div>
 <script type="text/javascript">
+var  data = null;
 anychart.onDocumentReady(function() {
   // create a data set
-  var data = anychart.data.set([
-    ["Winter", 20000, 40000, 20000],
-    ["Spring", 20000, 40000, 40000],
-    ["Summer", 40000, 30000, 30000],
-    ["Autumn", 20000, 20000, 40000]
+  data = anychart.data.set([
+    ["1", 20000, 40000, ],
+    ["2", 20000, 40000, ],
+    ["3", 40000, 30000, ],
+    ["4", 20000, 20000, ],
+    ["5", 10000, 15000, ],
+    ["6", 40000, 30000, ],
   ]);
 
   // map the data
   var seriesData_1 = data.mapAs({x: 0, value: 1});
   var seriesData_2 = data.mapAs({x: 0, value: 2});
-  var seriesData_3 = data.mapAs({x: 0, value: 3});
 
   // create a chart
   chart = anychart.area();
@@ -32,7 +36,6 @@ anychart.onDocumentReady(function() {
   // create splineArea series, set the data
   var series1 = chart.splineArea(seriesData_1);
   var series2 = chart.splineArea(seriesData_2);
-  var series3 = chart.splineArea(seriesData_3);
 
   // configure tooltips
   chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
@@ -49,5 +52,21 @@ anychart.onDocumentReady(function() {
   // initiate drawing the chart
   chart.draw();
 });
+
+var _add = 0;
+
+function _onUI_Test01()
+{
+  console.log("Test01: ...");
+  data.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
+_add ++;
+}
+function _onUI_Test02()
+{
+  console.log("Test02: ...");
+  data.append({x: "E" + _add, value: 10000 + 5000*(_add % 10), });
+_add ++;
+}
 </script>
 </body>
+
