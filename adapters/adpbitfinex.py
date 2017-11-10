@@ -6,59 +6,112 @@ import hmac
 import hashlib
 import json
 
+import pymongo
+
+from pymongo import MongoClient
+
 class TradeBook(object):
-	def __init__(self, prec, size):
+	def __init__(self, db_database, prec, size):
 		self.flag_dbg  = True
+		self.flag_dbg  = False
 		self.wreq_prec = prec
 		self.wreq_len  = size
 		self.wrsp_chan = None
-		self.book_bids = []
-		self.book_asks = []
+		self.loc_book_bids = []
+		self.loc_book_asks = []
+		# database members init
+		self.dbInit(db_database)
+
+	def dbInit(self, db_database):
+		flag_exist = True if (self.wreq_prec in db_database.collection_names(False)) else False
+		self.db_collection = pymongo.collection.Collection(db_database, self.wreq_prec,
+								False if flag_exist else True)
+		rec_tmp = self.db_collection.find_one({ 'rec-type': 'price.extr.bids', })
+		if rec_tmp != None:
+			self.dbid_price_bids = rec_tmp['_id']
+			print("TradeBook(dbInit)", self.wreq_prec, "extr-bids:", rec_tmp)
+		else:
+			self.dbid_price_bids = self.db_collection.insert_one({ 'rec-type': 'price.extr.bids', }).inserted_id
+		rec_tmp = self.db_collection.find_one({ 'rec-type': 'price.extr.asks', })
+		if rec_tmp != None:
+			self.dbid_price_asks = rec_tmp['_id']
+			print("TradeBook(dbInit)", self.wreq_prec, "extr-asks:", rec_tmp)
+		else:
+			self.dbid_price_asks = self.db_collection.insert_one({ 'rec-type': 'price.extr.asks', }).inserted_id
+		print("TradeBook(dbInit)", self.wreq_prec, "id_bids:", self.dbid_price_bids, "id_asks:", self.dbid_price_asks)
+		self.flag_db_init = True
 
 	def upBookChan(self, chan_id):
 		self.wrsp_chan = chan_id
 
 	def upBookRec(self, rec_update):
-		rec_price   = rec_update[0]
-		list_update = self.book_bids if rec_update[2] >  0.0 else self.book_asks
+		price_rec = rec_update[0]
+		flag_bids = True if rec_update[2] >  0.0 else False
+		# locate the book record from self.loc_book_bids or self.loc_book_asks
+		list_update = self.loc_book_bids if flag_bids else self.loc_book_asks
 		idx_bgn = 0
 		idx_end = len(list_update) - 1
 		while idx_bgn < idx_end:
-			idx_ins = int((idx_bgn + idx_end) / 2)
-			mid_price = list_update[idx_ins][0]
-			if   rec_price <  mid_price:
-				idx_end = idx_ins - 1
-			elif rec_price >  mid_price:
-				idx_bgn = idx_ins + 1
+			idx_rec = int((idx_bgn + idx_end) / 2)
+			mid_price = list_update[idx_rec][0]
+			if   price_rec <  mid_price:
+				idx_end = idx_rec - 1
+			elif price_rec >  mid_price:
+				idx_bgn = idx_rec + 1
 			else:
-				idx_bgn = idx_end = idx_ins
+				idx_bgn = idx_end = idx_rec
 		idx_rec = idx_end
+		# delete/add/update book record in self.loc_book_bids or self.loc_book_asks
+		rec_del = rec_new = rec_up = False
 		if   idx_rec >= 0 and rec_update[1] == 0:
-			if list_update[idx_rec][0] == rec_price:
+			rec_del = True
+			if list_update[idx_rec][0] == price_rec:
 				del list_update[idx_rec]
-		elif idx_rec <  0  or rec_price >  list_update[idx_rec][0]:
-			list_update.insert(idx_rec+1, rec_update)
-		elif rec_price < list_update[idx_rec][0]:
+		elif idx_rec <  0  or price_rec > list_update[idx_rec][0]:
+			rec_new = True
+			idx_rec = idx_rec + 1
+			list_update.insert(idx_rec, rec_update)
+		elif price_rec < list_update[idx_rec][0]:
+			rec_new = True
 			list_update.insert(idx_rec, rec_update)
 		else:
+			rec_up  = True
 			list_update[idx_rec] = rec_update
+		# update database
+		price_min = None if len(list_update) == 0 else list_update[0][0]
+		price_max = None if len(list_update) == 0 else list_update[len(list_update)-1][0]
+		if flag_bids:
+			self.db_collection.find_one_and_update( { '_id': self.dbid_price_bids, },
+					{ '$set': { 'price-extr': [ price_min, price_max, ], }, })
+		else:
+			self.db_collection.find_one_and_update( { '_id': self.dbid_price_asks, },
+					{ '$set': { 'price-extr': [ price_min, price_max, ], }, })
+		str_rec_type = 'book.bids' if flag_bids else 'book.asks'
+		if   rec_del:
+			self.db_collection.delete_one({ 'rec-type': str_rec_type, 'book-price': price_rec, })
+		elif rec_new:
+			self.db_collection.insert_one({ 'rec-type': str_rec_type, 'book-price': price_rec,
+						'book-count': rec_update[1], 'book-amount': rec_update[2], })
+		elif rec_up:
+			self.db_collection.find_one_and_update({ 'rec-type': str_rec_type, 'book-price': price_rec, },
+						{ '$set': { 'book-count': rec_update[1], 'book-amount': rec_update[2], } })
 
 	def upBookRecs(self, recs_update):
 		if   type(recs_update[0]) is list:
 			for rec_update in recs_update:
 				self.upBookRec(rec_update)
 			if self.flag_dbg:
-				print("TradeBook Sn: ", json.dumps(self.book_bids + self.book_asks))
+				print("TradeBook Sn: ", json.dumps(self.loc_book_bids + self.loc_book_asks))
 		else:
 			rec_update = recs_update
 			self.upBookRec(rec_update)
 			if self.flag_dbg:
 				print("TradeBook Up: ", json.dumps(rec_update), "=>", json.dumps(
-						self.book_bids if rec_update[2] > 0.0 else self.book_asks))
+						self.loc_book_bids if rec_update[2] > 0.0 else self.loc_book_asks))
 
 
 class AdpBitfinexWSS(websocket.WebSocketApp):
-	def __init__(self, url, api_key=None, api_secret=None):
+	def __init__(self, url, db_client, api_key=None, api_secret=None):
 		super(AdpBitfinexWSS, self).__init__(url)
 		self.on_open = AdpBitfinexWSS.wssEV_OnOpen
 		self.on_message = AdpBitfinexWSS.wssEV_OnMessage
@@ -66,8 +119,9 @@ class AdpBitfinexWSS(websocket.WebSocketApp):
 		self.on_close = AdpBitfinexWSS.wssEV_OnClose
 		self.auth_api_key = api_key
 		self.auth_api_secret = api_secret
-		self.book_p0_book = TradeBook("P0", 25)
-		self.book_p1_book = TradeBook("P1", 25)
+		db_database = db_client['books']
+		self.book_p0_book = TradeBook(db_database, "P0", 25)
+		self.book_p1_book = TradeBook(db_database, "P1", 25)
 
 	def	wssEV_OnOpen(self):
 		if (self.auth_api_key != None) and (self.auth_api_secret != None):
