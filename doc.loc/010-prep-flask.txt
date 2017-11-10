@@ -15,3 +15,8 @@ pip install flask uwsgi
 # for client
 pip install requests
 
+#
+# more
+#
+pip install pymongo
+
