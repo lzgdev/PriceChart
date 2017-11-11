@@ -14,11 +14,9 @@ from adapters.basebooks import TradeBook_DbBase
 from adapters.basebooks import DBNAME_BOOK_PRICEEXTR, DBNAME_BOOK_RECTYPE
 
 class TradeBook_DbWrite(TradeBook_DbBase):
-	def __init__(self, db_database, prec, size):
+	def __init__(self, prec, size):
 		self.fdbg_dbwr = False
-		super(TradeBook_DbWrite, self).__init__(db_database, prec, size)
-		# database members init
-		self.dbInit(db_database)
+		super(TradeBook_DbWrite, self).__init__(prec, size)
 
 	def dbInit(self, db_database):
 		super(TradeBook_DbWrite, self).dbInit(db_database)
@@ -76,8 +74,10 @@ class AdpBitfinexWSS(websocket.WebSocketApp):
 		self.auth_api_key = api_key
 		self.auth_api_secret = api_secret
 		db_database = db_client['books']
-		self.book_p0_book = TradeBook_DbWrite(db_database, "P0", 25)
-		self.book_p1_book = TradeBook_DbWrite(db_database, "P1", 25)
+		self.book_p0_book = TradeBook_DbWrite("P0", 25)
+		self.book_p0_book.dbInit(db_database)
+		self.book_p1_book = TradeBook_DbWrite("P1", 25)
+		self.book_p1_book.dbInit(db_database)
 
 	def	wssEV_OnOpen(self):
 		if (self.auth_api_key != None) and (self.auth_api_secret != None):

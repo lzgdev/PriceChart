@@ -73,7 +73,7 @@ class TradeBook_Base(object):
 
 
 class TradeBook_DbBase(TradeBook_Base):
-	def __init__(self, db_database, prec, size):
+	def __init__(self, prec, size):
 		self.fdbg_db = False
 		super(TradeBook_DbBase, self).__init__(prec, size)
 		self.db_collection = None
