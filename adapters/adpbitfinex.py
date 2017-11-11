@@ -10,7 +10,7 @@ import pymongo
 
 from pymongo import MongoClient
 
-from adapters.basebooks import TradeBook_DbBase
+from adapters.basebooks import TradeBook_Base, TradeBook_DbBase
 from adapters.basebooks import DBNAME_BOOK_PRICEEXTR, DBNAME_BOOK_RECTYPE
 
 class TradeBook_DbWrite(TradeBook_DbBase):
@@ -33,14 +33,7 @@ class TradeBook_DbWrite(TradeBook_DbBase):
 			if self.fdbg_dbwr:
 				print("TradeBook_DbWrite(dbInit): new price:asks(write).")
 
-	def dbClear(self):
-		if (self.db_collection == None):
-			return
-		self.db_collection.drop()
-		if self.fdbg_dbwr:
-			print("TradeBook_DbWrite(dbClear): drop collection(write).")
-
-	def upBookRec_ex(self, rec_update, rec_del, rec_new, rec_up):
+	def upBookRec_end_ex(self, rec_update, rec_del, rec_new, rec_up):
 		price_rec = rec_update[0]
 		flag_bids = True if rec_update[2] >  0.0 else False
 		# locate the book record from self.loc_book_bids or self.loc_book_asks
@@ -70,6 +63,15 @@ class TradeBook_DbWrite(TradeBook_DbBase):
 		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.bids', })
 		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.asks', })
 
+class TradeBook_WssSrv(TradeBook_Base):
+	def __init__(self, prec, size):
+		super(TradeBook_WssSrv, self).__init__(prec, size)
+
+	def upBookRec_end_ex(self, rec_update, rec_del, rec_new, rec_up):
+		print("TradeBook_WssSrv(upBookRec_end_ex)")
+
+	def upBookRecs_end_ex(self, recs_update):
+		print("TradeBook_WssSrv(upBookRecs_end_ex)")
 
 class AdpBitfinexWSS(websocket.WebSocketApp):
 	def __init__(self, url, db_client, api_key=None, api_secret=None):
@@ -83,6 +85,7 @@ class AdpBitfinexWSS(websocket.WebSocketApp):
 		db_database = db_client['books']
 		self.book_p0_book = TradeBook_DbWrite("P0", 25)
 		self.book_p0_book.dbInit(db_database)
+		#self.book_p0_book = TradeBook_WssSrv("P0", 25)
 		self.book_p1_book = TradeBook_DbWrite("P1", 25)
 		self.book_p1_book.dbInit(db_database)
 
