@@ -64,6 +64,13 @@ class TradeBook_DbWrite(TradeBook_DbBase):
 			self.db_collection.find_one_and_update({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec, },
 						{ '$set': { 'book-count': rec_update[1], 'book-amount': rec_update[2], } })
 
+	def upBookRecs_bgn_ex(self, recs_update):
+		if (self.db_collection == None):
+			return
+		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.bids', })
+		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.asks', })
+
+
 class AdpBitfinexWSS(websocket.WebSocketApp):
 	def __init__(self, url, db_client, api_key=None, api_secret=None):
 		super(AdpBitfinexWSS, self).__init__(url)

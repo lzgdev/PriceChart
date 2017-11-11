@@ -52,19 +52,29 @@ class TradeBook_Base(object):
 		self.upBookRec_ex(rec_update, rec_del, rec_new, rec_up)
 
 	def upBookRecs(self, recs_update):
-		if   type(recs_update[0]) is list:
-			for rec_update in recs_update:
-				self.upBookRec(rec_update)
-			if self.fdbg_base:
-				print("TradeBook Sn: ", json.dumps(self.loc_book_bids + self.loc_book_asks))
-		else:
+		if not type(recs_update[0]) is list:
 			rec_update = recs_update
 			self.upBookRec(rec_update)
 			if self.fdbg_base:
 				print("TradeBook Up: ", json.dumps(rec_update), "=>", json.dumps(
 						self.loc_book_bids if rec_update[2] > 0.0 else self.loc_book_asks))
+		else:
+			self.loc_book_bids = []
+			self.loc_book_asks = []
+			self.upBookRecs_bgn_ex(recs_update)
+			for rec_update in recs_update:
+				self.upBookRec(rec_update)
+			self.upBookRecs_end_ex(recs_update)
+			if self.fdbg_base:
+				print("TradeBook Sn: ", json.dumps(self.loc_book_bids + self.loc_book_asks))
 
 	def upBookRec_ex(self, rec_update, rec_del, rec_new, rec_up):
+		pass
+
+	def upBookRecs_bgn_ex(self, recs_update):
+		pass
+
+	def upBookRecs_end_ex(self, recs_update):
 		pass
 
 	def dbgOut_Books(self):
