@@ -6,7 +6,7 @@ DBNAME_BOOK_PRICEEXTR  = 'price-extr'
 
 class TradeBook_Base(object):
 	def __init__(self, prec, size):
-		self.flag_dbg  = False
+		self.fdbg_base  = False
 		self.wreq_prec = prec
 		self.wreq_len  = size
 		self.wrsp_chan = None
@@ -55,12 +55,12 @@ class TradeBook_Base(object):
 		if   type(recs_update[0]) is list:
 			for rec_update in recs_update:
 				self.upBookRec(rec_update)
-			if self.flag_dbg:
+			if self.fdbg_base:
 				print("TradeBook Sn: ", json.dumps(self.loc_book_bids + self.loc_book_asks))
 		else:
 			rec_update = recs_update
 			self.upBookRec(rec_update)
-			if self.flag_dbg:
+			if self.fdbg_base:
 				print("TradeBook Up: ", json.dumps(rec_update), "=>", json.dumps(
 						self.loc_book_bids if rec_update[2] > 0.0 else self.loc_book_asks))
 
@@ -71,15 +71,18 @@ class TradeBook_Base(object):
 		print("TradeBook(dbg) " + self.wreq_prec + ": bids=", self.loc_book_bids)
 		print("TradeBook(dbg) " + self.wreq_prec + ": asks=", self.loc_book_asks)
 
+
 class TradeBook_DbBase(TradeBook_Base):
 	def __init__(self, db_database, prec, size):
+		self.fdbg_db = False
 		super(TradeBook_DbBase, self).__init__(prec, size)
 		self.db_collection = None
 		self.dbid_price_bids = None
 		self.dbid_price_asks = None
 
 	def dbInit(self, db_database):
-		print("TradeBook_DbBase(dbInit): ...")
+		if self.fdbg_db:
+			print("TradeBook_DbBase(dbInit): ...")
 		flag_exist = True if (self.wreq_prec in db_database.collection_names(False)) else False
 		self.db_collection = None if not flag_exist else pymongo.collection.Collection(
 							db_database, self.wreq_prec, False)
@@ -107,4 +110,5 @@ class TradeBook_DbBase(TradeBook_Base):
 			rec_update = [ doc_rec['book-price'], doc_rec['book-count'], doc_rec['book-amount'], ]
 			self.upBookRec(rec_update)
 		crr_recs.close()
+
 
