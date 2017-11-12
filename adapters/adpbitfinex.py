@@ -63,19 +63,10 @@ class TradeBook_DbWrite(TradeBook_DbBase):
 		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.bids', })
 		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.asks', })
 
-class TradeBook_WssSrv(TradeBook_Base):
-	def __init__(self, prec, size):
-		super(TradeBook_WssSrv, self).__init__(prec, size)
-
-	def upBookRec_end_ex(self, rec_update, rec_del, rec_new, rec_up):
-		print("TradeBook_WssSrv(upBookRec_end_ex)")
-
-	def upBookRecs_end_ex(self, recs_update):
-		print("TradeBook_WssSrv(upBookRecs_end_ex)")
 
 class AdpBitfinexWSS(websocket.WebSocketApp):
-	def __init__(self, url, db_client, api_key=None, api_secret=None):
-		super(AdpBitfinexWSS, self).__init__(url)
+	def __init__(self, url_bfx, sio_namespace, db_client, api_key=None, api_secret=None):
+		super(AdpBitfinexWSS, self).__init__(url_bfx)
 		self.on_open = AdpBitfinexWSS.wssEV_OnOpen
 		self.on_message = AdpBitfinexWSS.wssEV_OnMessage
 		self.on_error = AdpBitfinexWSS.wssEV_OnError
@@ -85,7 +76,6 @@ class AdpBitfinexWSS(websocket.WebSocketApp):
 		db_database = db_client['books']
 		self.book_p0_book = TradeBook_DbWrite("P0", 25)
 		self.book_p0_book.dbInit(db_database)
-		#self.book_p0_book = TradeBook_WssSrv("P0", 25)
 		self.book_p1_book = TradeBook_DbWrite("P1", 25)
 		self.book_p1_book.dbInit(db_database)
 
