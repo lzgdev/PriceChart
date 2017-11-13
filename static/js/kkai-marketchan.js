@@ -9,6 +9,7 @@ class ClChanData
   locCleanData()
   {
     this.onLocCleanData_impl();
+    this.onLocCleanData_CB();
   }
 
   locAppendData(obj_msg)
@@ -19,6 +20,10 @@ class ClChanData
   locRecChg(obj_rec)
   {
     this.onLocRecChg_impl(obj_rec)
+  }
+
+  onLocCleanData_CB()
+  {
   }
 
   onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up)
@@ -87,8 +92,8 @@ class ClChanData_ABooks extends ClChanData_Array
   onLocRecChg_impl(obj_rec)
   {
     // locate the book record from self.loc_book_bids or self.loc_book_asks
-    var price_rec = obj_rec[2];
-    var flag_bids = (price_rec > 0.0) ? true : false;
+    var price_rec = obj_rec[0];
+    var flag_bids = (obj_rec[2] > 0.0) ? true : false;
     var book_recs = flag_bids ? this.loc_book_bids : this.loc_book_asks;
     var idx_rec, idx_bgn, idx_end;
     var flag_del, flag_new, flag_up;
@@ -114,7 +119,7 @@ class ClChanData_ABooks extends ClChanData_Array
     flag_del = flag_new = flag_up  = false;
     if  (idx_rec >= 0 && obj_rec[1] == 0) {
       flag_del = true;
-      if (book_recs[idx_rec][0] == price_rec) {
+      if (price_rec == book_recs[idx_rec][0]) {
         book_recs.splice(idx_rec, 1);
       }
     }
@@ -122,7 +127,12 @@ class ClChanData_ABooks extends ClChanData_Array
     if (idx_rec <  0  || price_rec > book_recs[idx_rec][0]) {
       flag_new = true;
       idx_rec = idx_rec + 1;
-      book_recs.splice(idx_rec, 0, obj_rec);
+      if (idx_rec >= book_recs.length) {
+        book_recs.push(obj_rec);
+      }
+      else {
+        book_recs.splice(idx_rec, 0, obj_rec);
+      }
     }
     else
     if (price_rec < book_recs[idx_rec][0]) {

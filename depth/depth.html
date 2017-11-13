@@ -2,14 +2,14 @@
 <head>
   <title>Price Depth</title>
   <script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
-<!--
   <script type="text/javascript" src="/js/anychart-bundle.min.js"></script>
   <script type="text/javascript" src="/js/anychart-base.min.js"></script>
   <script type="text/javascript" src="/js/anychart-exports.min.js"></script>
   <script type="text/javascript" src="/js/anychart-ui.min.js"></script>
+  <script type="text/javascript" src="/js/kkai-marketchan.js"></script>
+<!--
   <script type="text/javascript" src="/js/socket.io.min.js"></script>
   -->
-  <script type="text/javascript" src="/js/kkai-marketchan.js"></script>
   <link rel="stylesheet" href="/css/anychart-ui.min.css">
 <style>
 .div-dep-left  {
@@ -26,158 +26,19 @@
 }
 </style>
 <body>
+<!-- -->
   <h1>Output of log_out1</h1>
   <pre id="log_out1">init(html) log_out1</pre>
   <h1>Output of log_out2</h1>
   <pre id="log_out2">init(html) log_out2</pre>
-<script type="text/javascript">
-// DepthView code: javascript
-  $('#log_out1').html('init(js) log_out1');
-  $('#log_out2').html('init(js) log_out2');
-
-var chan_books_P0 = null;
-
-function wssBfx_OnMsg(msg)
-{
-  //console.log('Server: ' + msg.data);
-  $('#log_out2').append('\nServer: ' + msg.data);
-
-  var obj_msg  = (typeof(msg.data) === 'string') ? JSON.parse(msg.data) : null;
-  if (obj_msg === null) {
-    return ;
-  }
-  //$('#log_out2').append('\nwssBfx_OnMsg: type:' + type_msg + ', data:' + obj_msg);
-  //$('#log_out2').append('\nwssBfx_OnMsg: type:' + typeof(obj_msg) + ',isArray:' + Array.isArray(obj_msg) + ', data:' + obj_msg);
-  if (Array.isArray(obj_msg))
-  {
-    var chanid_msg = obj_msg[0];
-    var handler_msg = null;
-    if ((chan_books_P0 !== null) && (chanid_msg === chan_books_P0.chan_id))
-    {
-      handler_msg = chan_books_P0;
-    }
-    if (handler_msg !== null) {
-      handler_msg.locAppendData(obj_msg);
-      //$('#log_out2').append('\nwssBfx_OnMsg: chanid(books P0):' + chanid_msg);
-      /*
-      $('#log_out2').append('\nwssBfx_OnMsg: bids=' + JSON.stringify(handler_msg.loc_book_bids));
-      $('#log_out2').append('\nwssBfx_OnMsg: asks=' + JSON.stringify(handler_msg.loc_book_asks));
-       */
-    }
-    else {
-      $('#log_out2').append('\nwssBfx_OnMsg: chanid:' + chanid_msg);
-    }
-  }
-  else
-  if (obj_msg.event === 'subscribed')
-  {
-    var chan_id = obj_msg.chanId;
-    if (obj_msg.channel === 'book' && obj_msg.symbol === 'tBTCUSD')
-    {
-      if (obj_msg.prec === 'P0') {
-        chan_books_P0 = new ClChanData_ABooks(chan_id, obj_msg.prec);
-      }
-      $('#log_out2').append('\nwssBfx_OnMsg: event(book P0):' + obj_msg.event);
-    }
-    else {
-      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + chan_id + ', msg:' + msg.data);
-    }
-  }
-  else
-  {
-    // typeof(obj_msg.event) !== 'undefined'
-    $('#log_out2').append('\nwssBfx_OnMsg: msg:' + msg.data);
-  }
-}
-
-  var obj_subscribe = {
-      'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
-      'prec': 'P0',
-      'freq': 'F0',
-      'len':  25,
-    };
-
-  var wss_srvproto = 'wss';
-  var wss_srvhost = 'api.bitfinex.com';
-  var wss_srvport = null;
-  var wss_srvpath = null;
-
-  wss_srvpath = '/ws/2';
-
-  var wss_socket = new WebSocket(wss_srvproto + '://' + wss_srvhost
-                    + ((wss_srvport === null) ? '' : (':' + wss_srvport))
-                    + ((wss_srvpath === null) ? '' : wss_srvpath));
-
-  // When the connection is open, send some data to the server
-  wss_socket.onopen = function () {
-    //wss_socket.send('Ping'); // Send the message 'Ping' to the server
-    $('#log_out2').html('wss_socket connected to ' + wss_srvhost);
-    wss_socket.send(JSON.stringify(obj_subscribe));
-  };
-  // Log errors
-  wss_socket.onerror = function (error) {
-    $('#log_out2').html('WebSocket Error: ' + error);
-  };
-  // Log messages from the server
-  wss_socket.onmessage = wssBfx_OnMsg;
-/*
-  wss_socket.onmessage = function (e) {
-    //console.log('Server: ' + e.data);
-    //$('#log_out2').html('Server: ' + e.data);
-    //$('#log_out2').after('\r\nServer: ' + e.data);
-    $('#log_out2').append('\nServer: ' + e.data);
-  };
- */
-  //exampleSocket.send("Here's some text that the server is urgently awaiting!");
-</script>
-<!-- -->
 <!-- AnyChart sample code: html -->
-<!--
+<!-- -->
   <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
   <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
   <div id="container-dep">
     <div id="dep01-book"></div>
   </div>
--->
-<!-- Flask-socketio sample code: html -->
-<!--
-    <h1>Flask-SocketIO Test</h1>
-    <p>Async mode is: <b>{{ async_mode }}</b></p>
-    <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
-    <h2>Send:</h2>
-    <form id="emit" method="POST" action='#'>
-        <input type="text" name="emit_data" id="emit_data" placeholder="Message">
-        <input type="submit" value="Echo">
-    </form>
-    <form id="broadcast" method="POST" action='#'>
-        <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">
-        <input type="submit" value="Broadcast">
-    </form>
-    <form id="join" method="POST" action='#'>
-        <input type="text" name="join_room" id="join_room" placeholder="Room Name">
-        <input type="submit" value="Join Room">
-    </form>
-    <form id="leave" method="POST" action='#'>
-        <input type="text" name="leave_room" id="leave_room" placeholder="Room Name">
-        <input type="submit" value="Leave Room">
-    </form>
-    <form id="send_room" method="POST" action='#'>
-        <input type="text" name="room_name" id="room_name" placeholder="Room Name">
-        <input type="text" name="room_data" id="room_data" placeholder="Message">
-        <input type="submit" value="Send to Room">
-    </form>
-    <form id="close" method="POST" action="#">
-        <input type="text" name="close_room" id="close_room" placeholder="Room Name">
-        <input type="submit" value="Close Room">
-    </form>
-    <form id="disconnect" method="POST" action="#">
-        <input type="submit" value="Disconnect">
-    </form>
-    <h2>Receive:</h2>
-    <div id="log"></div>
--->
-</body>
-<!--
+<!-- -->
 <script type="text/javascript">
 // AnyChart sample code: javascript
 var  gdata_dep_book  = null;
@@ -185,25 +46,156 @@ var  valMax = 160000;
 var  cl1Buy = "#228B22",  cl2Buy = "#2E8B57";
 var cl1Sell = "#8B0000", cl2Sell = "#DC143C";
 
+var  valMax = 500.0;
+
+class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
+{
+  constructor(chan_id, prec)
+  {
+    super(chan_id, prec)
+    this.loc_num_bids = 0;
+    this.loc_num_asks = 0;
+  }
+
+  onLocCleanData_CB()
+  {
+    if (gdata_dep_book == null) {
+      return;
+    }
+    while (gdata_dep_book.getRowsCount() > 0) {
+      gdata_dep_book.remove(0);
+    }
+  }
+
+  onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up)
+  {
+    if (gdata_dep_book == null) {
+      return;
+    }
+    var price_rec =  obj_rec[0];
+    var flag_bids = (obj_rec[2] > 0.0) ? true : false;
+    var amount_rec = flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]);
+    idx_rec += flag_bids ? 0 : this.loc_num_bids;
+    //console.log("char data: idx=" + idx_rec + ", price=" + price_rec + ", del=" + flag_del + ", new=" + flag_new + ", up=" + flag_up);
+    // operate(del/new/up) on gdata_dep_book
+    if (flag_del) {
+      gdata_dep_book.remove(idx_rec);
+      this.loc_num_bids -= flag_bids ? 1 : 0;
+      this.loc_num_asks -= flag_bids ? 0 : 1;
+    }
+    else
+    if (flag_new) {
+      gdata_dep_book.insert([ price_rec,
+            flag_bids ? cl1Buy : cl1Sell, flag_bids ? cl2Buy : cl2Sell,
+            0, amount_rec, 0.0, ], idx_rec);
+      this.loc_num_bids += flag_bids ? 1 : 0;
+      this.loc_num_asks += flag_bids ? 0 : 1;
+    }
+    else
+    if (flag_up)  {
+      gdata_dep_book.row(idx_rec, [ price_rec, 
+            flag_bids ? cl1Buy : cl1Sell, flag_bids ? cl2Buy : cl2Sell,
+            0, amount_rec, 0.0, ]);
+    }
+    //
+    var count_rows, idx_last = -1;
+    var obj_last;
+    if ( flag_bids && idx_rec+1 <  this.loc_num_bids) {
+      idx_last = idx_rec + 1;
+    }
+    else
+    if (!flag_bids && idx_rec-1 >= this.loc_num_bids) {
+      idx_last = idx_rec - 1;
+    }
+    // update amount of each gdata_dep_book.row
+    count_rows = gdata_dep_book.getRowsCount();
+    while (( flag_bids && idx_rec >= 0) || (!flag_bids && idx_rec <  count_rows))
+    {
+      obj_last = (idx_last < 0) ? null : gdata_dep_book.row(idx_last);
+      obj_rec  = gdata_dep_book.row(idx_rec);
+      obj_rec[5] = (obj_last == null) ? 0.0 : (obj_last[5] + obj_last[4]);
+      idx_last = idx_rec;
+      idx_rec += flag_bids ? -1 :  1;
+    }
+
+    /*
+    var arr_errors = this.dbgCheck_DepthBook();
+    for (idx_rec = 0; idx_rec < arr_errors.length; idx_rec++) {
+      $('#log_out2').append(arr_errors[idx_rec]);
+    }
+     */
+  }
+
+  dbgCheck_DepthBook()
+  {
+    var  arr_errors = [];
+    var  idx_rec, idx_other, num_shift;
+    //
+    if (this.loc_num_bids != this.loc_book_bids.length) {
+        arr_errors.push("Err(book bids): num_loc=" + this.loc_book_bids.length
+                        + "num_chart=" + this.loc_num_bids);
+    }
+    if (this.loc_num_asks != this.loc_book_asks.length) {
+        arr_errors.push("Err(book asks): num_loc=" + this.loc_book_asks.length
+                        + "num_chart=" + this.loc_num_asks);
+    }
+    // check book of bids
+    num_shift = 0;
+    for (idx_rec=0; idx_rec < this.loc_book_bids.length; idx_rec++)
+    {
+      if (((idx_other = idx_rec-1) >= 0) &&
+          (this.loc_book_bids[idx_rec][0] <= this.loc_book_bids[idx_other][0])) {
+        arr_errors.push("Err(book bids disorder): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    "last=" + JSON.stringify(this.loc_book_bids[idx_other]) + ", " +
+                    "new=" + JSON.stringify(this.loc_book_bids[idx_rec]));
+      }
+      var row_this, row_other;
+      if ((idx_other = idx_rec+1) < this.loc_book_bids.length)
+      {
+        row_this  = gdata_dep_book.row(num_shift + idx_rec);
+        row_other = gdata_dep_book.row(num_shift + idx_other);
+        if (row_this[5] != (row_other[5] + row_other[4])) {
+          arr_errors.push("Err(book bids sum): idx=" + idx_rec + ", " +
+                    "this=" + JSON.stringify(row_this) + ", " +
+                    "other=" + JSON.stringify(row_other));
+        }
+      }
+    }
+    // check book of asks
+    num_shift = this.loc_num_bids;
+    for (idx_rec=0; idx_rec < this.loc_book_asks.length; idx_rec++)
+    {
+      if (((idx_other = idx_rec-1) >= 0) &&
+          (this.loc_book_asks[idx_rec][0] <= this.loc_book_asks[idx_other][0])) {
+        arr_errors.push("Err(book asks disorder): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    "last=" + JSON.stringify(this.loc_book_asks[idx_other]) + ", " +
+                    "new=" + JSON.stringify(this.loc_book_asks[idx_rec]));
+      }
+      var row_this, row_other;
+      if ((idx_other = idx_rec-1) >= 0)
+      {
+        row_this  = gdata_dep_book.row(num_shift + idx_rec);
+        row_other = gdata_dep_book.row(num_shift + idx_other);
+        if (row_this[5] != (row_other[5] + row_other[4])) {
+          arr_errors.push("Err(book asks sum): idx=" + idx_rec + ", " +
+                    "this=" + JSON.stringify(row_this) + ", " +
+                    "other=" + JSON.stringify(row_other));
+        }
+      }
+    }
+    return arr_errors;
+  }
+}
+
 anychart.onDocumentReady(function()
 {
   var chart;
   var series, seriesData;
   // create a data set
-  gdata_dep_book = anychart.data.set([
-    ["11",  cl1Buy,  cl2Buy, 20000, 40000, ],
-    ["12",  cl1Buy,  cl2Buy, 20000, 40000, ],
-    ["13",  cl1Buy,  cl2Buy, 40000, 30000, ],
-    ["14",  cl1Buy,  cl2Buy, 20000, 20000, ],
-    ["15",  cl1Buy,  cl2Buy, 10000, 15000, ],
-    ["16",  cl1Buy,  cl2Buy, 40000, 30000, ],
-    ["21", cl1Sell, cl2Sell, 20000, 40000, ],
-    ["22", cl1Sell, cl2Sell, 20000, 40000, ],
-    ["23", cl1Sell, cl2Sell, 40000, 30000, ],
-    ["24", cl1Sell, cl2Sell, 20000, 20000, ],
-    ["25", cl1Sell, cl2Sell, 10000, 15000, ],
-    ["26", cl1Sell, cl2Sell, 40000, 30000, ],
-  ]);
+
+  gdata_dep_book = anychart.data.set([ ]);
 
   // create a chart
   chart = anychart.column();
@@ -214,9 +206,9 @@ anychart.onDocumentReady(function()
   chart.yScale().stackMode("value");
 
   // create splineArea series, set the data
-  seriesData = gdata_dep_book.mapAs({x: 0, value: 3, fill: 1, });
+  seriesData = gdata_dep_book.mapAs({x: 0, value: 5, fill: 2, });
   series = chart.column(seriesData);
-  seriesData = gdata_dep_book.mapAs({x: 0, value: 4, fill: 2, });
+  seriesData = gdata_dep_book.mapAs({x: 0, value: 4, fill: 1, });
   series = chart.column(seriesData);
 
   // configure tooltips
@@ -254,95 +246,127 @@ function _onUI_Test02()
 _add ++;
 }
 </script>
-  -->
 <!-- -->
-<!--
-<script type="text/javascript" charset="utf-8">
-// Flask-socketio sample code: javascript
-$(document).ready(function() {
-    // Use a "/test" namespace.
-    // An application can open a connection on multiple namespaces, and
-    // Socket.IO will multiplex all those connections on a single
-    // physical channel. If you don't care about multiple channels, you
-    // can set the namespace to an empty string.
-    sio_namespace = '/bfx.charts';
+<script type="text/javascript">
+// DepthView code: javascript
+  $('#log_out1').html('init(js) log_out1');
+  $('#log_out2').html('init(js) log_out2');
 
-    // Connect to the Socket.IO server.
-    // The connection URL has the following format:
-    //     http[s]://<domain>:<port>[/<namespace>]
-    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + sio_namespace);
+var flag_book_P0 = true;
+var flg_dbg_out2 = false;
 
-    // Event handler for new connections.
-    // The callback function is invoked when a connection with the
-    // server is established.
-    socket.on('connect', function() {
-        socket.emit('my_event', {data: 'I\'m connected!'});
-    });
+var chan_books_P0 = null;
 
-    // Event handler for server sent data.
-    // The callback function is invoked whenever the server emits data
-    // to the client. The data is then displayed in the "Received"
-    // section of the page.
-    socket.on('my_response', function(msg) {
-        $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
-    });
+var dbg_fail = false;
 
-    // Interval function that tests message latency by sending a "ping"
-    // message. The server then responds with a "pong" message and the
-    // round trip time is measured.
-    var ping_pong_times = [];
-    var start_time;
-    window.setInterval(function() {
-        start_time = (new Date).getTime();
-        socket.emit('my_ping');
-    }, 1000);
+function wssBfx_OnMsg(msg)
+{
+  var obj_msg  = (typeof(msg.data) === 'string') ? JSON.parse(msg.data) : null;
+  if (obj_msg === null) {
+    return;
+  }
+  if (dbg_fail) {
+    return;
+  }
+//  $('#log_out2').append('\nServer: msg=' + msg.data);
+  if (Array.isArray(obj_msg))
+  {
+    var chanid_msg = obj_msg[0];
+    var handler_msg = null;
+    if ((chan_books_P0 !== null) && (chanid_msg === chan_books_P0.chan_id))
+    {
+      handler_msg = chan_books_P0;
+    }
+    if (handler_msg !== null) {
+      handler_msg.locAppendData(obj_msg);
+      if (!handler_msg.dbgCheck_DepthBook()) {
+dbg_fail = true;
+      }
+      //$('#log_out2').append('\nwssBfx_OnMsg: chanid(books P0):' + chanid_msg);
+/*
+      $('#log_out2').append('\nwssBfx_OnMsg: bids=' + JSON.stringify(handler_msg.loc_book_bids));
+      $('#log_out2').append('\nwssBfx_OnMsg: asks=' + JSON.stringify(handler_msg.loc_book_asks));
+// */
+    }
+    else {
+      $('#log_out2').append('\nwssBfx_OnMsg: chanid:' + chanid_msg);
+    }
+  }
+  else
+  if (obj_msg.event === 'subscribed')
+  {
+    var chan_id = obj_msg.chanId;
+    if (obj_msg.channel === 'book' && obj_msg.symbol === 'tBTCUSD')
+    {
+      if (obj_msg.prec === 'P0') {
+        //chan_books_P0 = new ClChanData_ABooks(chan_id, obj_msg.prec);
+        chan_books_P0 = new ClChanData_ABooks_AnyChart(chan_id, obj_msg.prec);
+      }
+      if (flg_dbg_out2) $('#log_out2').append('\nwssBfx_OnMsg: event(book P0):' + obj_msg.event);
+    }
+    else {
+      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + chan_id + ', msg:' + msg.data);
+    }
+  }
+  else
+  {
+    // typeof(obj_msg.event) !== 'undefined'
+    $('#log_out2').append('\nwssBfx_OnMsg: msg:' + msg.data);
+  }
+}
 
-    // Handler for the "pong" message. When the pong is received, the
-    // time from the ping is stored, and the average of the last 30
-    // samples is average and displayed.
-    socket.on('my_pong', function() {
-        var latency = (new Date).getTime() - start_time;
-        ping_pong_times.push(latency);
-        ping_pong_times = ping_pong_times.slice(-30); // keep last 30 samples
-        var sum = 0;
-        for (var i = 0; i < ping_pong_times.length; i++)
-            sum += ping_pong_times[i];
-        $('#ping-pong').text(Math.round(10 * sum / ping_pong_times.length) / 10);
-    });
+var num_books = 25;
 
-    // Handlers for the different forms in the page.
-    // These accept data from the user and send it to the server in a
-    // variety of ways
-    $('form#emit').submit(function(event) {
-        socket.emit('my_event', {data: $('#emit_data').val()});
-        return false;
-    });
-    $('form#broadcast').submit(function(event) {
-        socket.emit('my_broadcast_event', {data: $('#broadcast_data').val()});
-        return false;
-    });
-    $('form#join').submit(function(event) {
-        socket.emit('join', {room: $('#join_room').val()});
-        return false;
-    });
-    $('form#leave').submit(function(event) {
-        socket.emit('leave', {room: $('#leave_room').val()});
-        return false;
-    });
-    $('form#send_room').submit(function(event) {
-        socket.emit('my_room_event', {room: $('#room_name').val(), data: $('#room_data').val()});
-        return false;
-    });
-    $('form#close').submit(function(event) {
-        socket.emit('close_room', {room: $('#close_room').val()});
-        return false;
-    });
-    $('form#disconnect').submit(function(event) {
-        socket.emit('disconnect_request');
-        return false;
-    });
-});
+  var obj_subscribe = {
+      'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
+      'prec': 'P0',
+      'freq': 'F0',
+      'len':  num_books,
+    };
+
+  var wss_srvproto = 'wss';
+  var wss_srvhost = 'api.bitfinex.com';
+  var wss_srvport = null;
+  var wss_srvpath = null;
+
+  wss_srvpath = '/ws/2';
+
+  var wss_socket = new WebSocket(wss_srvproto + '://' + wss_srvhost
+                    + ((wss_srvport === null) ? '' : (':' + wss_srvport))
+                    + ((wss_srvpath === null) ? '' : wss_srvpath));
+
+  // When the connection is open, send some data to the server
+  wss_socket.onopen = function () {
+    //wss_socket.send('Ping'); // Send the message 'Ping' to the server
+    $('#log_out2').html('wss_socket connected to ' + wss_srvhost);
+    if (flag_book_P0) {
+      wss_socket.send(JSON.stringify(obj_subscribe));
+    }
+  };
+  // Log errors
+  wss_socket.onerror = function (error) {
+    $('#log_out2').html('WebSocket Error: ' + error);
+  };
+
+  // Log messages from the server
+var msg_cnt = 0;
+  wss_socket.onmessage = function (msg) {
+    msg_cnt ++;
+    if (flg_dbg_out2) $('#log_out2').append('\nServer(' + msg_cnt + '): ' + msg.data);
+    //console.log('Server: ' + msg.data);
+    wssBfx_OnMsg(msg);
+/*
+    if (msg_cnt > 500) {
+      wss_socket.onclose = function () {}; // disable onclose handler first
+      wss_socket.close();
+    }
+ */
+  };
+
+  wss_socket.onerror = function (error) {
+  };
 </script>
-  -->
+</body>
+<!-- -->
 </html>
 
