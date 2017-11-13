@@ -1,17 +1,38 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO
+#!/usr/bin/env python
+from threading import Lock
+from flask import Flask, render_template, send_from_directory
+from flask import session, request
+
+import flask_socketio
+from flask_socketio import SocketIO, emit, disconnect
+from flask_socketio import rooms, join_room, leave_room, close_room
 
 from pymongo  import MongoClient
-
 from adapters import TradeBook_DbBase
 
-##
-from flask import render_template, send_from_directory
-app = Flask(__name__, static_folder='static')
+# Set this variable to "threading", "eventlet" or "gevent" to test the
+# different async modes, or leave it set to None for the application to choose
+# the best option based on installed packages.
+async_mode = None
 
-#app = Flask(__name__)
+##
+app = Flask(__name__, static_folder='static')
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode=async_mode)
+thread = None
+thread_lock = Lock()
+
+SIO_NAMESPACE = '/bfx.charts'
+
+def background_thread():
+    """Example of how to send server generated events to clients."""
+    count = 0
+    while True:
+        socketio.sleep(10)
+        count += 1
+        socketio.emit('my_response',
+                      {'data': 'Server generated event', 'count': count},
+                      namespace=SIO_NAMESPACE)
 
 # app data
 appData_TB_P0 = TradeBook_DbBase("P0", 25)
@@ -40,23 +61,67 @@ def def_static_depth(filename):
 def def_static_index():
 	return send_from_directory(app.static_folder + '/html', 'index.html')
 
-@socketio.on('message')
-def handle_message(message):
-	print('received message: ' + message)
-	socketio.send(message)
+class MyNamespace(flask_socketio.Namespace):
+    def on_my_event(self, message):
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+             {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('json')
-def handle_json(json):
-	print('received json: ' + str(json))
-	socketio.send(json, json=True)
+    def on_my_broadcast_event(self, message):
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+             {'data': message['data'], 'count': session['receive_count']},
+             broadcast=True)
 
-@socketio.on('js.req.books')
-def handle_js_req_books(json):
-	global appData_TB_P0
-	print('received js.req.books: ' + str(json))
-	#socketio.emit('js.ret.books', json)
-	socketio.emit('js.ret.books', { 'bids': appData_TB_P0.loc_book_bids, 'asks': appData_TB_P0.loc_book_asks, })
+    def on_join(self, message):
+        join_room(message['room'])
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+             {'data': 'In rooms: ' + ', '.join(rooms()),
+              'count': session['receive_count']})
+
+    def on_leave(self, message):
+        leave_room(message['room'])
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+             {'data': 'In rooms: ' + ', '.join(rooms()),
+              'count': session['receive_count']})
+
+    def on_close_room(self, message):
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response', {'data': 'Room ' + message['room'] + ' is closing.',
+                             'count': session['receive_count']},
+             room=message['room'])
+        close_room(message['room'])
+
+    def on_my_room_event(self, message):
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+             {'data': message['data'], 'count': session['receive_count']},
+             room=message['room'])
+
+    def on_disconnect_request(self):
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+             {'data': 'Disconnected!', 'count': session['receive_count']})
+        disconnect()
+
+    def on_my_ping(self):
+        emit('my_pong')
+
+    def on_connect(self):
+        global thread
+        with thread_lock:
+            if thread is None:
+                thread = socketio.start_background_task(
+                    target=background_thread)
+        emit('my_response', {'data': 'Connected', 'count': 0})
+
+    def on_disconnect(self):
+        print('Client disconnected', request.sid)
+
+socketio.on_namespace(MyNamespace(SIO_NAMESPACE))
 
 if __name__ == '__main__':
-	socketio.run(app)
+    socketio.run(app, debug=True)
 
