@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+
+import time
+
 from threading import Lock
 from flask import Flask, render_template, send_from_directory
 from flask import session, request
@@ -53,8 +55,10 @@ def def_static_demo(filename):
 	return send_from_directory('demo/html', filename, mimetype='text/html')
 
 @app.route('/depth/<path:filename>')
-def def_static_depth(filename):
-	return send_from_directory('depth', filename, mimetype='text/html')
+def def_active_depth(filename):
+	js01_ver = str(int((time.time()+1) * 1000000))
+	js02_ver = str(int((time.time()+2) * 1000000))
+	return render_template(filename, dev_js01_ver=js01_ver, dev_js02_ver=js02_ver)
 
 @app.route("/")
 @app.route("/index.html")

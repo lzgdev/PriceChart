@@ -1,0 +1,173 @@
+<html>
+<head>
+  <title>Price Depth</title>
+  <script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+  <script type="text/javascript" src="/js/anychart-bundle.min.js"></script>
+  <script type="text/javascript" src="/js/anychart-base.min.js"></script>
+  <script type="text/javascript" src="/js/anychart-exports.min.js"></script>
+  <script type="text/javascript" src="/js/anychart-ui.min.js"></script>
+  <script type="text/javascript" src="/js/kkai-marketchan.js?version={{ dev_js01_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev02-charts.js?version={{ dev_js02_ver }}"></script>
+<!--
+  <script type="text/javascript" src="/js/socket.io.min.js"></script>
+  -->
+  <link rel="stylesheet" href="/css/anychart-ui.min.css">
+<style>
+.div-dep-left  {
+  float: left;
+  width: 49.8%;
+  height: 92%;
+  background-color: green;
+}
+.div-dep-right {
+  float: right;
+  width: 49.8%;
+  height: 92%;
+  background-color: red;
+}
+</style>
+<body>
+<!-- -->
+  <h1>Output of log_out1</h1>
+  <pre id="log_out1">init(html) log_out1</pre>
+  <h1>Output of log_out2</h1>
+  <pre id="log_out2">init(html) log_out2</pre>
+<!-- AnyChart sample code: html -->
+<!-- -->
+  <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
+  <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
+  <div id="container-dep">
+    <div id="dep01-book"></div>
+  </div>
+<!-- -->
+<script type="text/javascript">
+var _add = 0;
+
+function _onUI_Test01()
+{
+  console.log("Test01: ...");
+  gdata_dep_book.append(["E" + _add,  cl1Buy,  cl2Buy, 20000, 10000 + 5000*(_add % 10), ]);
+_add ++;
+}
+function _onUI_Test02()
+{
+  console.log("Test02: ...");
+  gdata_dep_book.append(["E" + _add, cl1Sell, cl2Sell, 20000, 10000 + 5000*(_add % 10), ]);
+_add ++;
+}
+</script>
+<!-- -->
+<script type="text/javascript">
+// DepthView code: javascript
+  $('#log_out1').html('init(js) log_out1');
+  $('#log_out2').html('init(js) log_out2');
+
+var flag_book_P0 = true;
+var flg_dbg_out2 = false;
+
+var chan_books_P0 = null;
+
+function wssBfx_OnMsg(msg)
+{
+  var obj_msg  = (typeof(msg.data) === 'string') ? JSON.parse(msg.data) : null;
+  if (obj_msg === null) {
+    return;
+  }
+//  $('#log_out2').append('\nServer: msg=' + msg.data);
+  if (Array.isArray(obj_msg))
+  {
+    var chanid_msg = obj_msg[0];
+    var handler_msg = null;
+    if ((chan_books_P0 !== null) && (chanid_msg === chan_books_P0.chan_id))
+    {
+      handler_msg = chan_books_P0;
+    }
+    if (handler_msg !== null) {
+      handler_msg.locAppendData(obj_msg);
+      //$('#log_out2').append('\nwssBfx_OnMsg: chanid(books P0):' + chanid_msg);
+/*
+      $('#log_out2').append('\nwssBfx_OnMsg: bids=' + JSON.stringify(handler_msg.loc_book_bids));
+      $('#log_out2').append('\nwssBfx_OnMsg: asks=' + JSON.stringify(handler_msg.loc_book_asks));
+// */
+    }
+    else {
+      $('#log_out2').append('\nwssBfx_OnMsg: chanid:' + chanid_msg);
+    }
+  }
+  else
+  if (obj_msg.event === 'subscribed')
+  {
+    var chan_id = obj_msg.chanId;
+    if (obj_msg.channel === 'book' && obj_msg.symbol === 'tBTCUSD')
+    {
+      if (obj_msg.prec === 'P0') {
+        chan_books_P0 = new ClChanData_ABooks_AnyChart(chan_id, obj_msg.prec);
+      }
+      if (flg_dbg_out2) $('#log_out2').append('\nwssBfx_OnMsg: event(book P0):' + obj_msg.event);
+    }
+    else {
+      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + chan_id + ', msg:' + msg.data);
+    }
+  }
+  else
+  {
+    // typeof(obj_msg.event) !== 'undefined'
+    $('#log_out2').append('\nwssBfx_OnMsg: msg:' + msg.data);
+  }
+}
+
+var num_books = 25;
+
+  var obj_subscribe = {
+      'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
+      'prec': 'P0',
+      'freq': 'F0',
+      'len':  num_books,
+    };
+
+  var wss_srvproto = 'wss';
+  var wss_srvhost = 'api.bitfinex.com';
+  var wss_srvport = null;
+  var wss_srvpath = null;
+
+  wss_srvpath = '/ws/2';
+
+  var wss_socket = new WebSocket(wss_srvproto + '://' + wss_srvhost
+                    + ((wss_srvport === null) ? '' : (':' + wss_srvport))
+                    + ((wss_srvpath === null) ? '' : wss_srvpath));
+
+  // When the connection is open, send some data to the server
+  wss_socket.onopen = function () {
+    //wss_socket.send('Ping'); // Send the message 'Ping' to the server
+    $('#log_out2').html('wss_socket connected to ' + wss_srvhost);
+    if (flag_book_P0) {
+      wss_socket.send(JSON.stringify(obj_subscribe));
+    }
+  };
+  // Log errors
+  wss_socket.onerror = function (error) {
+    $('#log_out2').html('WebSocket Error: ' + error);
+  };
+
+  // Log messages from the server
+var msg_cnt = 0;
+  wss_socket.onmessage = function (msg) {
+    msg_cnt ++;
+    if (flg_dbg_out2) $('#log_out2').append('\nServer(' + msg_cnt + '): ' + msg.data);
+    //console.log('Server: ' + msg.data);
+    wssBfx_OnMsg(msg);
+/*
+    if (msg_cnt > 500) {
+      wss_socket.onclose = function () {}; // disable onclose handler first
+      wss_socket.close();
+    }
+ */
+  };
+
+  wss_socket.onerror = function (error) {
+  };
+</script>
+</body>
+<!-- -->
+</html>
+

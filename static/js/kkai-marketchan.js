@@ -145,5 +145,37 @@ class ClChanData_ABooks extends ClChanData_Array
     }
     this.onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up);
   }
+
+  // develop/debug support
+  devCheck_Books(err_ses)
+  {
+    var  arr_errors = [];
+    var  idx_rec, idx_other;
+    var  strErr_pref = this.constructor.name + ' Err' +
+                 ((err_ses == null || err_ses == '') ? ':' : ('(' + err_ses + '):'));
+    // check book of bids
+    for (idx_rec=0; idx_rec < this.loc_book_bids.length; idx_rec++)
+    {
+      if (((idx_other = idx_rec-1) >= 0) &&
+          (this.loc_book_bids[idx_rec][0] <= this.loc_book_bids[idx_other][0])) {
+        arr_errors.push(strErr_pref + "(book bids disorder): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    "last=" + JSON.stringify(this.loc_book_bids[idx_other]) + ", " +
+                    "new=" + JSON.stringify(this.loc_book_bids[idx_rec]));
+      }
+    }
+    // check book of asks
+    for (idx_rec=0; idx_rec < this.loc_book_asks.length; idx_rec++)
+    {
+      if (((idx_other = idx_rec-1) >= 0) &&
+          (this.loc_book_asks[idx_rec][0] <= this.loc_book_asks[idx_other][0])) {
+        arr_errors.push(strErr_pref + "(book asks disorder): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    "last=" + JSON.stringify(this.loc_book_asks[idx_other]) + ", " +
+                    "new=" + JSON.stringify(this.loc_book_asks[idx_rec]));
+      }
+    }
+    return arr_errors;
+  }
 }
 
