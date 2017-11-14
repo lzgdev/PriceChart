@@ -76,7 +76,7 @@ this.loc_anychart_datalist = [];
     }
 
     // TEMP: temp develop/debug code
-    //*
+    /*
     var err_ses = null;
     var arr_errors = this.devCheck_Books(err_ses)
                     .concat(this.devCheck_ChartData(err_ses));

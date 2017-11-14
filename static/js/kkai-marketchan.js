@@ -84,14 +84,14 @@ class ClChanData_ABooks extends ClChanData_Array
   {
     super();
     this.prec = prec;
-    this.loc_book_bids = new Array();
-    this.loc_book_asks = new Array();
+    this.loc_book_bids = [];
+    this.loc_book_asks = [];
   }
 
   onLocCleanData_impl()
   {
-    this.loc_book_bids = new Array();
-    this.loc_book_asks = new Array();
+    this.loc_book_bids = [];
+    this.loc_book_asks = [];
   }
 
   onLocRecChg_impl(obj_rec)

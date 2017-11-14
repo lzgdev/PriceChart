@@ -7,7 +7,7 @@ var num_msg_rcv = 0;
 var num_msg_max = 100;
 
 var  wss_socket = null;
-var  chan_books_P0 = null;
+var  chan_book_OBJs = [];
 
 var  valMax = 1000.0;
 
@@ -16,46 +16,57 @@ valMax = 200.0;
 
 function wssBfx_OnMsg(msg)
 {
+  var obj_chan;
   var obj_msg  = (typeof(msg.data) === 'string') ? JSON.parse(msg.data) : null;
+  var cid_msg;
   if (obj_msg === null) {
     return;
   }
 //  $('#log_out2').append('\nServer: msg=' + msg.data);
   if (Array.isArray(obj_msg))
   {
-    var chanid_msg = '';
     var handler_msg = null;
-    chanid_msg = Number(obj_msg[0]);
-    if ((chan_books_P0 !== null) && (chanid_msg === chan_books_P0.chan_id))
-    {
-      handler_msg = chan_books_P0;
+    cid_msg = Number(obj_msg[0]);
+    for (var i=0; i <  chan_book_OBJs.length; i++) {
+      obj_chan = chan_book_OBJs[i];
+      if (cid_msg === obj_chan.chan_id) {
+        handler_msg = obj_chan;
+        break;
+      }
     }
     if (handler_msg !== null) {
       handler_msg.locAppendData(obj_msg);
-      //$('#log_out2').append('\nwssBfx_OnMsg: chanid(books P0):' + chanid_msg);
+      //$('#log_out2').append('\nwssBfx_OnMsg: chanid(books):' + cid_msg);
 /*
       $('#log_out2').append('\nwssBfx_OnMsg: bids=' + JSON.stringify(handler_msg.loc_book_bids));
       $('#log_out2').append('\nwssBfx_OnMsg: asks=' + JSON.stringify(handler_msg.loc_book_asks));
 // */
     }
     else {
-      $('#log_out2').append('\nwssBfx_OnMsg: chanid:' + chanid_msg);
+      $('#log_out2').append('\nwssBfx_OnMsg: chanid:' + cid_msg);
     }
   }
   else
   if (obj_msg.event === 'subscribed')
   {
-    var chan_id = null;
-    chan_id = Number(obj_msg.chanId);
+    cid_msg = Number(obj_msg.chanId);
     if (obj_msg.channel === 'book' && obj_msg.symbol === 'tBTCUSD')
     {
-      if (obj_msg.prec === 'P0') {
-        chan_books_P0.locSet_ChanId(chan_id);
+      var handler_msg = null;
+      for (var i=0; i <  chan_book_OBJs.length; i++) {
+        obj_chan = chan_book_OBJs[i];
+        if (obj_msg.prec == obj_chan.prec) {
+          handler_msg = obj_chan;
+          break;
+        }
       }
-      if (flg_dbg_out2) $('#log_out2').append('\nwssBfx_OnMsg: event(book P0):' + obj_msg.event);
+      if (handler_msg != null) {
+        handler_msg.locSet_ChanId(cid_msg);
+      }
+      if (flg_dbg_out2) $('#log_out2').append('\nwssBfx_OnMsg: event(book):' + obj_msg.event);
     }
     else {
-      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + chan_id + ', msg:' + msg.data);
+      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + cid_msg + ', msg:' + msg.data);
     }
   }
   else
@@ -70,10 +81,12 @@ function cbEV_OnDocReady_anychart()
   var chart;
   var series, seriesData;
   var str_prec;
-  // create a data set
+  var books_obj = null;
 
   str_prec = 'P0';
-  chan_books_P0 = new ClChanData_ABooks_AnyChart(str_prec);
+  str_prec = 'P1';
+  books_obj = new ClChanData_ABooks_AnyChart(str_prec);
+  chan_book_OBJs.push(books_obj);
 
   // create a chart
   chart = anychart.column();
@@ -84,9 +97,9 @@ function cbEV_OnDocReady_anychart()
   chart.yScale().stackMode("value");
 
   // create splineArea series, set the data
-  seriesData = chan_books_P0.loc_anychart_dataset.mapAs({x: 0, value: 5, fill: 2, });
+  seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 5, fill: 2, });
   series = chart.column(seriesData);
-  seriesData = chan_books_P0.loc_anychart_dataset.mapAs({x: 0, value: 4, fill: 1, });
+  seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 4, fill: 1, });
   series = chart.column(seriesData);
 
   // configure tooltips
@@ -112,12 +125,6 @@ function cbEV_OnDocReady_anychart()
 function cbEV_OnDocReady_websocket()
 {
   var num_books = 25;
-  var obj_subscribe = {
-      'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
-      'prec': 'P0',
-      'freq': 'F0',
-      'len':  num_books,
-    };
 
   var wss_srvproto = 'wss';
   var wss_srvhost = 'api.bitfinex.com';
@@ -131,10 +138,18 @@ function cbEV_OnDocReady_websocket()
                     + ((wss_srvpath === null) ? '' : wss_srvpath));
 
   // When the connection is open, send some data to the server
-  wss_socket.onopen = function () {
+  wss_socket.onopen = function ()
+  {
     //wss_socket.send('Ping'); // Send the message 'Ping' to the server
     $('#log_out2').html('wss_socket connected to ' + wss_srvhost);
-    if (flag_book_P0) {
+    for (var i=0; i <  chan_book_OBJs.length; i++)
+    {
+      var obj_subscribe = {
+        'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
+        'prec': chan_book_OBJs[i].prec,
+        'freq': 'F0',
+        'len':  num_books,
+      };
       wss_socket.send(JSON.stringify(obj_subscribe));
     }
   };
