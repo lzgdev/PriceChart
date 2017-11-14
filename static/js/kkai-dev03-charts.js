@@ -78,48 +78,56 @@ function wssBfx_OnMsg(msg)
 
 function cbEV_OnDocReady_anychart()
 {
-  var chart;
-  var series, seriesData;
-  var str_prec;
-  var books_obj = null;
+  var map_prec2uid = [
+        { prec: 'P0', uid: 'dep-book-P0', visible:  true, },
+        { prec: 'P1', uid: 'dep-book-P1', visible: false, },
+      ];
 
-  str_prec = 'P0';
-  str_prec = 'P1';
-  books_obj = new ClChanData_ABooks_AnyChart(str_prec);
-  chan_book_OBJs.push(books_obj);
+  for (var m=0; m < map_prec2uid.length; m++)
+  {
+    var books_obj;
+    var chart;
+    var series, seriesData;
+    var map_unit = map_prec2uid[m];
+    if (!map_unit.visible) {
+      continue;
+    }
+    books_obj = new ClChanData_ABooks_AnyChart(map_unit.prec);
+    chan_book_OBJs.push(books_obj);
 
-  // create a chart
-  chart = anychart.column();
+    // create a chart
+    chart = anychart.column();
 
-  chart.background().fill("#2F4F4F");
+    chart.background().fill("#2F4F4F");
 
-  // enable the percent stacking mode
-  chart.yScale().stackMode("value");
+    // enable the percent stacking mode
+    chart.yScale().stackMode("value");
 
-  // create splineArea series, set the data
-  seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 5, fill: 2, });
-  series = chart.column(seriesData);
-  seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 4, fill: 1, });
-  series = chart.column(seriesData);
+    // create splineArea series, set the data
+    seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 5, fill: 2, });
+    series = chart.column(seriesData);
+    seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 4, fill: 1, });
+    series = chart.column(seriesData);
 
-  // configure tooltips
-  chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
+    // configure tooltips
+    chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
 
-  // configure labels on the Y-axis
-  chart.yAxis().labels().format("{%Value}");
-  chart.yAxis().orientation("left");
+    // configure labels on the Y-axis
+    chart.yAxis().labels().format("{%Value}");
+    chart.yAxis().orientation("left");
 //  chart.yAxis().orientation("right");
 
-  chart.yScale().minimum(0);
-  chart.yScale().maximum(valMax);
+    chart.yScale().minimum(0);
+    chart.yScale().maximum(valMax);
 
-  // set the chart title
-  chart.title("Stacked Column Chart");
+    // set the chart title
+    chart.title("Stacked Column Chart");
 
-  // set the container id
-  chart.container("dep01-book");
+    // set the container id
+    chart.container(map_unit.uid);
 
-  chart.draw();
+    chart.draw();
+  }
 }
 
 function cbEV_OnDocReady_websocket()
