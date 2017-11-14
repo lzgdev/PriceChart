@@ -10,11 +10,13 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
     super(prec)
     this.loc_num_bids = 0;
     this.loc_num_asks = 0;
-    this.loc_anychart_dataset = anychart.data.set([ ]);
+    this.loc_anychart_datalist = [];
+    this.loc_anychart_dataset  = anychart.data.set([ ]);
   }
 
   onLocCleanData_CB()
   {
+    this.loc_anychart_datalist = [];
     while (this.loc_anychart_dataset.getRowsCount() > 0) {
       this.loc_anychart_dataset.remove(0);
     }
@@ -24,13 +26,16 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
 
   onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up)
   {
+    var idx_list;
     var price_rec =  obj_rec[0];
     var flag_bids = (obj_rec[2] > 0.0) ? true : false;
     var amount_rec = flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]);
+    idx_list = idx_rec + (flag_bids ? 0 : this.loc_num_bids);
     idx_rec += flag_bids ? 0 : this.loc_num_bids;
     //console.log("char data: idx=" + idx_rec + ", price=" + price_rec + ", del=" + flag_del + ", new=" + flag_new + ", up=" + flag_up);
     // operate(del/new/up) on this.loc_anychart_dataset
     if (flag_del) {
+this.loc_anychart_datalist = [];
       this.loc_anychart_dataset.remove(idx_rec);
       this.loc_num_bids -= flag_bids ? 1 : 0;
       this.loc_num_asks -= flag_bids ? 0 : 1;
@@ -72,7 +77,7 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
 
     // TEMP: temp develop/debug code
     //*
-    var err_ses = '123';
+    var err_ses = null;
     var arr_errors = this.devCheck_Books(err_ses)
                     .concat(this.devCheck_ChartData(err_ses));
     for (idx_rec = 0; idx_rec < arr_errors.length; idx_rec++) {
@@ -107,9 +112,15 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
     for (idx_rec=0; idx_rec < this.loc_book_bids.length; idx_rec++)
     {
       var row_this, row_other;
-      if ((idx_other = idx_rec+1) < this.loc_book_bids.length)
+      idx_other = idx_rec + 1;
+      row_this  = this.loc_anychart_dataset.row(num_shift + idx_rec);
+      if (this.loc_book_bids[idx_rec][0] != row_this[0]) {
+          arr_errors.push(strErr_pref + "(book bid price): idx=" + idx_rec + ", " +
+                    "rec=" + JSON.stringify(this.loc_book_bids[idx_rec]) + ", " +
+                    "row=" + JSON.stringify(row_this));
+      }
+      if (idx_other < this.loc_book_bids.length)
       {
-        row_this  = this.loc_anychart_dataset.row(num_shift + idx_rec);
         row_other = this.loc_anychart_dataset.row(num_shift + idx_other);
         if (row_this[5] != (row_other[5] + row_other[4])) {
           arr_errors.push(strErr_pref + "(book bids sum): idx=" + idx_rec + ", " +
@@ -122,9 +133,15 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
     for (idx_rec=0; idx_rec < this.loc_book_asks.length; idx_rec++)
     {
       var row_this, row_other;
-      if ((idx_other = idx_rec-1) >= 0)
+      idx_other = idx_rec - 1;
+      row_this  = this.loc_anychart_dataset.row(num_shift + idx_rec);
+      if (this.loc_book_asks[idx_rec][0] != row_this[0]) {
+          arr_errors.push(strErr_pref + "(book ask price): idx=" + idx_rec + ", " +
+                    "rec=" + JSON.stringify(this.loc_book_asks[idx_rec]) + ", " +
+                    "row=" + JSON.stringify(row_this));
+      }
+      if (idx_other >= 0)
       {
-        row_this  = this.loc_anychart_dataset.row(num_shift + idx_rec);
         row_other = this.loc_anychart_dataset.row(num_shift + idx_other);
         if (row_this[5] != (row_other[5] + row_other[4])) {
           arr_errors.push(strErr_pref + "(book asks sum): idx=" + idx_rec + ", " +

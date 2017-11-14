@@ -149,7 +149,7 @@ function cbEV_OnDocReady_websocket()
     if (flg_dbg_out2) $('#log_out2').append('\nServer(' + num_msg_rcv + '): ' + msg.data);
     //console.log('Server: ' + msg.data);
     wssBfx_OnMsg(msg);
-    if ((num_msg_max >  0) && (num_msg_rcv >= num_msg_max)) {
+    if ((num_msg_max != 0) && (num_msg_rcv >= num_msg_max)) {
       $('#log_out2').append('\nClose websocket!!');
       wss_socket.onclose = function () {}; // disable onclose handler first
       wss_socket.close();
@@ -162,11 +162,12 @@ function cbEV_OnDocReady_websocket()
 
 function _onUI_Test01()
 {
-  console.log("Test01: ...");
+  $('#log_out1').html('Close websocket.');
+  num_msg_max = -1;
 }
 
 function _onUI_Test02()
 {
-  console.log("Test02: ...");
+  $('#log_out1').html('Test 02.');
 }
 

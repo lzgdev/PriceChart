@@ -84,14 +84,14 @@ class ClChanData_ABooks extends ClChanData_Array
   {
     super();
     this.prec = prec;
-    this.loc_book_bids = [];
-    this.loc_book_asks = [];
+    this.loc_book_bids = new Array();
+    this.loc_book_asks = new Array();
   }
 
   onLocCleanData_impl()
   {
-    this.loc_book_bids = [];
-    this.loc_book_asks = [];
+    this.loc_book_bids = new Array();
+    this.loc_book_asks = new Array();
   }
 
   onLocRecChg_impl(obj_rec)
@@ -125,28 +125,23 @@ class ClChanData_ABooks extends ClChanData_Array
     if  (idx_rec >= 0 && obj_rec[1] == 0) {
       flag_del = true;
       if (price_rec == book_recs[idx_rec][0]) {
-        book_recs.splice(idx_rec, 1);
+        book_recs.kk_delete_at(idx_rec);
       }
     }
     else
     if (idx_rec <  0  || price_rec > book_recs[idx_rec][0]) {
       flag_new = true;
       idx_rec = idx_rec + 1;
-      if (idx_rec >= book_recs.length) {
-        book_recs.push(obj_rec);
-      }
-      else {
-        book_recs.splice(idx_rec, 0, obj_rec);
-      }
+      book_recs.kk_insert_at(idx_rec, obj_rec);
     }
     else
     if (price_rec < book_recs[idx_rec][0]) {
       flag_new = true;
-      book_recs.splice(idx_rec, 0, obj_rec)
+      book_recs.kk_insert_at(idx_rec, obj_rec);
     }
     else {
       flag_up  = true;
-      book_recs.splice(idx_rec, 1, obj_rec)
+      book_recs.kk_update_at(idx_rec, obj_rec);
     }
     this.onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up);
   }
