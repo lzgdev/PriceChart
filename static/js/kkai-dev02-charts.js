@@ -1,7 +1,18 @@
 
 // AnyChart sample code: javascript
-var  cl1Buy = "#228B22",  cl2Buy = "#2E8B57";
-var cl1Sell = "#8B0000", cl2Sell = "#DC143C";
+var  cl1Buy,  cl2Buy;
+var cl1Sell, cl2Sell;
+
+cl1Buy  = "#228B22";
+cl2Buy  = "#2E8B57";
+cl1Sell = "#8B0000";
+cl2Sell = "#DC143C";
+
+cl1Buy  = '#00FF00'; // Lime
+cl2Buy  = '#32CD32'; // LimeGreen
+cl1Sell = '#FF4500'; // OrangeRed
+//cl2Sell = '#C71585'; // MediumVioletRed
+cl2Sell = '#F08080'; // LightCoral
 
 class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
 {
@@ -10,13 +21,11 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
     super(prec)
     this.loc_num_bids = 0;
     this.loc_num_asks = 0;
-    this.loc_anychart_datalist = [];
     this.loc_anychart_dataset  = anychart.data.set([ ]);
   }
 
   onLocCleanData_CB()
   {
-    this.loc_anychart_datalist = [];
     while (this.loc_anychart_dataset.getRowsCount() > 0) {
       this.loc_anychart_dataset.remove(0);
     }
@@ -26,53 +35,67 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
 
   onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up)
   {
-    var idx_list;
+    var idx_all;
+    var row_last;
     var price_rec =  obj_rec[0];
     var flag_bids = (obj_rec[2] > 0.0) ? true : false;
     var amount_rec = flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]);
-    idx_list = idx_rec + (flag_bids ? 0 : this.loc_num_bids);
-    idx_rec += flag_bids ? 0 : this.loc_num_bids;
+    idx_all  = idx_rec + (flag_bids ? 0 : this.loc_num_bids);
     //console.log("char data: idx=" + idx_rec + ", price=" + price_rec + ", del=" + flag_del + ", new=" + flag_new + ", up=" + flag_up);
     // operate(del/new/up) on this.loc_anychart_dataset
     if (flag_del) {
-this.loc_anychart_datalist = [];
-      this.loc_anychart_dataset.remove(idx_rec);
+      this.loc_anychart_dataset.remove(idx_all);
       this.loc_num_bids -= flag_bids ? 1 : 0;
       this.loc_num_asks -= flag_bids ? 0 : 1;
     }
     else
     if (flag_new) {
+      row_last = null;
+      if ( flag_bids && idx_all   <  this.loc_num_bids) {
+        row_last =  this.loc_anychart_dataset.row(idx_all);
+      }
+      else
+      if (!flag_bids && idx_all-1 >= this.loc_num_bids) {
+        row_last =  this.loc_anychart_dataset.row(idx_all-1);
+      } 
       this.loc_anychart_dataset.insert([ price_rec,
             flag_bids ? cl1Buy : cl1Sell, flag_bids ? cl2Buy : cl2Sell,
-            0, amount_rec, 0.0, ], idx_rec);
+            0, amount_rec, (row_last == null) ? 0.0 : (0.0 + row_last[5] + row_last[4]), ], idx_all);
       this.loc_num_bids += flag_bids ? 1 : 0;
       this.loc_num_asks += flag_bids ? 0 : 1;
     }
     else
     if (flag_up)  {
-      this.loc_anychart_dataset.row(idx_rec, [ price_rec, 
+      row_last = null;
+      if ( flag_bids && idx_all+1 <  this.loc_num_bids) {
+        row_last =  this.loc_anychart_dataset.row(idx_all+1);
+      }
+      else
+      if (!flag_bids && idx_all-1 >= this.loc_num_bids) {
+        row_last =  this.loc_anychart_dataset.row(idx_all-1);
+      } 
+      this.loc_anychart_dataset.row(idx_all, [ price_rec, 
             flag_bids ? cl1Buy : cl1Sell, flag_bids ? cl2Buy : cl2Sell,
-            0, amount_rec, 0.0, ]);
-    }
-    //
-    var count_rows, idx_last = -1;
-    var obj_last;
-    if ( flag_bids && idx_rec+1 <  this.loc_num_bids) {
-      idx_last = idx_rec + 1;
-    }
-    else
-    if (!flag_bids && idx_rec-1 >= this.loc_num_bids) {
-      idx_last = idx_rec - 1;
+            0, amount_rec, (row_last == null) ? 0.0 : (0.0 + row_last[5] + row_last[4]), ]);
     }
     // update amount of each this.loc_anychart_dataset.row
+    var count_rows, idx_last = -1;
+    idx_all += (!flag_del) ? 0 : (flag_bids ? -1 : 0);
+    if ( flag_bids && idx_all+1 <  this.loc_num_bids) {
+      idx_last = idx_all + 1;
+    }
+    else
+    if (!flag_bids && idx_all-1 >= this.loc_num_bids) {
+      idx_last = idx_all - 1;
+    }
     count_rows = this.loc_anychart_dataset.getRowsCount();
-    while (( flag_bids && idx_rec >= 0) || (!flag_bids && idx_rec <  count_rows))
+    while (( flag_bids && idx_all >= 0) || (!flag_bids && idx_all <  count_rows))
     {
-      obj_last = (idx_last < 0) ? null : this.loc_anychart_dataset.row(idx_last);
-      obj_rec  = this.loc_anychart_dataset.row(idx_rec);
-      obj_rec[5] = (obj_last == null) ? 0.0 : (obj_last[5] + obj_last[4]);
-      idx_last = idx_rec;
-      idx_rec += flag_bids ? -1 :  1;
+      row_last = (idx_last < 0) ? null : this.loc_anychart_dataset.row(idx_last);
+      obj_rec  = this.loc_anychart_dataset.row(idx_all);
+      obj_rec[5] = (row_last == null) ? 0.0 : (row_last[5] + row_last[4]);
+      idx_last = idx_all;
+      idx_all += flag_bids ? -1 :  1;
     }
 
     // TEMP: temp develop/debug code
@@ -80,8 +103,8 @@ this.loc_anychart_datalist = [];
     var err_ses = null;
     var arr_errors = this.devCheck_Books(err_ses)
                     .concat(this.devCheck_ChartData(err_ses));
-    for (idx_rec = 0; idx_rec < arr_errors.length; idx_rec++) {
-      $('#log_out2').append('\n' + arr_errors[idx_rec]);
+    for (idx_all = 0; idx_all < arr_errors.length; idx_all++) {
+      $('#log_out2').append('\n' + arr_errors[idx_all]);
     }
     // */
   }
