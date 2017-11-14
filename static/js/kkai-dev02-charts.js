@@ -1,17 +1,13 @@
 
 // AnyChart sample code: javascript
-var  gdata_dep_book  = null;
-var  valMax = 160000;
 var  cl1Buy = "#228B22",  cl2Buy = "#2E8B57";
 var cl1Sell = "#8B0000", cl2Sell = "#DC143C";
 
-var  valMax = 500.0;
-
 class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
 {
-  constructor(chan_id, prec)
+  constructor(prec)
   {
-    super(chan_id, prec)
+    super(prec)
     this.loc_num_bids = 0;
     this.loc_num_asks = 0;
     this.loc_anychart_dataset = anychart.data.set([ ]);
@@ -140,46 +136,4 @@ class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
     return arr_errors;
   }
 }
-
-anychart.onDocumentReady(function()
-{
-  var chart;
-  var series, seriesData;
-  // create a data set
-
-  gdata_dep_book = anychart.data.set([ ]);
-
-  // create a chart
-  chart = anychart.column();
-
-  chart.background().fill("#2F4F4F");
-
-  // enable the percent stacking mode
-  chart.yScale().stackMode("value");
-
-  // create splineArea series, set the data
-  seriesData = gdata_dep_book.mapAs({x: 0, value: 5, fill: 2, });
-  series = chart.column(seriesData);
-  seriesData = gdata_dep_book.mapAs({x: 0, value: 4, fill: 1, });
-  series = chart.column(seriesData);
-
-  // configure tooltips
-  chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
-
-  // configure labels on the Y-axis
-  chart.yAxis().labels().format("{%Value}");
-  chart.yAxis().orientation("left");
-//  chart.yAxis().orientation("right");
-
-  chart.yScale().minimum(0);
-  chart.yScale().maximum(valMax);
-
-  // set the chart title
-  chart.title("Stacked Column Chart");
-
-  // set the container id
-  chart.container("dep01-book");
-
-  chart.draw();
-});
 

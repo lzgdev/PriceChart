@@ -58,7 +58,8 @@ def def_static_demo(filename):
 def def_active_depth(filename):
 	js01_ver = str(int((time.time()+1) * 1000000))
 	js02_ver = str(int((time.time()+2) * 1000000))
-	return render_template(filename, dev_js01_ver=js01_ver, dev_js02_ver=js02_ver)
+	js03_ver = str(int((time.time()+3) * 1000000))
+	return render_template(filename, dev_js01_ver=js01_ver, dev_js02_ver=js02_ver, dev_js03_ver=js03_ver,)
 
 @app.route("/")
 @app.route("/index.html")

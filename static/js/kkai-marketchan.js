@@ -1,7 +1,12 @@
 
 class ClChanData
 {
-  constructor(chan_id)
+  constructor()
+  {
+    this.chan_id = null;
+  }
+
+  locSet_ChanId(chan_id)
   {
     this.chan_id = chan_id;
   }
@@ -45,9 +50,9 @@ class ClChanData
 
 class ClChanData_Array extends ClChanData
 {
-  constructor(chan_id)
+  constructor()
   {
-    super(chan_id)
+    super();
   }
 
   onLocAppendData_impl(obj_msg)
@@ -75,9 +80,9 @@ class ClChanData_Array extends ClChanData
 
 class ClChanData_ABooks extends ClChanData_Array
 {
-  constructor(chan_id, prec)
+  constructor(prec)
   {
-    super(chan_id)
+    super();
     this.prec = prec;
     this.loc_book_bids = [];
     this.loc_book_asks = [];
