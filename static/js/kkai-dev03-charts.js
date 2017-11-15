@@ -55,7 +55,8 @@ function wssBfx_OnMsg(msg)
       var handler_msg = null;
       for (var i=0; i <  chan_book_OBJs.length; i++) {
         obj_chan = chan_book_OBJs[i];
-        if (obj_msg.prec == obj_chan.prec) {
+        if ((obj_msg.prec == obj_chan.req_book_prec) &&
+            (obj_msg.len  == chan_book_OBJs[i].req_book_len)) {
           handler_msg = obj_chan;
           break;
         }
@@ -78,21 +79,21 @@ function wssBfx_OnMsg(msg)
 
 function cbEV_OnDocReady_anychart()
 {
-  var map_prec2uid = [
-        { prec: 'P0', uid: 'dep-book-P0', visible:  true, },
-        { prec: 'P1', uid: 'dep-book-P1', visible: false, },
+  var map_wreq2uid = [
+        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
+        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
       ];
 
-  for (var m=0; m < map_prec2uid.length; m++)
+  for (var m=0; m < map_wreq2uid.length; m++)
   {
     var books_obj;
     var chart;
     var series, seriesData;
-    var map_unit = map_prec2uid[m];
+    var map_unit = map_wreq2uid[m];
     if (!map_unit.visible) {
       continue;
     }
-    books_obj = new ClChanData_ABooks_AnyChart(map_unit.prec);
+    books_obj = new ClChanData_ABooks_AnyChart(map_unit.prec, map_unit.len);
     chan_book_OBJs.push(books_obj);
 
     // create a chart
@@ -104,10 +105,12 @@ function cbEV_OnDocReady_anychart()
     chart.yScale().stackMode("value");
 
     // create splineArea series, set the data
+//*
     seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 5, fill: 2, });
     series = chart.column(seriesData);
     seriesData = books_obj.loc_anychart_dataset.mapAs({x: 0, value: 4, fill: 1, });
     series = chart.column(seriesData);
+// */
 
     // configure tooltips
     chart.tooltip().format("{%Value} ({%yPercentOfCategory}{decimalCount:2}%)");
@@ -132,8 +135,6 @@ function cbEV_OnDocReady_anychart()
 
 function cbEV_OnDocReady_websocket()
 {
-  var num_books = 25;
-
   var wss_srvproto = 'wss';
   var wss_srvhost = 'api.bitfinex.com';
   var wss_srvport = null;
@@ -154,9 +155,9 @@ function cbEV_OnDocReady_websocket()
     {
       var obj_subscribe = {
         'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
-        'prec': chan_book_OBJs[i].prec,
+        'prec': chan_book_OBJs[i].req_book_prec,
         'freq': 'F0',
-        'len':  num_books,
+        'len':  chan_book_OBJs[i].req_book_len,
       };
       wss_socket.send(JSON.stringify(obj_subscribe));
     }

@@ -16,9 +16,9 @@ cl2Sell = '#F08080'; // LightCoral
 
 class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
 {
-  constructor(prec)
+  constructor(prec, len)
   {
-    super(prec)
+    super(prec, len)
     this.loc_num_bids = 0;
     this.loc_num_asks = 0;
     this.loc_anychart_dataset  = anychart.data.set([ ]);

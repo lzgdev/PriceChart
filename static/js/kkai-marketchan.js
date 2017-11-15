@@ -80,10 +80,11 @@ class ClChanData_Array extends ClChanData
 
 class ClChanData_ABooks extends ClChanData_Array
 {
-  constructor(prec)
+  constructor(prec, len)
   {
     super();
-    this.prec = prec;
+    this.req_book_prec = prec;
+    this.req_book_len  = len;
     this.loc_book_bids = [];
     this.loc_book_asks = [];
   }
