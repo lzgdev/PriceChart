@@ -58,11 +58,16 @@ def def_static_demo(filename):
 
 @app.route('/depth/<path:filename>')
 def def_active_depth(filename):
-	js11_ver = str(int((time.time()+11) * 1000000))
-	js12_ver = str(int((time.time()+12) * 1000000))
-	js19_ver = str(int((time.time()+19) * 1000000))
+	jsvv_time = int(time.time());
+	js11_ver = str((jsvv_time + 11) * 1000000)
+	js12_ver = str((jsvv_time + 12) * 1000000)
+	js19_ver = str((jsvv_time + 19) * 1000000)
+	js21_ver = str((jsvv_time + 21) * 1000000)
+	js22_ver = str((jsvv_time + 22) * 1000000)
+	js29_ver = str((jsvv_time + 29) * 1000000)
 	return render_template(filename,
-					dev_js11_ver=js11_ver, dev_js12_ver=js12_ver, dev_js19_ver=js19_ver)
+					dev_js11_ver=js11_ver, dev_js12_ver=js12_ver, dev_js19_ver=js19_ver,
+					dev_js21_ver=js21_ver, dev_js22_ver=js22_ver, dev_js29_ver=js29_ver)
 
 @app.route("/")
 @app.route("/index.html")

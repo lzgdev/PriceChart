@@ -6,9 +6,16 @@
   <script type="text/javascript" src="/js/anychart-base.min.js"></script>
   <script type="text/javascript" src="/js/anychart-exports.min.js"></script>
   <script type="text/javascript" src="/js/anychart-ui.min.js"></script>
+<!--
+  <script type="text/javascript" src="/js/highcharts.js"></script>
+  -->
+  <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+
   <script type="text/javascript" src="/js/kkai-add00.js"></script>
   <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js11_ver }}"></script>
   <script type="text/javascript" src="/js/kkai-dev12.js?version={{ dev_js12_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev21.js?version={{ dev_js21_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js22_ver }}"></script>
 <!--
   <script type="text/javascript" src="/js/socket.io.min.js"></script>
   -->
@@ -35,10 +42,13 @@
 <!-- -->
   <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
   <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
+  <div id="container" style="width:100%; height:400px;"></div>
+<!--
   <div id="container-dep">
     <div id="dep-book-P0"></div>
     <div id="dep-book-P1"></div>
   </div>
+-->
 <!-- -->
   <h3>Output log2</h3>
   <pre id="log_out2">init(html) log2</pre>
@@ -49,12 +59,19 @@
 
 </script>
   <script type="text/javascript" src="/js/kkai-dev19.js?version={{ dev_js19_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev29.js?version={{ dev_js29_ver }}"></script>
 <!-- -->
 <script type="text/javascript">
+  /*
   anychart.onDocumentReady(function () {
     cbEV_OnDocReady_anychart();
     cbEV_OnDocReady_websocket();
   });
+// */
+$(function () { 
+    cbEV_OnDocReady_highcharts();
+    cbEV_OnDocReady_websocket();
+});
 </script>
 </body>
 <!-- -->
