@@ -1,5 +1,6 @@
 
 import time
+import os.path
 
 from threading import Lock
 from flask import Flask, render_template, send_from_directory
@@ -44,7 +45,8 @@ appData_TB_P0.dbLoad_Books()
 
 @app.route('/js/<path:js_file>')
 def def_static_js(js_file):
-	return send_from_directory(app.static_folder + '/js', js_file, mimetype='application/javascript')
+	js_code_path = 'code/js' if os.path.isfile('code/js/' + js_file) else app.static_folder + '/js'
+	return send_from_directory(js_code_path, js_file, mimetype='application/javascript')
 
 @app.route('/css/<path:css_file>')
 def def_static_css(css_file):
@@ -56,10 +58,11 @@ def def_static_demo(filename):
 
 @app.route('/depth/<path:filename>')
 def def_active_depth(filename):
-	js01_ver = str(int((time.time()+1) * 1000000))
-	js02_ver = str(int((time.time()+2) * 1000000))
-	js03_ver = str(int((time.time()+3) * 1000000))
-	return render_template(filename, dev_js01_ver=js01_ver, dev_js02_ver=js02_ver, dev_js03_ver=js03_ver,)
+	js11_ver = str(int((time.time()+11) * 1000000))
+	js12_ver = str(int((time.time()+12) * 1000000))
+	js19_ver = str(int((time.time()+19) * 1000000))
+	return render_template(filename,
+					dev_js11_ver=js11_ver, dev_js12_ver=js12_ver, dev_js19_ver=js19_ver)
 
 @app.route("/")
 @app.route("/index.html")
