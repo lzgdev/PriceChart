@@ -1,8 +1,9 @@
 function cbEV_OnDocReady_highcharts()
 {
   var map_wreq2uid = [
-        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
-        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
+//        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
+//        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
+        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: true, },
       ];
 
   for (var m=0; m < map_wreq2uid.length; m++)
@@ -20,13 +21,12 @@ function cbEV_OnDocReady_highcharts()
 
   highcharts_chart = Highcharts.chart('container', {
     chart: {
-        type: 'column'
+//        type: 'column'
+        type: 'area'
+//        type: 'areaspline'
     },
     title: {
         text: 'Stacked column chart'
-    },
-    xAxis: {
-//        categories: ['Apples', 'Oranges', 'Pears', 'Grapes', 'Bananas']
     },
     yAxis: {
         min: 0,
@@ -68,39 +68,24 @@ function cbEV_OnDocReady_highcharts()
 
     series: [
       {
-        name: 'John',
-        pointPadding: 0,
-        groupPadding: 0,
-//pointPlacement: 'between',
-//        data: [ 5, 3, 4, 7, 2, ],
+        name: 'Bids',
+        color: '#00FF00',
         data: [ ],
       },
       {
-        name: 'Jane',
-        pointPadding: 0,
-        groupPadding: 0,
-//pointPlacement: 'between',
-//        data: [ 2, 5, 1, 2, 4, ],
+        name: 'Asks',
+        color: '#FF0000',
         data: [ ],
       },
     ],
   });
 
+/*
 var data1 = [ 5, 3, 4, 7, 2, ];
 var data2 = [ 2, 5, 1, 2, 4, ];
 highcharts_chart.series[0].setData(data1, false);
 highcharts_chart.series[1].setData(data2, false);
 highcharts_chart.redraw({});
+   */
 }
-
-/*
-    {
-        name: 'Histogram',
-        type: 'column',
-        data: histogram(data, 10),
-        pointPadding: 0,
-        groupPadding: 0,
-        pointPlacement: 'between'
-    }
-// */
 
