@@ -21,9 +21,9 @@ function cbEV_OnDocReady_highcharts()
 
   highcharts_chart = Highcharts.chart('container', {
     chart: {
-//        type: 'column'
-        type: 'area'
-//        type: 'areaspline'
+//        type: 'column',
+        type: 'area',
+//        type: 'areaspline',
     },
     title: {
         text: 'Stacked column chart'
@@ -69,12 +69,17 @@ function cbEV_OnDocReady_highcharts()
     series: [
       {
         name: 'Bids',
-        color: '#00FF00',
-        data: [ ],
-      },
-      {
-        name: 'Asks',
-        color: '#FF0000',
+        zoneAxis: 'x',
+        zones: [ {
+            value: 0,
+            color: '#000000',
+          }, {
+            value: 7633,
+            color: '#00FF00',
+          }, {
+            color: '#FF0000',
+          }
+          ],
         data: [ ],
       },
     ],

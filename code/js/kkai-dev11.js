@@ -93,16 +93,18 @@ class ClChanData_ABooks extends ClChanData_Array
 
   onLocRecChg_impl(obj_rec)
   {
-    // locate the book record from self.loc_book_bids or self.loc_book_asks
+    var  flag_bids  = (obj_rec[2] >  0.0) ? true : false;
+    var  amount_rec =  Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
     var  book_rec = {
         price:  Number(obj_rec[0]),
         count:  Number(obj_rec[1]),
-        amount: Number((obj_rec[2] >  0.0) ? obj_rec[2] : (0.0 - obj_rec[2])),
+        amount: amount_rec,
+        sumamt: amount_rec,
       };
     var  idx_book, idx_bgn, idx_end;
     var  flag_del;
-    var  flag_bids = (book_rec.amount >  0.0) ? true : false;
     var  book_recs = flag_bids ? this.loc_book_bids : this.loc_book_asks;
+    // locate the book record from self.loc_book_bids or self.loc_book_asks
     idx_bgn = 0; idx_end = book_recs.length - 1;
     while (idx_bgn < idx_end)
     {
@@ -124,11 +126,11 @@ class ClChanData_ABooks extends ClChanData_Array
     // delete/add/update book record in self.loc_book_bids or self.loc_book_asks
     flag_del  = (book_rec.count == 0) ? true : false;
     if  (flag_del) {
-      if (idx_book >= 0) {
-        book_recs.kk_delete_at(idx_book);
+      if (idx_book <  0) {
+        flag_del  = false;
       }
       else {
-        flag_del  = false;
+        book_recs.kk_delete_at(idx_book);
       }
     }
     else
@@ -144,7 +146,18 @@ class ClChanData_ABooks extends ClChanData_Array
       book_recs.kk_update_at(idx_book, book_rec);
     }
     //
-    this.onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del);
+    var  idx_last, idx_sum;
+    idx_last  =  idx_book + (flag_bids ? 1 : -1);
+    idx_last  = (idx_last <  0 || idx_last >= book_recs.length) ? -1 : idx_last;
+    for (idx_sum=idx_book; idx_sum >= 0 && idx_sum <  book_recs.length; idx_sum += flag_bids ? -1 : 1)
+    {
+      book_recs[idx_sum].sumamt = book_recs[idx_sum].amount +
+              ((idx_last <  0) ? 0.0 : book_recs[idx_last].sumamt);
+      idx_last = idx_sum;
+      idx_sum += flag_bids ? -1 : 1;
+    }
+    //
+    this.onLocBookChg_CB(flag_del ? book_rec : book_recs[idx_book], flag_bids, idx_book, flag_del);
   }
 
   onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
