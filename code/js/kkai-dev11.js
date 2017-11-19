@@ -99,7 +99,7 @@ class ClChanData_ABooks extends ClChanData_Array
         price:  Number(obj_rec[0]),
         count:  Number(obj_rec[1]),
         amount: amount_rec,
-        sumamt: amount_rec,
+        sumamt: Number(0.0),
       };
     var  idx_book, idx_bgn, idx_end;
     var  flag_del;
@@ -145,16 +145,15 @@ class ClChanData_ABooks extends ClChanData_Array
     else {
       book_recs.kk_update_at(idx_book, book_rec);
     }
-    //
+    // update .sumamt in self.loc_book_bids or self.loc_book_asks
     var  idx_last, idx_sum;
     idx_last  =  idx_book + (flag_bids ? 1 : -1);
     idx_last  = (idx_last <  0 || idx_last >= book_recs.length) ? -1 : idx_last;
-    for (idx_sum=idx_book; idx_sum >= 0 && idx_sum <  book_recs.length; idx_sum += flag_bids ? -1 : 1)
+    for (idx_sum=idx_book; idx_sum >= 0 && idx_sum <  book_recs.length; idx_sum+=flag_bids ? -1 : 1)
     {
-      book_recs[idx_sum].sumamt = book_recs[idx_sum].amount +
+      book_recs[idx_sum].sumamt = 0.0 + book_recs[idx_sum].amount +
               ((idx_last <  0) ? 0.0 : book_recs[idx_last].sumamt);
       idx_last = idx_sum;
-      idx_sum += flag_bids ? -1 : 1;
     }
     //
     this.onLocBookChg_CB(flag_del ? book_rec : book_recs[idx_book], flag_bids, idx_book, flag_del);
@@ -174,23 +173,47 @@ class ClChanData_ABooks extends ClChanData_Array
     // check book of bids
     for (idx_rec=0; idx_rec < this.loc_book_bids.length; idx_rec++)
     {
-      if (((idx_other = idx_rec-1) >= 0) &&
-          (this.loc_book_bids[idx_rec][0] <= this.loc_book_bids[idx_other][0])) {
+      var  sum_diff;
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other <  this.loc_book_bids.length) &&
+          (this.loc_book_bids[idx_rec].price <= this.loc_book_bids[idx_other].price)) {
         arr_errors.push(strErr_pref + "(book bids disorder): "
                         + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
-                    "last=" + JSON.stringify(this.loc_book_bids[idx_other]) + ", " +
-                    "new=" + JSON.stringify(this.loc_book_bids[idx_rec]));
+                    ", new=" + JSON.stringify(this.loc_book_bids[idx_rec]) +
+                    ", last=" + JSON.stringify(this.loc_book_bids[idx_other]));
+      }
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other <  this.loc_book_bids.length) &&
+          (Math.abs(sum_diff = (this.loc_book_bids[idx_other].sumamt - this.loc_book_bids[idx_other].amount -
+                        this.loc_book_bids[idx_rec].sumamt)) >  0.0001)) {
+        arr_errors.push(strErr_pref + "(book bids sum mistake): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_bids[idx_rec]) +
+                    ", next=" + JSON.stringify(this.loc_book_asks[idx_other]) +
+                    ", diff=" + sum_diff);
       }
     }
     // check book of asks
     for (idx_rec=0; idx_rec < this.loc_book_asks.length; idx_rec++)
     {
-      if (((idx_other = idx_rec-1) >= 0) &&
-          (this.loc_book_asks[idx_rec][0] <= this.loc_book_asks[idx_other][0])) {
+      var  sum_diff;
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other < this.loc_book_asks.length) &&
+          (this.loc_book_asks[idx_rec].price <= this.loc_book_asks[idx_other].price)) {
         arr_errors.push(strErr_pref + "(book asks disorder): "
                         + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
-                    "last=" + JSON.stringify(this.loc_book_asks[idx_other]) + ", " +
-                    "new=" + JSON.stringify(this.loc_book_asks[idx_rec]));
+                    ", new=" + JSON.stringify(this.loc_book_asks[idx_rec]) +
+                    ", last=" + JSON.stringify(this.loc_book_asks[idx_other]));
+      }
+      idx_other = idx_rec+1;
+      if ((idx_other >= 0) && (idx_other < this.loc_book_asks.length) &&
+          (Math.abs(sum_diff = (this.loc_book_asks[idx_other].sumamt - this.loc_book_asks[idx_other].amount -
+                        this.loc_book_asks[idx_rec].sumamt)) >  0.0001)) {
+        arr_errors.push(strErr_pref + "(book asks sum mistake): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_asks[idx_rec]) +
+                    ", next=" + JSON.stringify(this.loc_book_asks[idx_other]) +
+                    ", diff=" + sum_diff);
       }
     }
     return arr_errors;

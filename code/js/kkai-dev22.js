@@ -29,9 +29,24 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
     this.loc_highcharts_needel = 0;
     this.loc_highcharts_amount = [];
     this.loc_highcharts_sumamt = [];
-this.loc_price_unit =  1.0;
-this.loc_price_min  =  0.0;
-this.loc_price_max  = -1.0;
+    this.loc_price_unit =  1.0;
+    this.loc_price_min  =  0.0;
+    this.loc_price_max  = -1.0;
+    if (this.req_book_prec == 'P0') {
+      this.loc_price_unit =   0.1;
+    }
+    else
+    if (this.req_book_prec == 'P1') {
+      this.loc_price_unit =   1.0;
+    }
+    else
+    if (this.req_book_prec == 'P2') {
+      this.loc_price_unit =  10.0;
+    }
+    else
+    if (this.req_book_prec == 'P3') {
+      this.loc_price_unit = 100.0;
+    }
   }
 
   onLocCleanData_CB()
@@ -45,75 +60,61 @@ this.loc_price_max  = -1.0;
 
   onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
   {
-    var  srs_books;
-    srs_books = highcharts_chart.series[0];
-    if (this.loc_price_max <  this.loc_price_min) {
-      if (flag_del) {
-        return;
-      }
-      srs_books.addPoint([book_rec.price, book_rec.amount], false);
-      this.loc_price_min = this.loc_price_max = book_rec.price;
-      return;
-    }
-    if (flag_del)
+    var  sers_books;
+    var  sers_data = [];
+    sers_books = highcharts_chart.series[0];
+
+    var  idx_this, idx_pair;
+    for (idx_this=0; idx_this <  this.loc_book_bids.length; idx_this++)
     {
-//      srs_books.addPoint([this.loc_price_min, 0.0], false);
-    }
-    else
-    if (book_rec.price <  this.loc_price_min)
-    {
-      this.loc_price_min -= this.loc_price_unit;
-      for (; book_rec.price <  this.loc_price_min; this.loc_price_min-=this.loc_price_unit)
+      var  pric_this;
+      idx_pair  =  idx_this - 1;
+      pric_this = (idx_pair >= 0) ? this.loc_book_bids[idx_pair].price :
+                        (this.loc_book_bids[idx_this].price - this.loc_price_unit);
+      for (pric_this += this.loc_price_unit;
+           pric_this <  this.loc_book_bids[idx_this].price;
+           pric_this += this.loc_price_unit)
       {
-        srs_books.addPoint([this.loc_price_min, book_rec.amount], false);
+        sers_data.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
       }
-      srs_books.addPoint([this.loc_price_min, flag_bids ? book_rec.amount : 0.0], false);
+      sers_data.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
     }
-    else
-    if (book_rec.price >  this.loc_price_max)
+    for (idx_this=0; idx_this <  this.loc_book_asks.length; idx_this++)
     {
-      this.loc_price_max += this.loc_price_unit;
-      for (; book_rec.price >  this.loc_price_max; this.loc_price_max += this.loc_price_unit)
+      var  pric_this;
+      idx_pair  =  idx_this - 1;
+      pric_this = (idx_pair >= 0) ? this.loc_book_asks[idx_pair].price :
+                 ((this.loc_book_bids.length == 0) ? (this.loc_book_asks[idx_this].price - this.loc_price_unit) :
+                                                     (this.loc_book_bids[this.loc_book_bids.length-1].price));
+      for (pric_this += this.loc_price_unit;
+           pric_this <  this.loc_book_asks[idx_this].price;
+           pric_this += this.loc_price_unit)
       {
-        srs_books.addPoint([this.loc_price_max, book_rec.amount], false);
+        sers_data.push({ x: pric_this, y: ((idx_pair < 0) ? 0.0 : this.loc_book_asks[idx_pair].sumamt), });
       }
-      srs_books.addPoint([this.loc_price_max, flag_bids ? book_rec.amount : 0.0], false);
-    }
-    else
-    {
-      var  book_recs = flag_bids ? this.loc_book_bids : this.loc_book_asks;
-      while ((flag_bids && idx_book >= 0) || (!flag_bids && idx_book <  book_recs.length))
-      {
-        var  idx_sers, prc_sers, prc_next;
-        book_rec  = book_recs[idx_book];
-        prc_sers  = book_rec.price;
-        prc_next  = (flag_bids) ? ((idx_book-1 <  0) ? 0.0 : book_recs[idx_book-1].price) :
-                                  ((idx_book+1 >= book_recs.length) ? (prc_sers+200) : book_recs[idx_book+1].price);
-        while ((flag_bids && prc_sers >  prc_next) || (!flag_bids && prc_sers <  prc_next))
-        {
-          idx_sers  = Math.round((prc_sers - this.loc_price_min) / this.loc_price_unit);
-          if (idx_sers <  0 || idx_sers >= srs_books.data.length) {
-            break;
-          }
-          srs_books.data[idx_sers].update({ x: prc_sers, y: book_rec.amount, }, false);
-          prc_sers += flag_bids ? (0-this.loc_price_unit) : this.loc_price_unit;
-        }
-        idx_book += (flag_bids) ? -1 :  1;
-      }
+      sers_data.push({ x: pric_this, y: this.loc_book_asks[idx_this].sumamt, });
     }
 
-if ((++num_change % 10) == 0)
-{
-  highcharts_chart.redraw({});
-}
-/*
-$('#log_out2').append("\nbook bids=" + JSON.stringify(this.loc_book_bids));
-$('#log_out2').append("\nbook asks=" + JSON.stringify(this.loc_book_asks));
- */
-/*
-    this.loc_book_bids  = [];
-    this.loc_book_asks  = [];
-// */
+    var pric_needel = (this.loc_book_asks.length >  0) ? this.loc_book_asks[0].price :
+                 ((this.loc_book_bids.length >  0) ? this.loc_book_bids[this.loc_book_bids.length - 1].price : 0.0);
+    var opt_zones = {
+        zones: [ {
+            value: 0.0,
+            color: '#000000',
+          }, {
+            value: pric_needel,
+            color: '#009F00',
+          }, {
+            color: '#9F0000',
+          }
+          ],
+      };
+
+    sers_books.setData(sers_data, false);
+    sers_books.update(opt_zones, false);
+    if ((num_change % 2) == 0) {
+      highcharts_chart.redraw({});
+    }
   }
 
   onLocRecChg_CB(obj_rec, idx_rec, flag_del, flag_new, flag_up)

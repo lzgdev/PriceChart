@@ -1,9 +1,9 @@
 function cbEV_OnDocReady_highcharts()
 {
   var map_wreq2uid = [
-//        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
+        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
 //        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
-        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: true, },
+//        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: true, },
       ];
 
   for (var m=0; m < map_wreq2uid.length; m++)
@@ -21,17 +21,16 @@ function cbEV_OnDocReady_highcharts()
 
   highcharts_chart = Highcharts.chart('container', {
     chart: {
-//        type: 'column',
         type: 'area',
-//        type: 'areaspline',
+        backgroundColor: '#1F1F1F',
     },
     title: {
-        text: 'Stacked column chart'
+        text: 'Books Depth View',
     },
     yAxis: {
-        min: 0,
+        min: 0.0,
         title: {
-            text: 'Total fruit consumption'
+            text: 'Amount Sum',
         },
         stackLabels: {
             enabled: true,
@@ -40,17 +39,6 @@ function cbEV_OnDocReady_highcharts()
                 color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
             }
         }
-    },
-    legend: {
-        align: 'right',
-        x: -30,
-        verticalAlign: 'top',
-        y: 25,
-        floating: true,
-        backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
-        borderColor: '#CCC',
-        borderWidth: 1,
-        shadow: false
     },
     tooltip: {
         headerFormat: '<b>{point.x}</b><br/>',
@@ -68,7 +56,7 @@ function cbEV_OnDocReady_highcharts()
 
     series: [
       {
-        name: 'Bids',
+        name: 'Books',
         zoneAxis: 'x',
         zones: [ {
             value: 0,
@@ -84,13 +72,5 @@ function cbEV_OnDocReady_highcharts()
       },
     ],
   });
-
-/*
-var data1 = [ 5, 3, 4, 7, 2, ];
-var data2 = [ 2, 5, 1, 2, 4, ];
-highcharts_chart.series[0].setData(data1, false);
-highcharts_chart.series[1].setData(data2, false);
-highcharts_chart.redraw({});
-   */
 }
 
