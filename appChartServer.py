@@ -60,13 +60,11 @@ def def_static_demo(filename):
 def def_active_depth(filename):
 	jsvv_time = int(time.time()) * 1000;
 	js11_ver = str(jsvv_time + 11)
-	js12_ver = str(jsvv_time + 12)
-	js19_ver = str(jsvv_time + 19)
 	js21_ver = str(jsvv_time + 21)
 	js22_ver = str(jsvv_time + 22)
 	js29_ver = str(jsvv_time + 29)
 	return render_template(filename,
-					dev_js11_ver=js11_ver, dev_js12_ver=js12_ver, dev_js19_ver=js19_ver,
+					dev_js11_ver=js11_ver,
 					dev_js21_ver=js21_ver, dev_js22_ver=js22_ver, dev_js29_ver=js29_ver)
 
 @app.route("/")

@@ -2,24 +2,16 @@
 <head>
   <title>Price Depth</title>
   <script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="/js/anychart-bundle.min.js"></script>
-  <script type="text/javascript" src="/js/anychart-base.min.js"></script>
-  <script type="text/javascript" src="/js/anychart-exports.min.js"></script>
-  <script type="text/javascript" src="/js/anychart-ui.min.js"></script>
-<!--
-  <script type="text/javascript" src="/js/highcharts.js"></script>
-  -->
   <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
-
-  <script type="text/javascript" src="/js/kkai-add00.js"></script>
-  <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js11_ver }}"></script>
-  <script type="text/javascript" src="/js/kkai-dev12.js?version={{ dev_js12_ver }}"></script>
-  <script type="text/javascript" src="/js/kkai-dev21.js?version={{ dev_js21_ver }}"></script>
-  <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js22_ver }}"></script>
 <!--
   <script type="text/javascript" src="/js/socket.io.min.js"></script>
   -->
-  <link rel="stylesheet" href="/css/anychart-ui.min.css">
+<!-- -->
+
+  <script type="text/javascript" src="/js/kkai-add00.js"></script>
+  <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js11_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev21.js?version={{ dev_js21_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js22_ver }}"></script>
 <style>
 body {
   background-color: #1F1F1F;
@@ -42,7 +34,6 @@ body {
 <!-- -->
   <h3>Output log1</h3>
   <pre id="log_out1">init(html) log1</pre>
-<!-- AnyChart sample code: html -->
 <!-- -->
   <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
   <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
@@ -62,16 +53,9 @@ body {
   $('#log_out2').html('init(js) log_out2');
 
 </script>
-  <script type="text/javascript" src="/js/kkai-dev19.js?version={{ dev_js19_ver }}"></script>
   <script type="text/javascript" src="/js/kkai-dev29.js?version={{ dev_js29_ver }}"></script>
 <!-- -->
 <script type="text/javascript">
-  /*
-  anychart.onDocumentReady(function () {
-    cbEV_OnDocReady_anychart();
-    cbEV_OnDocReady_websocket();
-  });
-// */
 $(function () { 
     cbEV_OnDocReady_highcharts();
     cbEV_OnDocReady_websocket();
