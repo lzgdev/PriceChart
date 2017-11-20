@@ -60,9 +60,7 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
 
   onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
   {
-    var  sers_books;
-    var  sers_data = [];
-    sers_books = highcharts_chart.series[0];
+    var  sers_data_bids = [], sers_data_asks = [];
 
     var  idx_this, idx_pair;
     for (idx_this=0; idx_this <  this.loc_book_bids.length; idx_this++)
@@ -75,9 +73,9 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
            pric_this <  this.loc_book_bids[idx_this].price;
            pric_this += this.loc_price_unit)
       {
-        sers_data.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
+        sers_data_bids.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
       }
-      sers_data.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
+      sers_data_bids.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
     }
     for (idx_this=0; idx_this <  this.loc_book_asks.length; idx_this++)
     {
@@ -90,28 +88,14 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
            pric_this <  this.loc_book_asks[idx_this].price;
            pric_this += this.loc_price_unit)
       {
-        sers_data.push({ x: pric_this, y: ((idx_pair < 0) ? 0.0 : this.loc_book_asks[idx_pair].sumamt), });
+        sers_data_asks.push({ x: pric_this, y: ((idx_pair < 0) ? 0.0 : this.loc_book_asks[idx_pair].sumamt), });
       }
-      sers_data.push({ x: pric_this, y: this.loc_book_asks[idx_this].sumamt, });
+      sers_data_asks.push({ x: pric_this, y: this.loc_book_asks[idx_this].sumamt, });
     }
 
-    var pric_needel = (this.loc_book_asks.length >  0) ? this.loc_book_asks[0].price :
-                 ((this.loc_book_bids.length >  0) ? this.loc_book_bids[this.loc_book_bids.length - 1].price : 0.0);
-    var opt_zones = {
-        zones: [ {
-            value: 0.0,
-            color: '#000000',
-          }, {
-            value: pric_needel,
-            color: '#009F00',
-          }, {
-            color: '#9F0000',
-          }
-          ],
-      };
+    highcharts_chart.series[0].setData(sers_data_bids);
+    highcharts_chart.series[1].setData(sers_data_asks);
 
-    sers_books.setData(sers_data, false);
-    sers_books.update(opt_zones, false);
     if ((num_change % 2) == 0) {
       highcharts_chart.redraw({});
     }

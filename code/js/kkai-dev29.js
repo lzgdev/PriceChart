@@ -1,7 +1,8 @@
 function cbEV_OnDocReady_highcharts()
 {
   var map_wreq2uid = [
-        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
+//        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
+        { prec: 'P0', len: 100, uid: 'dep-book-P0', visible:  true, },
 //        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
 //        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: true, },
       ];
@@ -56,18 +57,15 @@ function cbEV_OnDocReady_highcharts()
 
     series: [
       {
-        name: 'Books',
+        name: 'Bids',
         zoneAxis: 'x',
-        zones: [ {
-            value: 0,
-            color: '#000000',
-          }, {
-            value: 7633,
-            color: '#00FF00',
-          }, {
-            color: '#FF0000',
-          }
-          ],
+        color: '#009F00',
+        data: [ ],
+      },
+      {
+        name: 'Asks',
+        zoneAxis: 'x',
+        color: '#9F0000',
         data: [ ],
       },
     ],
