@@ -87,15 +87,15 @@ function _eval_book_unit(str_prec)
   }
   else
   if (str_prec == 'P1') {
-    book_unit = Number(  1.0).toFixed(1);
+    book_unit = Number(  1.0);
   }
   else
   if (str_prec == 'P2') {
-    book_unit = Number( 10.0).toFixed(1);
+    book_unit = Number( 10.0);
   }
   else
   if (str_prec == 'P3') {
-    book_unit = Number(100.0).toFixed(1);
+    book_unit = Number(100.0);
   }
   return book_unit;
 }
@@ -121,12 +121,12 @@ class ClChanData_ABooks extends ClChanData_Array
   onLocRecChg_impl(obj_rec)
   {
     var  flag_bids  = (obj_rec[2] >  0.0) ? true : false;
-    var  amount_rec =  Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
+    var  amount_rec = Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
     var  book_rec = {
         price:  Number(obj_rec[0]),
-        count:  Number(obj_rec[1]),
+        count:  obj_rec[1],
         amount: amount_rec,
-        sumamt: Number(0.0),
+        sumamt: 0.0,
       };
     var  idx_book, idx_bgn, idx_end;
     var  flag_del;

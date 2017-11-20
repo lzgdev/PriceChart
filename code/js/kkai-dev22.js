@@ -38,7 +38,7 @@ this.num_change = 0;
       gui_sers = this.loc_gui_chart.series[idx_sers];
       num_pnt_gui = gui_sers.data.length;
       num_pnt_loc = 0;
-      for (idx_book=0; idx_book < loc_book.length; idx_book++)
+      for (idx_book=0; idx_book <  loc_book.length; idx_book++)
       {
         pric_this =  loc_book[idx_book].price;
         num_next  = (idx_book+1 >= loc_book.length) ? 0 : Math.round(
@@ -48,8 +48,8 @@ this.num_change = 0;
           val_next = loc_book[idx_book+1].sumamt;
         }
         else
-        if (!flag_bids && idx_book-1 >= 0) {
-          val_next = loc_book[idx_book-1].sumamt;
+        if (!flag_bids) {
+          val_next = loc_book[idx_book].sumamt;
         }
         else {
           val_next = null;
@@ -65,7 +65,7 @@ this.num_change = 0;
         num_pnt_loc ++;
         for (idx_next=1; idx_next <  num_next; idx_next++)
         {
-          pnt_this = { x: (pric_this + this.loc_book_unit * idx_next), y: val_next, };
+          pnt_this = { x: Number(pric_this + this.loc_book_unit * idx_next).toFixed(1), y: val_next, };
           if (num_pnt_loc+1 < num_pnt_gui) {
             gui_sers.data[num_pnt_loc].update(pnt_this, false);
           }
@@ -83,15 +83,6 @@ this.num_change = 0;
       }
     }
     this.loc_gui_chart.redraw({});
-
-    // TEMP: temp develop/debug code
-    //*
-    var err_ses = null;
-    var arr_errors = this.devCheck_Books(err_ses);
-    for (var idx_err = 0; idx_err < arr_errors.length; idx_err++) {
-      $('#log_out2').append('\n' + arr_errors[idx_err]);
-    }
-    // */
   }
 
   onLocCleanData_CB()
