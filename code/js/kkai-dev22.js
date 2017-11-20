@@ -92,7 +92,7 @@ this.num_change = 0;
     this.loc_num_asks = 0;
   }
 
-  onLocAppendData_CB()
+  onLocAppendData_CB(chan_data)
   {
     if (!this.loc_sync_flag) {
       return 0;
@@ -106,6 +106,55 @@ if ((this.num_change % 4) != 0) { return -1; }
   onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
+  }
+
+  onSyncDataGUI_impl2()
+  {
+    var  idx_book, idx_sers;
+    for (idx_sers=0; idx_sers <  3; idx_sers++)
+    {
+      var  gui_sers, loc_book, flag_bids;
+      var  gui_data;
+      var  pric_this, val_next;
+      var  num_next, idx_next;
+      if (idx_sers == 0) {
+        flag_bids = true;
+        loc_book  = this.loc_book_bids;
+      }
+      else
+      if (idx_sers == 2) {
+        flag_bids = false;
+        loc_book  = this.loc_book_asks;
+      }
+      else {
+        continue;
+      }
+      gui_sers = this.loc_gui_chart.series[idx_sers];
+      gui_data = [];
+      for (idx_book=0; idx_book <  loc_book.length; idx_book++)
+      {
+        pric_this =  loc_book[idx_book].price;
+        num_next  = (idx_book+1 >= loc_book.length) ? 0 : Math.round(
+                        (loc_book[idx_book+1].price - pric_this) / this.loc_book_unit);
+        // evaluate val_next
+        if ( flag_bids && idx_book+1 <  loc_book.length) {
+          val_next = loc_book[idx_book+1].sumamt;
+        }
+        else
+        if (!flag_bids) {
+          val_next = loc_book[idx_book].sumamt;
+        }
+        else {
+          val_next = null;
+        }
+        gui_data.push({ x: pric_this, y: loc_book[idx_book].sumamt, });
+        for (idx_next=1; idx_next <  num_next; idx_next++) {
+          gui_data.push({ x: Number(pric_this + this.loc_book_unit * idx_next).toFixed(1), y: val_next, });
+        }
+      }
+      gui_sers.setData(gui_data, false);
+    }
+    this.loc_gui_chart.redraw({});
   }
 
     // TEMP: temp develop/debug code

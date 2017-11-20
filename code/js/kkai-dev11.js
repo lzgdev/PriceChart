@@ -20,7 +20,7 @@ class ClChanData
   locAppendData(obj_msg)
   {
     this.onLocAppendData_impl(obj_msg);
-    this.onLocAppendData_CB();
+    this.onLocAppendData_CB(null);
   }
 
   locRecChg(obj_rec)
@@ -31,7 +31,7 @@ class ClChanData
   onLocCleanData_CB()
   {
   }
-  onLocAppendData_CB()
+  onLocAppendData_CB(chan_data)
   {
   }
 
@@ -59,7 +59,6 @@ class ClChanData_Array extends ClChanData
   {
     if (!Array.isArray(obj_msg[1]))
     {
-      this.onLocAppendData_CB();
     }
     else
     {

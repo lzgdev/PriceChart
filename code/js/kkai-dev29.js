@@ -7,7 +7,7 @@ function cbEV_OnDocReady_highcharts()
 //        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
 //        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
         { prec: 'P0', len: 100, uid: 'dep-book-P0', visible:  true, },
-//        { prec: 'P1', len: 100, uid: 'dep-book-P1', visible:  true, },
+        { prec: 'P1', len: 100, uid: 'dep-book-P1', visible:  true, },
 //        { prec: 'P2', len: 100, uid: 'dep-book-P2', visible:  true, },
 //        { prec: 'P3', len: 100, uid: 'dep-book-P3', visible: false, },
       ];
