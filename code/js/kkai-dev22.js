@@ -1,20 +1,18 @@
 
 // HighCharts sample code: javascript
 
-var num_change = 0;
-
 class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
 {
-  constructor(prec, len)
+  constructor(wreq_prec, wreq_len, gui_chart)
   {
-    super(prec, len)
+    super(wreq_prec, wreq_len)
+this.num_change = 0;
+    this.loc_gui_chart = gui_chart;
+    this.loc_need_sync = false;
     this.loc_num_bids = 0;
     this.loc_num_asks = 0;
     this.loc_highcharts_numcol = Math.round(this.req_book_len + this.req_book_len / 3);
     // index between bids and asks
-    this.loc_highcharts_needel = 0;
-    this.loc_highcharts_amount = [];
-    this.loc_highcharts_sumamt = [];
     this.loc_price_unit =  1.0;
     this.loc_price_min  =  0.0;
     this.loc_price_max  = -1.0;
@@ -39,14 +37,17 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
   {
     this.loc_num_bids = 0;
     this.loc_num_asks = 0;
-    this.loc_highcharts_needel = 0;
-    this.loc_highcharts_amount.length = 0;
-    this.loc_highcharts_sumamt.length = 0;
   }
 
-  onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
+  onLocAppendData_CB()
   {
-    var  sers_data_bids = [], sers_data_asks = [];
+    if (!this.loc_need_sync) {
+      return 0;
+    }
+    this.loc_need_sync = true;
+this.num_change ++;
+if ((this.num_change % 4) != 0) { return -1; }
+    var  sers_data_bids = [], sers_data_pads = [], sers_data_asks = [];
 
     var  idx_this, idx_pair;
     for (idx_this=0; idx_this <  this.loc_book_bids.length; idx_this++)
@@ -79,14 +80,17 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
       sers_data_asks.push({ x: pric_this, y: this.loc_book_asks[idx_this].sumamt, });
     }
 
-    highcharts_chart.series[0].setData(sers_data_bids);
-    highcharts_chart.series[1].setData(sers_data_asks);
+    this.loc_gui_chart.series[0].setData(sers_data_bids);
+    this.loc_gui_chart.series[1].setData(sers_data_pads);
+    this.loc_gui_chart.series[2].setData(sers_data_asks);
 
-    if ((num_change % 2) == 0) {
-      highcharts_chart.redraw({});
-    }
+    this.loc_gui_chart.redraw({});
   }
 
+  onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
+  {
+    this.loc_need_sync = true;
+  }
     // TEMP: temp develop/debug code
     /*
     var err_ses = null;

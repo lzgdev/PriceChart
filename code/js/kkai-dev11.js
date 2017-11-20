@@ -20,6 +20,7 @@ class ClChanData
   locAppendData(obj_msg)
   {
     this.onLocAppendData_impl(obj_msg);
+    this.onLocAppendData_CB();
   }
 
   locRecChg(obj_rec)
@@ -28,6 +29,9 @@ class ClChanData
   }
 
   onLocCleanData_CB()
+  {
+  }
+  onLocAppendData_CB()
   {
   }
 
@@ -55,6 +59,7 @@ class ClChanData_Array extends ClChanData
   {
     if (!Array.isArray(obj_msg[1]))
     {
+      this.onLocAppendData_CB();
     }
     else
     {
@@ -76,11 +81,11 @@ class ClChanData_Array extends ClChanData
 
 class ClChanData_ABooks extends ClChanData_Array
 {
-  constructor(prec, len)
+  constructor(wreq_prec, wreq_len)
   {
     super();
-    this.req_book_prec  = String(prec);
-    this.req_book_len   = Number(len);
+    this.req_book_prec  = String(wreq_prec);
+    this.req_book_len   = Number(wreq_len);
     this.loc_book_bids  = [];
     this.loc_book_asks  = [];
   }
