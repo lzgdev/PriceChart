@@ -6,97 +6,123 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
   constructor(wreq_prec, wreq_len, gui_chart)
   {
     super(wreq_prec, wreq_len)
-this.num_change = 0;
     this.loc_gui_chart = gui_chart;
-    this.loc_need_sync = false;
+    this.loc_sync_flag = false;
     this.loc_num_bids = 0;
+    this.loc_num_pads = 0;
     this.loc_num_asks = 0;
-    this.loc_highcharts_numcol = Math.round(this.req_book_len + this.req_book_len / 3);
-    // index between bids and asks
-    this.loc_price_unit =  1.0;
-    this.loc_price_min  =  0.0;
-    this.loc_price_max  = -1.0;
-    if (this.req_book_prec == 'P0') {
-      this.loc_price_unit =   0.1;
+this.num_change = 0;
+  }
+
+  onSyncDataGUI_impl()
+  {
+    var  idx_book, idx_sers;
+    for (idx_sers=0; idx_sers < 3; idx_sers++)
+    {
+      var  gui_sers, loc_book, flag_bids;
+      var  num_pnt_gui, num_pnt_loc;
+      var  pric_this, val_next;
+      var  pnt_this, num_next, idx_next;
+      if (idx_sers == 0) {
+        flag_bids = true;
+        loc_book  = this.loc_book_bids;
+      }
+      else
+      if (idx_sers == 2) {
+        flag_bids = false;
+        loc_book  = this.loc_book_asks;
+      }
+      else {
+        continue;
+      }
+      gui_sers = this.loc_gui_chart.series[idx_sers];
+      num_pnt_gui = gui_sers.data.length;
+      num_pnt_loc = 0;
+      for (idx_book=0; idx_book < loc_book.length; idx_book++)
+      {
+        pric_this =  loc_book[idx_book].price;
+        num_next  = (idx_book+1 >= loc_book.length) ? 0 : Math.round(
+                        (loc_book[idx_book+1].price - pric_this) / this.loc_book_unit);
+        // evaluate val_next
+        if ( flag_bids && idx_book+1 <  loc_book.length) {
+          val_next = loc_book[idx_book+1].sumamt;
+        }
+        else
+        if (!flag_bids && idx_book-1 >= 0) {
+          val_next = loc_book[idx_book-1].sumamt;
+        }
+        else {
+          val_next = null;
+        }
+        pnt_this = { x: pric_this, y: loc_book[idx_book].sumamt, };
+        if (num_pnt_loc+1 <  num_pnt_gui) {
+          gui_sers.data[num_pnt_loc].update(pnt_this, false);
+        }
+        else {
+          gui_sers.addPoint(pnt_this, false);
+          num_pnt_gui ++;
+        }
+        num_pnt_loc ++;
+        for (idx_next=1; idx_next <  num_next; idx_next++)
+        {
+          pnt_this = { x: (pric_this + this.loc_book_unit * idx_next), y: val_next, };
+          if (num_pnt_loc+1 < num_pnt_gui) {
+            gui_sers.data[num_pnt_loc].update(pnt_this, false);
+          }
+          else {
+            gui_sers.addPoint(pnt_this, false);
+            num_pnt_gui ++;
+          }
+          num_pnt_loc ++;
+        }
+      }
+      while (num_pnt_gui >  num_pnt_loc)
+      {
+        gui_sers.removePoint(num_pnt_gui-1, false);
+        num_pnt_gui --;
+      }
     }
-    else
-    if (this.req_book_prec == 'P1') {
-      this.loc_price_unit =   1.0;
+    this.loc_gui_chart.redraw({});
+
+    // TEMP: temp develop/debug code
+    //*
+    var err_ses = null;
+    var arr_errors = this.devCheck_Books(err_ses);
+    for (var idx_err = 0; idx_err < arr_errors.length; idx_err++) {
+      $('#log_out2').append('\n' + arr_errors[idx_err]);
     }
-    else
-    if (this.req_book_prec == 'P2') {
-      this.loc_price_unit =  10.0;
-    }
-    else
-    if (this.req_book_prec == 'P3') {
-      this.loc_price_unit = 100.0;
-    }
+    // */
   }
 
   onLocCleanData_CB()
   {
     this.loc_num_bids = 0;
+    this.loc_num_pads = 0;
     this.loc_num_asks = 0;
   }
 
   onLocAppendData_CB()
   {
-    if (!this.loc_need_sync) {
+    if (!this.loc_sync_flag) {
       return 0;
     }
-    this.loc_need_sync = true;
 this.num_change ++;
 if ((this.num_change % 4) != 0) { return -1; }
-    var  sers_data_bids = [], sers_data_pads = [], sers_data_asks = [];
-
-    var  idx_this, idx_pair;
-    for (idx_this=0; idx_this <  this.loc_book_bids.length; idx_this++)
-    {
-      var  pric_this;
-      idx_pair  =  idx_this - 1;
-      pric_this = (idx_pair >= 0) ? this.loc_book_bids[idx_pair].price :
-                        (this.loc_book_bids[idx_this].price - this.loc_price_unit);
-      for (pric_this += this.loc_price_unit;
-           pric_this <  this.loc_book_bids[idx_this].price;
-           pric_this += this.loc_price_unit)
-      {
-        sers_data_bids.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
-      }
-      sers_data_bids.push({ x: pric_this, y: this.loc_book_bids[idx_this].sumamt, });
-    }
-    for (idx_this=0; idx_this <  this.loc_book_asks.length; idx_this++)
-    {
-      var  pric_this;
-      idx_pair  =  idx_this - 1;
-      pric_this = (idx_pair >= 0) ? this.loc_book_asks[idx_pair].price :
-                 ((this.loc_book_bids.length == 0) ? (this.loc_book_asks[idx_this].price - this.loc_price_unit) :
-                                                     (this.loc_book_bids[this.loc_book_bids.length-1].price));
-      for (pric_this += this.loc_price_unit;
-           pric_this <  this.loc_book_asks[idx_this].price;
-           pric_this += this.loc_price_unit)
-      {
-        sers_data_asks.push({ x: pric_this, y: ((idx_pair < 0) ? 0.0 : this.loc_book_asks[idx_pair].sumamt), });
-      }
-      sers_data_asks.push({ x: pric_this, y: this.loc_book_asks[idx_this].sumamt, });
-    }
-
-    this.loc_gui_chart.series[0].setData(sers_data_bids);
-    this.loc_gui_chart.series[1].setData(sers_data_pads);
-    this.loc_gui_chart.series[2].setData(sers_data_asks);
-
-    this.loc_gui_chart.redraw({});
+    this.onSyncDataGUI_impl();
+    this.loc_sync_flag = false;
   }
 
   onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
   {
-    this.loc_need_sync = true;
+    this.loc_sync_flag = true;
   }
+
     // TEMP: temp develop/debug code
     /*
     var err_ses = null;
     var arr_errors = this.devCheck_Books(err_ses);
-    for (idx_all = 0; idx_all < arr_errors.length; idx_all++) {
-      $('#log_out2').append('\n' + arr_errors[idx_all]);
+    for (var idx_err = 0; idx_err < arr_errors.length; idx_err++) {
+      $('#log_out2').append('\n' + arr_errors[idx_err]);
     }
     // */
 }

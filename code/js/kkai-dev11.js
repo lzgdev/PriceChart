@@ -79,6 +79,27 @@ class ClChanData_Array extends ClChanData
   }
 }
 
+function _eval_book_unit(str_prec)
+{
+  var  book_unit = 1.0;
+  if (str_prec == 'P0') {
+    book_unit = Number(  0.1).toFixed(1);
+  }
+  else
+  if (str_prec == 'P1') {
+    book_unit = Number(  1.0).toFixed(1);
+  }
+  else
+  if (str_prec == 'P2') {
+    book_unit = Number( 10.0).toFixed(1);
+  }
+  else
+  if (str_prec == 'P3') {
+    book_unit = Number(100.0).toFixed(1);
+  }
+  return book_unit;
+}
+
 class ClChanData_ABooks extends ClChanData_Array
 {
   constructor(wreq_prec, wreq_len)
@@ -86,6 +107,7 @@ class ClChanData_ABooks extends ClChanData_Array
     super();
     this.req_book_prec  = String(wreq_prec);
     this.req_book_len   = Number(wreq_len);
+    this.loc_book_unit  = _eval_book_unit(this.req_book_prec);
     this.loc_book_bids  = [];
     this.loc_book_asks  = [];
   }
