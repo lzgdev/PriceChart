@@ -1,0 +1,7 @@
+
+https://github.com/websockets/ws
+https://github.com/TooTallNate/node-socks-proxy-agent
+
+Installing
+
+npm install --save ws
