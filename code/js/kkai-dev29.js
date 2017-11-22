@@ -1,6 +1,8 @@
 var  wss_socket = null;
 var  chan_book_OBJs = [];
 
+import { ClChanData_ABooks_HighCharts, } from './kkai-dev22.js';
+
 function cbEV_OnDocReady_highcharts()
 {
   var map_wreq2uid = [
@@ -212,4 +214,7 @@ function _onUI_Test02()
 {
   $('#log_out1').html('Test 02.');
 }
+
+export { cbEV_OnDocReady_highcharts, cbEV_OnDocReady_websocket, };
+export { _onUI_Test01, _onUI_Test02, };
 

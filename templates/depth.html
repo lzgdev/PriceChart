@@ -9,9 +9,12 @@
 <!-- -->
 
   <script type="text/javascript" src="/js/kkai-add00.js"></script>
+<!--
   <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js11_ver }}"></script>
   <script type="text/javascript" src="/js/kkai-dev21.js?version={{ dev_js21_ver }}"></script>
   <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js22_ver }}"></script>
+  -->
+
 <style>
 body {
   background-color: #1F1F1F;
@@ -52,14 +55,26 @@ body {
   $('#log_out2').html('init(js) log_out2');
 
 </script>
+<!--
   <script type="text/javascript" src="/js/kkai-dev29.js?version={{ dev_js29_ver }}"></script>
-<!-- -->
 <script type="text/javascript">
 $(function () { 
     cbEV_OnDocReady_highcharts();
     cbEV_OnDocReady_websocket();
 });
 </script>
+  -->
+<!-- -->
+  <script type="module" src="/js/kkai-dev29.js?version={{ dev_js29_ver }}"></script>
+<script type="module">
+  import { cbEV_OnDocReady_highcharts, cbEV_OnDocReady_websocket, } from '/js/kkai-dev29.js';
+
+  $(function () {
+      cbEV_OnDocReady_highcharts();
+      cbEV_OnDocReady_websocket();
+    });
+</script>
+
 </body>
 <!-- -->
 </html>

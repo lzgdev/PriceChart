@@ -1,7 +1,24 @@
 
+https://code-maven.com/javascript-module-to-run-in-browser-and-in-node
+
 https://github.com/websockets/ws
 https://github.com/TooTallNate/node-socks-proxy-agent
 
 Installing
 
 npm install --save ws
+
+// about enable module support in google chrome 61+
+https://medium.com/dev-channel/es6-modules-in-chrome-canary-m60-ba588dfb8ab7
+
+<script type="module" src="module.js"></script>
+<script type="module">
+  // or an inline script
+  import {helperMethod} from './providesHelperMethod.js';
+  helperMethod();
+</script>
+// providesHelperMethod.js
+export function helperMethod() {
+  console.info(`I'm helping!`);
+}
+

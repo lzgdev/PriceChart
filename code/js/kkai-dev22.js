@@ -1,5 +1,6 @@
+// module kkai-dev22
 
-// HighCharts sample code: javascript
+import { ClChanData_ABooks, ClChanData_Array, ClChanData, } from './kkai-dev11.js';
 
 class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
 {
@@ -166,4 +167,6 @@ if ((this.num_change % 4) != 0) { return -1; }
     }
     // */
 }
+
+export { ClChanData_ABooks_HighCharts, };
 

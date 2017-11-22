@@ -1,3 +1,4 @@
+// module kkai-dev11
 
 class ClChanData
 {
@@ -245,4 +246,6 @@ class ClChanData_ABooks extends ClChanData_Array
     return arr_errors;
   }
 }
+
+export { ClChanData_ABooks, ClChanData_Array, ClChanData, };
 
