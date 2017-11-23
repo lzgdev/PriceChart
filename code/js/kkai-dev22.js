@@ -9,9 +9,10 @@ class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
     super(wreq_prec, wreq_len)
     this.loc_gui_chart = gui_chart;
     this.loc_sync_flag = false;
-    this.loc_num_bids = 0;
-    this.loc_num_pads = 0;
-    this.loc_num_asks = 0;
+    this.loc_min_xaxis =  0.0;
+    this.loc_max_xaxis = -1.0;
+    this.loc_min_yaxis =  0.0;
+    this.loc_max_yaxis = -1.0;
 this.num_change = 0;
   }
 
@@ -83,14 +84,32 @@ this.num_change = 0;
         num_pnt_gui --;
       }
     }
+
+    if (this.loc_book_bids.length >  0 && this.loc_book_asks.length >  0)
+    {
+      var  flag_x = false;
+      var  pric_min, pric_max, pric_pad;
+      pric_min  =  this.loc_book_bids[0].price;
+      pric_max  =  this.loc_book_asks[this.loc_book_asks.length - 1].price;
+      pric_pad  = (pric_max - pric_min) / 10;
+      if (pric_min <  this.loc_min_xaxis || pric_min >= this.loc_min_xaxis+pric_pad) {
+        flag_x = true;
+      }
+      if (pric_max >  this.loc_max_xaxis || pric_max <= this.loc_max_xaxis-pric_pad) {
+        flag_x = true;
+      }
+      if (flag_x) {
+        this.loc_min_xaxis = pric_min - pric_pad/2;
+        this.loc_max_xaxis = pric_max + pric_pad/2;
+        this.loc_gui_chart.xAxis[0].setExtremes(this.loc_min_xaxis, this.loc_max_xaxis, false);
+      }
+    }
+//this.loc_gui_chart.yAxis[0].setExtremes(   0.0,  200.0, false);
     this.loc_gui_chart.redraw({});
   }
 
   onLocCleanData_CB()
   {
-    this.loc_num_bids = 0;
-    this.loc_num_pads = 0;
-    this.loc_num_asks = 0;
   }
 
   onLocAppendData_CB(chan_data)
