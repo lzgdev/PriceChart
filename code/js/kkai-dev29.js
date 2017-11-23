@@ -61,16 +61,19 @@ function cbEV_OnDocReady_highcharts()
         series: [
           {
             name: 'Bids',
+            step: true,
             color: '#009F00',
             data: [ ],
           },
           {
             name: 'Tick',
+            step: true,
             color: '#FFD700',
             data: [ ],
           },
           {
             name: 'Asks',
+            step: true,
             color: '#9F0000',
             data: [ ],
           },
