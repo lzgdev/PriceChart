@@ -8,6 +8,9 @@ Installing
 
 npm install --save ws
 
+npm install ntp-client
+npm install mongodb
+
 // about enable module support in google chrome 61+
 https://medium.com/dev-channel/es6-modules-in-chrome-canary-m60-ba588dfb8ab7
 
