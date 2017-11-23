@@ -6,8 +6,8 @@ https://github.com/TooTallNate/node-socks-proxy-agent
 
 Installing
 
-npm install --save ws
-
+npm install express
+npm install ws
 npm install ntp-client
 npm install mongodb
 
