@@ -76,9 +76,9 @@ appExpress.get('/demo/:filename', (req, res) => {
       });
     });
 
-appExpress.get('/depth/:filename', (req, res) => {
+appExpress.get('/views/:filename', (req, res) => {
     var filename = req.params.filename;
-    var filepath = __dirname + '/templates';
+    var filepath = __dirname + '/views';
 
     var options = {
       root: filepath,

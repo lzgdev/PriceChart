@@ -1,29 +1,28 @@
 var  wss_socket = null;
-var  chan_book_OBJs = [];
+var  chan_data_OBJs = [];
 
-import { ClChanData_ABooks_HighCharts, } from './kkai-dev22.js';
+import { ClChanData_ACandles_HighCharts, ClChanData_ABooks_HighCharts, } from './kkai-dev22.js';
 
 function cbEV_OnDocReady_highcharts()
 {
-  var map_wreq2uid = [
-//        { prec: 'P0', len:  25, uid: 'dep-book-P0', visible:  true, },
-//        { prec: 'P1', len:  25, uid: 'dep-book-P1', visible: false, },
-        { prec: 'P0', len: 100, uid: 'dep-book-P0', visible:  true, },
-        { prec: 'P1', len: 100, uid: 'dep-book-P1', visible:  true, },
-//        { prec: 'P2', len: 100, uid: 'dep-book-P2', visible:  true, },
-//        { prec: 'P3', len: 100, uid: 'dep-book-P3', visible: false, },
+  var mi;
+  var mapWREQs = [
+        { channel:    'book', uid: 'dep-book-P0', prec: 'P0', len: 100, visible:  true, },
+        { channel:    'book', uid: 'dep-book-P1', prec: 'P1', len: 100, visible:  true, },
+//        { channel: 'candles', uid: 'dep-book-P0', key: 'trade:1m:tBTCUSD', visible:  true, },
       ];
 
-  for (var m=0; m < map_wreq2uid.length; m++)
+  for (mi=0; mi < mapWREQs.length; mi++)
   {
-    var books_obj, chart_gui;
-    var chart;
-    var series, seriesData;
-    var map_unit = map_wreq2uid[m];
+    var chan_obj;
+    var map_unit = mapWREQs[mi];
     if (!map_unit.visible) {
       continue;
     }
-    chart_gui = Highcharts.chart(map_unit.uid, {
+    chan_obj = null;
+    if (map_unit.channel == 'book') {
+      var chart_gui;
+      chart_gui = Highcharts.chart(map_unit.uid, {
         chart: {
             type: 'area',
             backgroundColor: '#1F1F1F',
@@ -57,7 +56,6 @@ function cbEV_OnDocReady_highcharts()
                 }
             }
         },
-    
         series: [
           {
             name: 'Bids',
@@ -79,11 +77,60 @@ function cbEV_OnDocReady_highcharts()
           },
         ],
       });
+      chan_obj = new ClChanData_ABooks_HighCharts(chart_gui, map_unit.prec, map_unit.len);
+    }
+    else
+    if (map_unit.channel == 'candles') {
+      var  chart_gui;
+      chart_gui = Highcharts.stockChart(map_unit.uid, {
+        chart: {
+            type: 'candlestick',
+zoomType: 'x',
+            backgroundColor: '#1F1F1F',
+        },
+        title: {
+            text: 'History: ' + map_unit.key,
+        },
+        subtitle: {
+            text: 'Subtitle ...',
+        },
 
-    books_obj = new ClChanData_ABooks_HighCharts(map_unit.prec, map_unit.len, chart_gui);
-    chan_book_OBJs.push(books_obj);
+        yAxis: {
+            min: 0.0,
+            title: {
+                text: 'Amount Sum',
+            },
+            stackLabels: {
+                enabled: true,
+                style: {
+                    fontWeight: 'bold',
+                    color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
+                }
+            }
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+        },
+        series: [
+          {
+            type: 'candlestick',
+            data: [ ],
+/*
+            dataGrouping: {
+                enabled: false
+            }
+// */
+          },
+        ],
+      });
+      chan_obj = new ClChanData_ACandles_HighCharts(1000, chart_gui, map_unit.key);
+    }
+
+    if (chan_obj != null) {
+      chan_data_OBJs.push(chan_obj);
+    }
   }
-
 }
 
 var flg_dbg_out2 = false;
@@ -106,47 +153,50 @@ function wssBfx_OnMsg(msg)
   {
     var handler_msg = null;
     cid_msg = Number(obj_msg[0]);
-    for (var i=0; i <  chan_book_OBJs.length; i++) {
-      obj_chan = chan_book_OBJs[i];
+    for (var i=0; i <  chan_data_OBJs.length; i++) {
+      obj_chan = chan_data_OBJs[i];
       if (cid_msg === obj_chan.chan_id) {
         handler_msg = obj_chan;
         break;
       }
     }
-    if (handler_msg !== null) {
-      handler_msg.locAppendData(obj_msg);
-      //$('#log_out2').append('\nwssBfx_OnMsg: chanid(books):' + cid_msg);
-/*
-      $('#log_out2').append('\nwssBfx_OnMsg: bids=' + JSON.stringify(handler_msg.loc_book_bids));
-      $('#log_out2').append('\nwssBfx_OnMsg: asks=' + JSON.stringify(handler_msg.loc_book_asks));
-// */
+    if (handler_msg == null) {
+      $('#log_out2').append('\nwssBfx_OnMsg(unk): chanid:' + cid_msg);
     }
     else {
-      $('#log_out2').append('\nwssBfx_OnMsg: chanid:' + cid_msg);
+//      $('#log_out2').append('\nwssBfx_OnMsg(obj): chanid:' + cid_msg);
+      handler_msg.locAppendData(obj_msg);
     }
   }
   else
   if (obj_msg.event === 'subscribed')
   {
+    var handler_msg = null;
     cid_msg = Number(obj_msg.chanId);
-    if (obj_msg.channel === 'book' && obj_msg.symbol === 'tBTCUSD')
-    {
-      var handler_msg = null;
-      for (var i=0; i <  chan_book_OBJs.length; i++) {
-        obj_chan = chan_book_OBJs[i];
-        if ((obj_msg.prec == obj_chan.req_book_prec) &&
-            (obj_msg.len  == chan_book_OBJs[i].req_book_len)) {
-          handler_msg = obj_chan;
-          break;
-        }
+    for (var i=0; i <  chan_data_OBJs.length; i++) {
+      obj_chan = chan_data_OBJs[i];
+      if (obj_chan.name_chan != obj_msg.channel) {
+        continue;
       }
-      if (handler_msg != null) {
-        handler_msg.locSet_ChanId(cid_msg);
+      if ((obj_msg.channel == 'book') &&
+          (obj_msg.prec == obj_chan.req_book_prec) &&
+          (obj_msg.len  == chan_data_OBJs[i].req_book_len)) {
+        handler_msg = obj_chan;
+        break;
       }
-      if (flg_dbg_out2) $('#log_out2').append('\nwssBfx_OnMsg: event(book):' + obj_msg.event);
+      else
+      if ((obj_msg.channel == 'candles') &&
+          (obj_msg.key == obj_chan.req_candles_key)) {
+        handler_msg = obj_chan;
+        break;
+      }
+    }
+    if (handler_msg == null) {
+      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + cid_msg + ', msg:' + msg.data);
     }
     else {
-      $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + cid_msg + ', msg:' + msg.data);
+      handler_msg.locSet_ChanId(cid_msg);
+      if (flg_dbg_out2) $('#log_out2').append('\nwssBfx_OnMsg: event(book):' + obj_msg.event);
     }
   }
   else
@@ -158,6 +208,7 @@ function wssBfx_OnMsg(msg)
 
 function cbEV_OnDocReady_websocket()
 {
+  var obj_chan;
   var wss_srvproto = 'wss';
   var wss_srvhost = 'api.bitfinex.com';
   var wss_srvport = null;
@@ -174,15 +225,31 @@ function cbEV_OnDocReady_websocket()
   {
     //wss_socket.send('Ping'); // Send the message 'Ping' to the server
     $('#log_out2').html('wss_socket connected to ' + wss_srvhost);
-    for (var i=0; i <  chan_book_OBJs.length; i++)
+    for (var i=0; i <  chan_data_OBJs.length; i++)
     {
-      var obj_subscribe = {
-        'event': 'subscribe', 'channel': 'book', 'symbol': 'tBTCUSD',
-        'prec': chan_book_OBJs[i].req_book_prec,
-        'freq': 'F0',
-        'len':  chan_book_OBJs[i].req_book_len,
-      };
-      wss_socket.send(JSON.stringify(obj_subscribe));
+      var  obj_subscribe = null;
+      obj_chan = chan_data_OBJs[i];
+      if (obj_chan.name_chan == 'book')
+      {
+        obj_subscribe = {
+          'event': 'subscribe', 'channel': obj_chan.name_chan,
+          'symbol': 'tBTCUSD',
+          'prec': obj_chan.req_book_prec,
+          'freq': 'F0',
+          'len':  obj_chan.req_book_len,
+        };
+      }
+      else
+      if (obj_chan.name_chan == 'candles')
+      {
+        obj_subscribe = {
+          'event': 'subscribe', 'channel': obj_chan.name_chan,
+          'key': obj_chan.req_candles_key,
+        };
+      }
+      if (obj_subscribe != null) {
+        wss_socket.send(JSON.stringify(obj_subscribe));
+      }
     }
   };
   // Log errors

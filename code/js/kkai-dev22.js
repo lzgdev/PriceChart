@@ -1,10 +1,10 @@
 // module kkai-dev22
 
-import { ClChanData_ABooks, ClChanData_Array, ClChanData, } from './kkai-dev11.js';
+import { ClChanData_ACandles, ClChanData_ABooks, } from './kkai-dev11.js';
 
 class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
 {
-  constructor(wreq_prec, wreq_len, gui_chart)
+  constructor(gui_chart, wreq_prec, wreq_len)
   {
     super(wreq_prec, wreq_len)
     this.loc_gui_chart = gui_chart;
@@ -87,24 +87,36 @@ this.num_change = 0;
 
     if (this.loc_book_bids.length >  0 && this.loc_book_asks.length >  0)
     {
-      var  flag_x = false;
-      var  pric_min, pric_max, pric_pad;
-      pric_min  =  this.loc_book_bids[0].price;
-      pric_max  =  this.loc_book_asks[this.loc_book_asks.length - 1].price;
-      pric_pad  = (pric_max - pric_min) / 10;
-      if (pric_min <  this.loc_min_xaxis || pric_min >= this.loc_min_xaxis+pric_pad) {
-        flag_x = true;
+      var  flag_axis;
+      var  axis_min, axis_max, axis_pad;
+      axis_min  =  this.loc_book_bids[0].price;
+      axis_max  =  this.loc_book_asks[this.loc_book_asks.length - 1].price;
+      axis_pad  = (axis_max - axis_min) / 10;
+      flag_axis = false;
+      if (axis_min <  this.loc_min_xaxis || axis_min >= this.loc_min_xaxis+axis_pad) {
+        flag_axis = true;
       }
-      if (pric_max >  this.loc_max_xaxis || pric_max <= this.loc_max_xaxis-pric_pad) {
-        flag_x = true;
+      if (axis_max >  this.loc_max_xaxis || axis_max <= this.loc_max_xaxis-axis_pad) {
+        flag_axis = true;
       }
-      if (flag_x) {
-        this.loc_min_xaxis = pric_min - pric_pad/2;
-        this.loc_max_xaxis = pric_max + pric_pad/2;
+      if (flag_axis) {
+        this.loc_min_xaxis = axis_min - axis_pad/2;
+        this.loc_max_xaxis = axis_max + axis_pad/2;
         this.loc_gui_chart.xAxis[0].setExtremes(this.loc_min_xaxis, this.loc_max_xaxis, false);
       }
+      axis_min  =  0.0;
+      axis_max  = (this.loc_book_bids[0].sumamt >= this.loc_book_asks[this.loc_book_asks.length - 1].sumamt) ?
+                   this.loc_book_bids[0].sumamt : this.loc_book_asks[this.loc_book_asks.length - 1].sumamt;
+      axis_pad  = (axis_max - axis_min) /  3;
+      flag_axis = false;
+      if (axis_max >  this.loc_max_yaxis || axis_max <= this.loc_max_yaxis-axis_pad) {
+        flag_axis = true;
+      }
+      if (flag_axis) {
+        this.loc_max_yaxis = axis_max + axis_pad/2;
+        this.loc_gui_chart.yAxis[0].setExtremes(this.loc_min_yaxis, this.loc_max_yaxis, false);
+      }
     }
-//this.loc_gui_chart.yAxis[0].setExtremes(   0.0,  200.0, false);
     this.loc_gui_chart.redraw({});
   }
 
@@ -123,7 +135,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     this.loc_sync_flag = false;
   }
 
-  onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
+  onLocRecChg_CB(book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
   }
@@ -187,5 +199,56 @@ if ((this.num_change % 4) != 0) { return -1; }
     // */
 }
 
-export { ClChanData_ABooks_HighCharts, };
+class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
+{
+  constructor(recs_size, gui_chart, wreq_key)
+  {
+    super(recs_size, wreq_key);
+    this.loc_gui_chart = gui_chart;
+    this.loc_sync_flag = false;
+  }
+
+  onSyncDataGUI_impl()
+  {
+    this.loc_gui_chart.redraw({});
+  }
+
+  onLocAppendData_CB(chan_data)
+  {
+    if (!this.loc_sync_flag) {
+      return 0;
+    }
+    this.onSyncDataGUI_impl();
+    this.loc_sync_flag = false;
+  }
+
+  onLocRecChg_CB(candle_rec, flag_pop, rec_index)
+  {
+//$('#log_out2').append('\nClChanData_ACandles_HighCharts(rec):' + JSON.stringify(candle_rec));
+    var gui_sers;
+    var pnt_this;
+    gui_sers = this.loc_gui_chart.series[0];
+    pnt_this = {
+//      x: 1,
+      open:  candle_rec.open,
+      high:  candle_rec.high,
+      low:   candle_rec.low,
+      close: candle_rec.close,
+/*
+      name: "Point2",
+      color: "#00FF00"
+// */
+/*
+    var  candle_rec = {
+        mts:    Number(obj_rec[0]),
+        volume: Number(obj_rec[5]),
+      };
+// */
+    };
+    gui_sers.addPoint(pnt_this, false);
+    this.loc_sync_flag = true;
+  }
+}
+
+export { ClChanData_ACandles_HighCharts, ClChanData_ABooks_HighCharts, };
 

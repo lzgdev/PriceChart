@@ -2,8 +2,9 @@
 
 class ClChanData
 {
-  constructor()
+  constructor(name_chan)
   {
+    this.name_chan = name_chan;
     this.chan_id = null;
   }
 
@@ -51,9 +52,9 @@ class ClChanData
 
 class ClChanData_Array extends ClChanData
 {
-  constructor()
+  constructor(name_chan)
   {
-    super();
+    super(name_chan);
   }
 
   onLocAppendData_impl(obj_msg)
@@ -104,7 +105,7 @@ class ClChanData_ABooks extends ClChanData_Array
 {
   constructor(wreq_prec, wreq_len)
   {
-    super();
+    super("book");
     this.req_book_prec  = String(wreq_prec);
     this.req_book_len   = Number(wreq_len);
     this.loc_book_unit  = _eval_book_unit(this.req_book_prec);
@@ -183,10 +184,10 @@ class ClChanData_ABooks extends ClChanData_Array
       idx_last = idx_sum;
     }
     //
-    this.onLocBookChg_CB(flag_del ? book_rec : book_recs[idx_book], flag_bids, idx_book, flag_del);
+    this.onLocRecChg_CB(flag_del ? book_rec : book_recs[idx_book], flag_bids, idx_book, flag_del);
   }
 
-  onLocBookChg_CB(book_rec, flag_bids, idx_book, flag_del)
+  onLocRecChg_CB(book_rec, flag_bids, idx_book, flag_del)
   {
   }
 
@@ -247,5 +248,103 @@ class ClChanData_ABooks extends ClChanData_Array
   }
 }
 
-export { ClChanData_ABooks, ClChanData_Array, ClChanData, };
+class ClChanData_ACandles extends ClChanData_Array
+{
+  constructor(recs_size, wreq_key)
+  {
+    super("candles");
+    this.req_candles_key = String(wreq_key);
+    this.loc_recs_size   = recs_size;
+    this.loc_candle_recs = [];
+  }
+
+  onLocCleanData_impl()
+  {
+    this.loc_candle_recs.length = 0;
+  }
+
+  onLocRecChg_impl(obj_rec)
+  {
+    var  flag_pop;
+    var  rec_index;
+    var  candle_rec = {
+        mts:    Number(obj_rec[0]),
+        open:   Number(obj_rec[1]),
+        close:  Number(obj_rec[2]),
+        high:   Number(obj_rec[3]),
+        low:    Number(obj_rec[4]),
+        volume: Number(obj_rec[5]),
+      };
+    flag_pop  = false;
+    if (this.loc_candle_recs.length+1 >  this.loc_recs_size) {
+      flag_pop  = true;
+      this.loc_candle_recs.pop();
+    }
+    rec_index = this.loc_candle_recs.length;
+    this.loc_candle_recs.push(candle_rec);
+    this.onLocRecChg_CB(candle_rec, flag_pop, rec_index);
+  }
+
+  onLocRecChg_CB(candle_rec, flag_pop, rec_index)
+  {
+  }
+
+  // develop/debug support
+  devCheck_Candles(err_ses)
+  {
+    var  arr_errors = [];
+    var  idx_rec, idx_other;
+    var  strErr_pref = this.constructor.name + ' Err' +
+                 ((err_ses == null || err_ses == '') ? ':' : ('(' + err_ses + '):'));
+    // check book of bids
+    for (idx_rec=0; idx_rec < this.loc_book_bids.length; idx_rec++)
+    {
+      var  sum_diff;
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other <  this.loc_book_bids.length) &&
+          (this.loc_book_bids[idx_rec].price <= this.loc_book_bids[idx_other].price)) {
+        arr_errors.push(strErr_pref + "(book bids disorder): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_bids[idx_rec]) +
+                    ", last=" + JSON.stringify(this.loc_book_bids[idx_other]));
+      }
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other <  this.loc_book_bids.length) &&
+          (Math.abs(sum_diff = (this.loc_book_bids[idx_other].sumamt - this.loc_book_bids[idx_other].amount -
+                        this.loc_book_bids[idx_rec].sumamt)) >  0.0001)) {
+        arr_errors.push(strErr_pref + "(book bids sum mistake): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_bids[idx_rec]) +
+                    ", next=" + JSON.stringify(this.loc_book_asks[idx_other]) +
+                    ", diff=" + sum_diff);
+      }
+    }
+    // check book of asks
+    for (idx_rec=0; idx_rec < this.loc_book_asks.length; idx_rec++)
+    {
+      var  sum_diff;
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other < this.loc_book_asks.length) &&
+          (this.loc_book_asks[idx_rec].price <= this.loc_book_asks[idx_other].price)) {
+        arr_errors.push(strErr_pref + "(book asks disorder): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_asks[idx_rec]) +
+                    ", last=" + JSON.stringify(this.loc_book_asks[idx_other]));
+      }
+      idx_other = idx_rec+1;
+      if ((idx_other >= 0) && (idx_other < this.loc_book_asks.length) &&
+          (Math.abs(sum_diff = (this.loc_book_asks[idx_other].sumamt - this.loc_book_asks[idx_other].amount -
+                        this.loc_book_asks[idx_rec].sumamt)) >  0.0001)) {
+        arr_errors.push(strErr_pref + "(book asks sum mistake): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_asks[idx_rec]) +
+                    ", next=" + JSON.stringify(this.loc_book_asks[idx_other]) +
+                    ", diff=" + sum_diff);
+      }
+    }
+    return arr_errors;
+  }
+}
+
+export { ClChanData_ACandles, ClChanData_ABooks, };
 
