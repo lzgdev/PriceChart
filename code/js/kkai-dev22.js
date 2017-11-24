@@ -206,11 +206,12 @@ class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
     super(recs_size, wreq_key);
     this.loc_gui_chart = gui_chart;
     this.loc_sync_flag = false;
+this.num_pnts = 0;
   }
 
   onSyncDataGUI_impl()
   {
-    this.loc_gui_chart.redraw({});
+//    this.loc_gui_chart.redraw({});
   }
 
   onLocAppendData_CB(chan_data)
@@ -228,25 +229,18 @@ class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
     var gui_sers;
     var pnt_this;
     gui_sers = this.loc_gui_chart.series[0];
+this.num_pnts ++;
     pnt_this = {
-//      x: 1,
+      x:     this.num_pnts,
       open:  candle_rec.open,
       high:  candle_rec.high,
       low:   candle_rec.low,
       close: candle_rec.close,
-/*
-      name: "Point2",
-      color: "#00FF00"
-// */
-/*
-    var  candle_rec = {
-        mts:    Number(obj_rec[0]),
-        volume: Number(obj_rec[5]),
-      };
-// */
     };
-    gui_sers.addPoint(pnt_this, false);
+//    gui_sers.addPoint(pnt_this, false);
+    gui_sers.addPoint(pnt_this, true);
     this.loc_sync_flag = true;
+$('#log_out2').append('\nClChanData_ACandles_HighCharts(rec):' + JSON.stringify(pnt_this));
   }
 }
 
