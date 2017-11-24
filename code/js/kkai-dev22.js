@@ -206,12 +206,12 @@ class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
     super(recs_size, wreq_key);
     this.loc_gui_chart = gui_chart;
     this.loc_sync_flag = false;
-this.num_pnts = 0;
+this.num_change = 0;
   }
 
   onSyncDataGUI_impl()
   {
-//    this.loc_gui_chart.redraw({});
+    this.loc_gui_chart.redraw({});
   }
 
   onLocAppendData_CB(chan_data)
@@ -219,28 +219,28 @@ this.num_pnts = 0;
     if (!this.loc_sync_flag) {
       return 0;
     }
+this.num_change ++;
+if ((this.num_change % 4) != 0) { return -1; }
     this.onSyncDataGUI_impl();
     this.loc_sync_flag = false;
   }
 
   onLocRecChg_CB(candle_rec, flag_pop, rec_index)
   {
-//$('#log_out2').append('\nClChanData_ACandles_HighCharts(rec):' + JSON.stringify(candle_rec));
     var gui_sers;
-    var pnt_this;
+    var can_this;
     gui_sers = this.loc_gui_chart.series[0];
-this.num_pnts ++;
-    pnt_this = {
-      x:     this.num_pnts,
-      open:  candle_rec.open,
-      high:  candle_rec.high,
-      low:   candle_rec.low,
-      close: candle_rec.close,
-    };
-//    gui_sers.addPoint(pnt_this, false);
-    gui_sers.addPoint(pnt_this, true);
+    can_this = [
+        candle_rec.mts,
+        candle_rec.open,
+        candle_rec.high,
+        candle_rec.low,
+        candle_rec.close,
+      ];
+// candle_rec.volume
+//    gui_sers.addPoint(can_this, false);
+    gui_sers.addPoint(can_this, false);
     this.loc_sync_flag = true;
-$('#log_out2').append('\nClChanData_ACandles_HighCharts(rec):' + JSON.stringify(pnt_this));
   }
 }
 

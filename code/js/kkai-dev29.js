@@ -7,11 +7,11 @@ function cbEV_OnDocReady_highcharts()
 {
   var mi;
   var mapWREQs = [
-//*
+/*
         { channel:    'book', uid: 'dep-book-P0', prec: 'P0', len: 100, visible:  true, },
         { channel:    'book', uid: 'dep-book-P1', prec: 'P1', len: 100, visible:  true, },
 // */
-/*
+//*
         { channel:    'book', uid: 'dep-book-P0', prec: 'P0', len: 100, visible: false, },
         { channel:    'book', uid: 'dep-book-P1', prec: 'P1', len: 100, visible: false, },
         { channel: 'candles', uid: 'dep-book-P0', key: 'trade:1m:tBTCUSD', visible:  true, },
@@ -20,14 +20,13 @@ function cbEV_OnDocReady_highcharts()
 
   for (mi=0; mi < mapWREQs.length; mi++)
   {
-    var chan_obj;
+    var chan_obj, chart_gui;
     var map_unit = mapWREQs[mi];
     if (!map_unit.visible) {
       continue;
     }
     chan_obj = null;
     if (map_unit.channel == 'book') {
-      var chart_gui;
       chart_gui = Highcharts.chart(map_unit.uid, {
         chart: {
             type: 'area',
@@ -87,14 +86,16 @@ function cbEV_OnDocReady_highcharts()
     }
     else
     if (map_unit.channel == 'candles') {
-      var  chart_gui;
-/*
       chart_gui = Highcharts.stockChart(map_unit.uid, {
         chart: {
-            type: 'candlestick',
-zoomType: 'x',
             backgroundColor: '#1F1F1F',
         },
+        plotOptions: {
+          candlestick: {
+            color:   '#9F0000',	    		
+            upColor: '#009F00',
+	      },
+	    },
         title: {
             text: 'History: ' + map_unit.key,
         },
@@ -102,19 +103,6 @@ zoomType: 'x',
             text: 'Subtitle ...',
         },
 
-        yAxis: {
-            min: 0.0,
-            title: {
-                text: 'Amount Sum',
-            },
-            stackLabels: {
-                enabled: true,
-                style: {
-                    fontWeight: 'bold',
-                    color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
-                }
-            }
-        },
         tooltip: {
             headerFormat: '<b>{point.x}</b><br/>',
             pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
@@ -129,8 +117,6 @@ zoomType: 'x',
           },
         ],
       });
-// */
-      chart_gui = null;
       chan_obj = new ClChanData_ACandles_HighCharts(1000, chart_gui, map_unit.key);
     }
 
@@ -150,7 +136,6 @@ num_msg_max = 0;
 function wssBfx_Subscribe(wss_socket)
 {
   var obj_chan;
-  $('#log_out2').append('\nwssBfx_Subscribe ...');
   for (var i=0; i <  chan_data_OBJs.length; i++)
   {
     var  obj_subscribe = null;
@@ -175,7 +160,7 @@ function wssBfx_Subscribe(wss_socket)
     }
     if (obj_subscribe != null) {
       wss_socket.send(JSON.stringify(obj_subscribe));
-$('#log_out2').append('\nwssBfx_Subscribe: ' + JSON.stringify(obj_subscribe));
+//      $('#log_out2').append('\nwssBfx_Subscribe: ' + JSON.stringify(obj_subscribe));
     }
   }
 }

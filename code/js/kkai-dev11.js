@@ -59,21 +59,21 @@ class ClChanData_Array extends ClChanData
 
   onLocAppendData_impl(obj_msg)
   {
-    if (!Array.isArray(obj_msg[1]))
+    var data_msg = obj_msg[1];
+    if (!Array.isArray(data_msg))
     {
     }
     else
     {
-      var book_msg = obj_msg[1];
-      if (!Array.isArray(book_msg[0]))
+      if (!Array.isArray(data_msg[0]))
       {
-        this.locRecChg(book_msg);
+        this.locRecChg(data_msg);
       }
       else
       {
-        this.locCleanData(book_msg);
-        for (var i=0; i < book_msg.length; i++) {
-          this.locRecChg(book_msg[i]);
+        this.locCleanData(data_msg);
+        for (var i=0; i < data_msg.length; i++) {
+          this.locRecChg(data_msg[i]);
         }
       }
     }
