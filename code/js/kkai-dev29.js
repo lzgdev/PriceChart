@@ -1,21 +1,72 @@
 var  wss_socket = null;
 var  chan_data_OBJs = [];
 
+import { ClChanData_ACandles_AnyChart, ClChanData_ABooks_AnyChart, } from './kkai-dev21.js';
 import { ClChanData_ACandles_HighCharts, ClChanData_ABooks_HighCharts, } from './kkai-dev22.js';
+
+function cbEV_OnDocReady_anychart()
+{
+  var mi;
+  var mapWREQs = [
+        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: false, },
+        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: false, },
+        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible:  true, },
+      ];
+
+  for (mi=0; mi < mapWREQs.length; mi++)
+  {
+    var chan_obj, chart_gui;
+    var map_unit = mapWREQs[mi];
+    if (!map_unit.visible) {
+      continue;
+    }
+    chan_obj = null;
+    if (map_unit.channel == 'book') {
+      var series;
+      chart_gui = anychart.area();
+      chart_gui.yScale().stackMode("value");
+      chan_obj = new ClChanData_ABooks_AnyChart(chart_gui, map_unit.prec, map_unit.len);
+
+      // create a step area series and set the data
+      series = chart_gui.stepArea(chan_obj.loc_map_bids);
+      series.stepDirection("backward");
+      series = chart_gui.stepArea(chan_obj.loc_map_asks);
+      series.stepDirection("forward");
+
+      chart_gui.container(map_unit.uid);
+      chart_gui.draw();
+    }
+    else
+    if (map_unit.channel == 'candles') {
+//    https://docs.anychart.com/Stock_Charts/Series/Japanese_Candlestick
+      var series;
+      chart_gui = anychart.stock();
+
+      chan_obj = new ClChanData_ACandles_AnyChart(1000, chart_gui, map_unit.key);
+
+      // set the series
+      series = chart_gui.plot(0).candlestick(chan_obj.loc_map_ohlc);
+      series.name("Prices");
+      series = chart_gui.plot(1).column(chan_obj.loc_map_vol);
+      series.name("Volumns");
+
+      chart_gui.container(map_unit.uid);
+      chart_gui.draw();
+    }
+
+    if (chan_obj != null) {
+      chan_data_OBJs.push(chan_obj);
+    }
+  }
+}
 
 function cbEV_OnDocReady_highcharts()
 {
   var mi;
   var mapWREQs = [
-/*
-        { channel:    'book', uid: 'dep-book-P0', prec: 'P0', len: 100, visible:  true, },
-        { channel:    'book', uid: 'dep-book-P1', prec: 'P1', len: 100, visible:  true, },
-// */
-//*
-        { channel:    'book', uid: 'dep-book-P0', prec: 'P0', len: 100, visible: false, },
-        { channel:    'book', uid: 'dep-book-P1', prec: 'P1', len: 100, visible: false, },
-        { channel: 'candles', uid: 'dep-book-P0', key: 'trade:1m:tBTCUSD', visible:  true, },
-// */
+        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: true, },
+        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: true, },
+        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: false, },
       ];
 
   for (mi=0; mi < mapWREQs.length; mi++)
@@ -289,6 +340,10 @@ function _onUI_Test02()
   $('#log_out1').html('Test 02.');
 }
 
-export { cbEV_OnDocReady_highcharts, cbEV_OnDocReady_websocket, };
+export { cbEV_OnDocReady_anychart, };
+export { cbEV_OnDocReady_highcharts, };
+
+export { cbEV_OnDocReady_websocket, };
+
 export { _onUI_Test01, _onUI_Test02, };
 

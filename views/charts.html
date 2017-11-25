@@ -1,9 +1,21 @@
 <html>
 <head>
-  <title>Price Depth</title>
-  <script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+  <title>Price Chart</title>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+<!--
+  <script type="text/javascript" src="https://cdn.anychart.com/js/8.0.1/anychart-bundle.min.js"></script>
+  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-base.min.js"></script>
+  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-stock.min.js"></script>
+  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-exports.min.js"></script>
+  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-ui.min.js"></script>
+  -->
+
 <!-- -->
+  <script type="text/javascript" src="https://code.highcharts.com/stock/highstock.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/modules/no-data-to-display.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/modules/exporting.js"></script>
 
   <script type="text/javascript" src="/js/kkai-add00.js"></script>
 <!-- -->
@@ -31,6 +43,8 @@ body {
   <h3>Output log1</h3>
   <pre id="log_out1">init(html) log1</pre>
 <!-- -->
+  <div id="container-bookP0"></div>
+  <div id="container-bookP1"></div>
   <div id="container-candle"></div>
 <!-- -->
   <h3>Output log2</h3>
@@ -43,12 +57,24 @@ body {
 </script>
 <!-- -->
 <script type="module">
-  import { cbEV_OnDocReady_highcharts, cbEV_OnDocReady_websocket, } from '/js/kkai-dev28.js';
+  import { cbEV_OnDocReady_anychart, } from '/js/kkai-dev29.js';
+  import { cbEV_OnDocReady_highcharts, } from '/js/kkai-dev29.js';
 
+  import { cbEV_OnDocReady_websocket, } from '/js/kkai-dev29.js';
+
+/*
+  anychart.onDocumentReady(function() {
+      cbEV_OnDocReady_anychart();
+      cbEV_OnDocReady_websocket();
+    });
+// */
+
+//*
   $(function () {
       cbEV_OnDocReady_highcharts();
       cbEV_OnDocReady_websocket();
     });
+// */
 </script>
 
 </body>
