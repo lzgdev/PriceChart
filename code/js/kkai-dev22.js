@@ -135,7 +135,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     this.loc_sync_flag = false;
   }
 
-  onLocRecChg_CB(book_rec, flag_bids, idx_book, flag_del)
+  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
   }
@@ -205,13 +205,14 @@ class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
   {
     super(recs_size, wreq_key);
     this.loc_gui_chart = gui_chart;
+    this.loc_gui_recn  = 0;
+    this.loc_mts_sync  = -1;
     this.loc_sync_flag = false;
-this.num_change = 0;
   }
 
   onSyncDataGUI_impl()
   {
-    this.loc_gui_chart.redraw({});
+//    this.loc_gui_chart.redraw({});
   }
 
   onLocAppendData_CB(chan_data)
@@ -219,27 +220,35 @@ this.num_change = 0;
     if (!this.loc_sync_flag) {
       return 0;
     }
-this.num_change ++;
-if ((this.num_change % 4) != 0) { return -1; }
     this.onSyncDataGUI_impl();
     this.loc_sync_flag = false;
   }
 
-  onLocRecChg_CB(candle_rec, flag_pop, rec_index)
+  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
   {
-    var gui_sers;
-    var can_this;
+    var gui_sers, pnt_this;
     gui_sers = this.loc_gui_chart.series[0];
-    can_this = [
+    pnt_this = [
         candle_rec.mts,
         candle_rec.open,
         candle_rec.high,
         candle_rec.low,
         candle_rec.close,
       ];
-// candle_rec.volume
-//    gui_sers.addPoint(can_this, false);
-    gui_sers.addPoint(can_this, false);
+    /*
+    if (candle_rec.mts >  this.loc_mts_sync) {
+      gui_sers.addPoint(pnt_this, flag_sece);
+      this.loc_mts_sync  = candle_rec.mts;
+    }
+    else {
+      var gui_index = gui_sers.data.length + rec_index - this.loc_candle_recs.length;
+      if ((gui_index >= 0) && (gui_index <  gui_sers.data.length)) {
+        gui_sers.data[gui_index].update(pnt_this, flag_sece);
+      }
+    }
+    // */
+    gui_sers.addPoint(pnt_this, flag_sece);
+    this.loc_mts_sync  = candle_rec.mts;
     this.loc_sync_flag = true;
   }
 }

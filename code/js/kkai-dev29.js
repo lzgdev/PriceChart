@@ -89,34 +89,33 @@ function cbEV_OnDocReady_highcharts()
       chart_gui = Highcharts.stockChart(map_unit.uid, {
         chart: {
             backgroundColor: '#1F1F1F',
-        },
+          },
         plotOptions: {
-          candlestick: {
-            color:   '#9F0000',	    		
-            upColor: '#009F00',
-	      },
-	    },
+            candlestick: {
+              color:   '#9F0000',	    		
+              upColor: '#009F00',
+	        },
+          },
         title: {
             text: 'History: ' + map_unit.key,
-        },
+          },
         subtitle: {
             text: 'Subtitle ...',
-        },
-
+          },
         tooltip: {
             headerFormat: '<b>{point.x}</b><br/>',
             pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
-        },
-        series: [
-          {
-            type: 'candlestick',
-            data: [ ],
-            dataGrouping: {
-                enabled: false
-            }
           },
-        ],
-      });
+        series: [
+            {
+              type: 'candlestick',
+              data: [ ],
+              dataGrouping: {
+                enabled: false
+              }
+            },
+          ],
+        });
       chan_obj = new ClChanData_ACandles_HighCharts(1000, chart_gui, map_unit.key);
     }
 

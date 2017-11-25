@@ -25,9 +25,9 @@ class ClChanData
     this.onLocAppendData_CB(null);
   }
 
-  locRecChg(obj_rec)
+  locRecChg(flag_sece, obj_rec)
   {
-    this.onLocRecChg_impl(obj_rec)
+    this.onLocRecChg_impl(flag_sece, obj_rec)
   }
 
   onLocCleanData_CB()
@@ -45,7 +45,7 @@ class ClChanData
   {
   }
 
-  onLocRecChg_impl(obj_rec)
+  onLocRecChg_impl(flag_sece, obj_rec)
   {
   }
 }
@@ -67,13 +67,18 @@ class ClChanData_Array extends ClChanData
     {
       if (!Array.isArray(data_msg[0]))
       {
-        this.locRecChg(data_msg);
+        this.locRecChg(true, data_msg);
       }
       else
       {
+        var  i, i_end;
         this.locCleanData(data_msg);
-        for (var i=0; i < data_msg.length; i++) {
-          this.locRecChg(data_msg[i]);
+        i_end = data_msg.length-1;
+        for (i=0; i <  i_end; i++) {
+          this.locRecChg(false, data_msg[i]);
+        }
+        if (i_end >= 0) {
+          this.locRecChg( true, data_msg[i]);
         }
       }
     }
@@ -119,7 +124,7 @@ class ClChanData_ABooks extends ClChanData_Array
     this.loc_book_asks.length = 0;
   }
 
-  onLocRecChg_impl(obj_rec)
+  onLocRecChg_impl(flag_sece, obj_rec)
   {
     var  flag_bids  = (obj_rec[2] >  0.0) ? true : false;
     var  amount_rec = Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
@@ -183,11 +188,12 @@ class ClChanData_ABooks extends ClChanData_Array
               ((idx_last <  0) ? 0.0 : book_recs[idx_last].sumamt);
       idx_last = idx_sum;
     }
-    //
-    this.onLocRecChg_CB(flag_del ? book_rec : book_recs[idx_book], flag_bids, idx_book, flag_del);
+    // invoke callback
+    this.onLocRecChg_CB(flag_sece, flag_del ? book_rec : book_recs[idx_book],
+                flag_bids, idx_book, flag_del);
   }
 
-  onLocRecChg_CB(book_rec, flag_bids, idx_book, flag_del)
+  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
   {
   }
 
@@ -263,10 +269,9 @@ class ClChanData_ACandles extends ClChanData_Array
     this.loc_candle_recs.length = 0;
   }
 
-  onLocRecChg_impl(obj_rec)
+  onLocRecChg_impl(flag_sece, obj_rec)
   {
-    var  flag_pop;
-    var  rec_index;
+    var  flag_chg, rec_index;
     var  candle_rec = {
         mts:    Number(obj_rec[0]),
         open:   Number(obj_rec[1]),
@@ -275,17 +280,32 @@ class ClChanData_ACandles extends ClChanData_Array
         low:    Number(obj_rec[4]),
         volume: Number(obj_rec[5]),
       };
-    flag_pop  = false;
-    if (this.loc_candle_recs.length+1 >  this.loc_recs_size) {
-      flag_pop  = true;
-      this.loc_candle_recs.pop();
+    flag_chg  = false;
+    for (rec_index=this.loc_candle_recs.length-1; rec_index >= 0; rec_index--) {
+      if (candle_rec.mts <= this.loc_candle_recs[rec_index].mts) {
+        break;
+      }
     }
-    rec_index = this.loc_candle_recs.length;
-    this.loc_candle_recs.push(candle_rec);
-    this.onLocRecChg_CB(candle_rec, flag_pop, rec_index);
+    if ((rec_index >= 0) && (this.loc_candle_recs[rec_index].mts == candle_rec.mts)) {
+      if (this.loc_candle_recs[rec_index].volume != candle_rec.volume) {
+        this.loc_candle_recs.splice(rec_index, 1, candle_rec);
+        flag_chg  = true;
+      }
+    }
+    else {
+      if (this.loc_candle_recs.length+1 >  this.loc_recs_size) {
+        this.loc_candle_recs.pop();
+      }
+      rec_index = this.loc_candle_recs.length;
+      this.loc_candle_recs.push(candle_rec);
+      flag_chg  = true;
+    }
+    if (flag_chg) {
+      this.onLocRecChg_CB(flag_sece, candle_rec, rec_index);
+    }
   }
 
-  onLocRecChg_CB(candle_rec, flag_pop, rec_index)
+  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
   {
   }
 
