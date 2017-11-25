@@ -3,15 +3,22 @@ var  chan_data_OBJs = [];
 
 import { ClChanData_ACandles_AnyChart, ClChanData_ABooks_AnyChart, } from './kkai-dev21.js';
 import { ClChanData_ACandles_HighCharts, ClChanData_ABooks_HighCharts, } from './kkai-dev22.js';
+import { ClChanData_ACandles_GoogleCharts, ClChanData_ABooks_GoogleCharts, } from './kkai-dev23.js';
+
+var mapWREQs = [
+/*
+        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: true, },
+        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: true, },
+        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: true, },
+// */
+        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: false, },
+        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: false, },
+        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: true, },
+      ];
 
 function cbEV_OnDocReady_anychart()
 {
   var mi;
-  var mapWREQs = [
-        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: false, },
-        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: false, },
-        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible:  true, },
-      ];
 
   for (mi=0; mi < mapWREQs.length; mi++)
   {
@@ -63,11 +70,6 @@ function cbEV_OnDocReady_anychart()
 function cbEV_OnDocReady_highcharts()
 {
   var mi;
-  var mapWREQs = [
-        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: true, },
-        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: true, },
-        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: false, },
-      ];
 
   for (mi=0; mi < mapWREQs.length; mi++)
   {
@@ -168,6 +170,92 @@ function cbEV_OnDocReady_highcharts()
           ],
         });
       chan_obj = new ClChanData_ACandles_HighCharts(1000, chart_gui, map_unit.key);
+    }
+
+    if (chan_obj != null) {
+      chan_data_OBJs.push(chan_obj);
+    }
+  }
+}
+
+function cbEV_OnDocReady_googlecharts()
+{
+  var mi;
+
+  for (mi=0; mi < mapWREQs.length; mi++)
+  {
+    var chan_obj, chart_gui;
+    var map_unit = mapWREQs[mi];
+    if (!map_unit.visible) {
+      continue;
+    }
+    chan_obj = null;
+    if (map_unit.channel == 'book') {
+      chart_gui = Highcharts.chart(map_unit.uid, {
+        chart: {
+            type: 'area',
+            backgroundColor: '#1F1F1F',
+        },
+        title: {
+            text: 'Books Depth: ' + map_unit.prec,
+        },
+        yAxis: {
+            min: 0.0,
+            title: {
+                text: 'Amount Sum',
+            },
+            stackLabels: {
+                enabled: true,
+                style: {
+                    fontWeight: 'bold',
+                    color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
+                }
+            }
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: true,
+                    color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
+                }
+            }
+        },
+        series: [
+          {
+            name: 'Bids',
+            step: true,
+            color: '#009F00',
+            data: [ ],
+          },
+          {
+            name: 'Tick',
+            step: true,
+            color: '#FFD700',
+            data: [ ],
+          },
+          {
+            name: 'Asks',
+            step: true,
+            color: '#9F0000',
+            data: [ ],
+          },
+        ],
+      });
+      chan_obj = new ClChanData_ABooks_GoogleCharts(chart_gui, map_unit.prec, map_unit.len);
+    }
+    else
+    if (map_unit.channel == 'candles') {
+      var options = {
+        legend:'none'
+      };
+      chart_gui = new google.visualization.CandlestickChart(document.getElementById(map_unit.uid));
+      chan_obj  = new ClChanData_ACandles_GoogleCharts(1000, chart_gui, map_unit.key);
+      chart_gui.draw(chan_obj.loc_gui_datatable, options);
     }
 
     if (chan_obj != null) {
@@ -342,6 +430,7 @@ function _onUI_Test02()
 
 export { cbEV_OnDocReady_anychart, };
 export { cbEV_OnDocReady_highcharts, };
+export { cbEV_OnDocReady_googlecharts, };
 
 export { cbEV_OnDocReady_websocket, };
 

@@ -1,21 +1,13 @@
-// module kkai-dev21
+// module kkai-dev23
 
 import { ClChanData_ACandles, ClChanData_ABooks, } from './kkai-dev11.js';
 
-class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
+class ClChanData_ABooks_GoogleCharts extends ClChanData_ABooks
 {
   constructor(gui_chart, wreq_prec, wreq_len)
   {
     super(wreq_prec, wreq_len)
     this.loc_gui_chart = gui_chart;
-
-    this.loc_gui_dataset_bids = anychart.data.set();
-    this.loc_gui_dataset_asks = anychart.data.set();
-    this.loc_map_bids = this.loc_gui_dataset_bids.mapAs(
-        { x: 0, value: 1, });
-    this.loc_map_asks = this.loc_gui_dataset_asks.mapAs(
-        { x: 0, value: 1, });
-
     this.loc_sync_flag = false;
     this.loc_min_xaxis =  0.0;
     this.loc_max_xaxis = -1.0;
@@ -26,30 +18,27 @@ this.num_change = 0;
 
   onSyncDataGUI_impl()
   {
-this.num_change ++;
-if (this.num_change > 50) { return; }
     var  idx_book, idx_sers;
     for (idx_sers=0; idx_sers < 3; idx_sers++)
     {
-      var  gui_dataset, loc_book, flag_bids;
+      var  gui_sers, loc_book, flag_bids;
       var  num_pnt_gui, num_pnt_loc;
       var  pric_this, val_next;
       var  pnt_this, num_next, idx_next;
       if (idx_sers == 0) {
         flag_bids = true;
-        gui_dataset = this.loc_gui_dataset_bids;
         loc_book  = this.loc_book_bids;
       }
       else
       if (idx_sers == 2) {
         flag_bids = false;
-        gui_dataset = this.loc_gui_dataset_asks;
         loc_book  = this.loc_book_asks;
       }
       else {
         continue;
       }
-      num_pnt_gui = gui_dataset.getRowsCount();
+      gui_sers = this.loc_gui_chart.series[idx_sers];
+      num_pnt_gui = gui_sers.data.length;
       num_pnt_loc = 0;
       for (idx_book=0; idx_book <  loc_book.length; idx_book++)
       {
@@ -67,23 +56,23 @@ if (this.num_change > 50) { return; }
         else {
           val_next = null;
         }
-        pnt_this = [ pric_this, loc_book[idx_book].sumamt, ];
+        pnt_this = { x: pric_this, y: loc_book[idx_book].sumamt, };
         if (num_pnt_loc+1 <  num_pnt_gui) {
-          gui_dataset.row(num_pnt_loc, pnt_this);
+          gui_sers.data[num_pnt_loc].update(pnt_this, false);
         }
         else {
-          gui_dataset.append(pnt_this);
+          gui_sers.addPoint(pnt_this, false);
           num_pnt_gui ++;
         }
         num_pnt_loc ++;
         for (idx_next=1; idx_next <  num_next; idx_next++)
         {
-          pnt_this = [ Number(pric_this + this.loc_book_unit * idx_next).toFixed(1), val_next, ];
+          pnt_this = { x: Number(pric_this + this.loc_book_unit * idx_next).toFixed(1), y: val_next, };
           if (num_pnt_loc+1 < num_pnt_gui) {
-            gui_dataset.row(num_pnt_loc, pnt_this);
+            gui_sers.data[num_pnt_loc].update(pnt_this, false);
           }
           else {
-            gui_dataset.append(pnt_this);
+            gui_sers.addPoint(pnt_this, false);
             num_pnt_gui ++;
           }
           num_pnt_loc ++;
@@ -91,12 +80,11 @@ if (this.num_change > 50) { return; }
       }
       while (num_pnt_gui >  num_pnt_loc)
       {
-        gui_dataset.remove(num_pnt_gui-1);
+        gui_sers.removePoint(num_pnt_gui-1, false);
         num_pnt_gui --;
       }
     }
 
-/*
     if (this.loc_book_bids.length >  0 && this.loc_book_asks.length >  0)
     {
       var  flag_axis;
@@ -130,7 +118,6 @@ if (this.num_change > 50) { return; }
       }
     }
     this.loc_gui_chart.redraw({});
-// */
   }
 
   onLocCleanData_CB()
@@ -212,23 +199,26 @@ if ((this.num_change % 4) != 0) { return -1; }
     // */
 }
 
-class ClChanData_ACandles_AnyChart extends ClChanData_ACandles
+class ClChanData_ACandles_GoogleCharts extends ClChanData_ACandles
 {
   constructor(recs_size, gui_chart, wreq_key)
   {
     super(recs_size, wreq_key);
     this.loc_gui_chart = gui_chart;
-    this.loc_gui_datatable = anychart.data.table();
-    this.loc_map_ohlc = this.loc_gui_datatable.mapAs(
-        { 'x': 0, 'open': 1, 'high': 2, 'low': 3, 'close': 4, });
-    this.loc_map_vol  = this.loc_gui_datatable.mapAs(
-        { 'x': 0, 'value': 5, });
+    this.loc_gui_datatable = new google.visualization.DataTable({ cols: [
+        { id:    'mts', type:  'datetime', label:   'Time', },
+        { id:   'open', type:    'number', label:   'Open', },
+        { id:   'high', type:    'number', label:   'High', },
+        { id:    'low', type:    'number', label:    'Low', },
+        { id:  'close', type:    'number', label:  'Close', },
+      ], });
     this.loc_mts_sync  = -1;
     this.loc_sync_flag = false;
   }
 
   onSyncDataGUI_impl()
   {
+//    this.loc_gui_chart.redraw({});
   }
 
   onLocAppendData_CB(chan_data)
@@ -242,17 +232,27 @@ class ClChanData_ACandles_AnyChart extends ClChanData_ACandles
 
   onLocRecChg_CB(flag_sece, candle_rec, rec_index)
   {
-    this.loc_gui_datatable.addData([[ candle_rec.mts,
-        candle_rec.open,
-        candle_rec.high,
-        candle_rec.low,
-        candle_rec.close,
-        candle_rec.volume,
-      ]]);
-    this.loc_mts_sync  = candle_rec.mts;
+    if (candle_rec.mts >  this.loc_mts_sync) {
+      this.loc_gui_datatable.addRow([ new Date(candle_rec.mts),
+            candle_rec.open, candle_rec.high, candle_rec.low, candle_rec.close, ]);
+      this.loc_mts_sync  = candle_rec.mts;
+    }
+    else {
+      var gui_index, gui_count = this.loc_gui_datatable.getNumberOfRows();
+      gui_index = gui_count + rec_index - this.loc_candle_recs.length;
+      if ((gui_index >= 0) && (gui_index <  gui_count)) {
+        this.loc_gui_datatable.setCell(gui_index, 1, candle_rec.open);
+        this.loc_gui_datatable.setCell(gui_index, 2, candle_rec.high);
+        this.loc_gui_datatable.setCell(gui_index, 3, candle_rec.low);
+        this.loc_gui_datatable.setCell(gui_index, 4, candle_rec.close);
+      }
+    }
     this.loc_sync_flag = true;
+    if (flag_sece) {
+      this.loc_gui_chart.draw(this.loc_gui_datatable, { legend:'none' });
+    }
   }
 }
 
-export { ClChanData_ACandles_AnyChart, ClChanData_ABooks_AnyChart, };
+export { ClChanData_ACandles_GoogleCharts, ClChanData_ABooks_GoogleCharts, };
 
