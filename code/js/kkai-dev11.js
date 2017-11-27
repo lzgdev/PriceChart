@@ -1,6 +1,6 @@
 // module kkai-dev11
 
-class ClChanData
+class ClDataSet_Base
 {
   constructor(name_chan)
   {
@@ -50,7 +50,7 @@ class ClChanData
   }
 }
 
-class ClChanData_Array extends ClChanData
+class ClDataSet_Array extends ClDataSet_Base
 {
   constructor(name_chan)
   {
@@ -106,7 +106,7 @@ function _eval_book_unit(str_prec)
   return book_unit;
 }
 
-class ClChanData_ABooks extends ClChanData_Array
+class ClDataSet_ABooks extends ClDataSet_Array
 {
   constructor(wreq_prec, wreq_len)
   {
@@ -254,7 +254,7 @@ class ClChanData_ABooks extends ClChanData_Array
   }
 }
 
-class ClChanData_ACandles extends ClChanData_Array
+class ClDataSet_ACandles extends ClDataSet_Array
 {
   constructor(recs_size, wreq_key)
   {
@@ -366,5 +366,5 @@ class ClChanData_ACandles extends ClChanData_Array
   }
 }
 
-export { ClChanData_ACandles, ClChanData_ABooks, };
+export { ClDataSet_ACandles, ClDataSet_ABooks, };
 

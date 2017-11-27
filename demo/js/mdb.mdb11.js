@@ -1,5 +1,5 @@
 
-//import { ClChanData_DbWriter, ClChanData_DbBase, } from '../../code/js/kkai-dev52.js'
+//import { ClDataSet_DbWriter, ClDataSet_DbBase, } from '../../code/js/kkai-dev52.js'
 
 var dev52 = require('../../code/js/kkai-dev52.js');
 
@@ -10,7 +10,7 @@ var dbObj = null;
 
 console.log("main(1) ...");
 
-dbObj = new dev52.ClChanData_DbWriter();
+dbObj = new dev52.ClDataSet_DbWriter();
 
 dbObj.dbConnect(db_url, col_name);
 

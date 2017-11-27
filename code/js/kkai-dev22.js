@@ -1,8 +1,8 @@
 // module kkai-dev22
 
-import { ClChanData_ACandles, ClChanData_ABooks, } from './kkai-dev11.js';
+import { ClDataSet_ACandles, ClDataSet_ABooks, } from './kkai-dev11.js';
 
-class ClChanData_ABooks_HighCharts extends ClChanData_ABooks
+class ClDataSet_ABooks_HighCharts extends ClDataSet_ABooks
 {
   constructor(gui_chart, wreq_prec, wreq_len)
   {
@@ -199,7 +199,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     // */
 }
 
-class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
+class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
 {
   constructor(recs_size, gui_chart, wreq_key)
   {
@@ -253,5 +253,5 @@ class ClChanData_ACandles_HighCharts extends ClChanData_ACandles
   }
 }
 
-export { ClChanData_ACandles_HighCharts, ClChanData_ABooks_HighCharts, };
+export { ClDataSet_ACandles_HighCharts, ClDataSet_ABooks_HighCharts, };
 

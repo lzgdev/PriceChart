@@ -1,7 +1,7 @@
 
-import { ClChanData_ACandles_AnyChart, ClChanData_ABooks_AnyChart, } from './kkai-dev21.js';
-import { ClChanData_ACandles_HighCharts, ClChanData_ABooks_HighCharts, } from './kkai-dev22.js';
-import { ClChanData_ACandles_GoogleCharts, ClChanData_ABooks_GoogleCharts, } from './kkai-dev23.js';
+import { ClDataSet_ACandles_AnyChart, ClDataSet_ABooks_AnyChart, } from './kkai-dev21.js';
+import { ClDataSet_ACandles_HighCharts, ClDataSet_ABooks_HighCharts, } from './kkai-dev22.js';
+import { ClDataSet_ACandles_GoogleCharts, ClDataSet_ABooks_GoogleCharts, } from './kkai-dev23.js';
 import { ClNetClient_BfxWss, ClNetClient_Base, } from './kkai-dev31.js';
 
 var obj_netclient = null;
@@ -38,7 +38,7 @@ function cbEV_OnDocReady_anychart()
       var series;
       chart_gui = anychart.area();
       chart_gui.yScale().stackMode("value");
-      chan_obj = new ClChanData_ABooks_AnyChart(chart_gui, map_unit.prec, map_unit.len);
+      chan_obj = new ClDataSet_ABooks_AnyChart(chart_gui, map_unit.prec, map_unit.len);
 
       // create a step area series and set the data
       series = chart_gui.stepArea(chan_obj.loc_map_bids);
@@ -55,7 +55,7 @@ function cbEV_OnDocReady_anychart()
       var series;
       chart_gui = anychart.stock();
 
-      chan_obj = new ClChanData_ACandles_AnyChart(1000, chart_gui, map_unit.key);
+      chan_obj = new ClDataSet_ACandles_AnyChart(1000, chart_gui, map_unit.key);
 
       // set the series
       series = chart_gui.plot(0).candlestick(chan_obj.loc_map_ohlc);
@@ -141,7 +141,7 @@ function cbEV_OnDocReady_highcharts()
           },
         ],
       });
-      chan_obj = new ClChanData_ABooks_HighCharts(chart_gui, map_unit.prec, map_unit.len);
+      chan_obj = new ClDataSet_ABooks_HighCharts(chart_gui, map_unit.prec, map_unit.len);
     }
     else
     if (map_unit.channel == 'candles') {
@@ -175,7 +175,7 @@ function cbEV_OnDocReady_highcharts()
             },
           ],
         });
-      chan_obj = new ClChanData_ACandles_HighCharts(1000, chart_gui, map_unit.key);
+      chan_obj = new ClDataSet_ACandles_HighCharts(1000, chart_gui, map_unit.key);
     }
 
     if ((chan_obj != null) && (obj_netclient != null)) {
@@ -252,7 +252,7 @@ function cbEV_OnDocReady_googlecharts()
           },
         ],
       });
-      chan_obj = new ClChanData_ABooks_GoogleCharts(chart_gui, map_unit.prec, map_unit.len);
+      chan_obj = new ClDataSet_ABooks_GoogleCharts(chart_gui, map_unit.prec, map_unit.len);
     }
     else
     if (map_unit.channel == 'candles') {
@@ -260,7 +260,7 @@ function cbEV_OnDocReady_googlecharts()
         legend:'none'
       };
       chart_gui = new google.visualization.CandlestickChart(document.getElementById(map_unit.uid));
-      chan_obj  = new ClChanData_ACandles_GoogleCharts(1000, chart_gui, map_unit.key);
+      chan_obj  = new ClDataSet_ACandles_GoogleCharts(1000, chart_gui, map_unit.key);
       chart_gui.draw(chan_obj.loc_gui_datatable, options);
     }
 

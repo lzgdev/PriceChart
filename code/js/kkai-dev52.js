@@ -1,12 +1,12 @@
 // module kkai-dev52
 
 /*
-import { ClChanData_ABooks, ClChanData_Array, ClChanData, } from './kkai-dev11.js';
+import { ClDataSet_ABooks, ClDataSet_Array, } from './kkai-dev11.js';
 // */
 
 var MongoClient = require('mongodb').MongoClient;
 
-class ClChanData_DbBase
+class ClDataSet_DbBase
 {
   constructor()
   {
@@ -29,7 +29,7 @@ class ClChanData_DbBase
     }
     else {
       MongoClient.connect(db_url, (err, db) => {
-        console.log("ClChanData_DbBase(onDb_PrepConnect): err:", err);
+        console.log("ClDataSet_DbBase(onDb_PrepConnect): err:", err);
         if (err == null) {
           this.db_database = db;
           this.onDb_PrepCollection(name_collection);
@@ -65,11 +65,11 @@ class ClChanData_DbBase
 
   onDb_RunPrepared(prep_arg1)
   {
-    console.log("ClChanData_DbBase(onDb_RunPrepared): arg1:", prep_arg1);
+    console.log("ClDataSet_DbBase(onDb_RunPrepared): arg1:", prep_arg1);
     // Insert a document in the capped collection
 /*
     this.db_collection.insertOne({a:1}, {w:1}, (err, result) => {
-        console.log("ClChanData_DbBase(onDb_RunPrepared): insertOne");
+        console.log("ClDataSet_DbBase(onDb_RunPrepared): insertOne");
         this.db_database.close(true, (err1, result1) => {
             this.onDb_Close(err1, result1);
           });
@@ -79,7 +79,7 @@ class ClChanData_DbBase
 
   onDb_Close(err, result)
   {
-    console.log("ClChanData_DbBase(onDb_Close): err:", err, "result:", result);
+    console.log("ClDataSet_DbBase(onDb_Close): err:", err, "result:", result);
     this.db_database = null;
   }
 
@@ -127,7 +127,7 @@ class ClChanData_DbBase
   }
 }
 
-class ClChanData_DbWriter extends ClChanData_DbBase
+class ClDataSet_DbWriter extends ClDataSet_DbBase
 {
 /*
 //class TradeBook_DbWrite(TradeBook_DbBase):
@@ -275,7 +275,7 @@ class AdpBitfinexWSS(websocket.WebSocketApp):
 // */
 
 module.exports = {
-  ClChanData_DbWriter: ClChanData_DbWriter,
-  ClChanData_DbBase: ClChanData_DbBase,
+  ClDataSet_DbWriter: ClDataSet_DbWriter,
+  ClDataSet_DbBase: ClDataSet_DbBase,
 }
 

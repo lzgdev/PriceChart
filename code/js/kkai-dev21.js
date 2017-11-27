@@ -1,8 +1,8 @@
 // module kkai-dev21
 
-import { ClChanData_ACandles, ClChanData_ABooks, } from './kkai-dev11.js';
+import { ClDataSet_ACandles, ClDataSet_ABooks, } from './kkai-dev11.js';
 
-class ClChanData_ABooks_AnyChart extends ClChanData_ABooks
+class ClDataSet_ABooks_AnyChart extends ClDataSet_ABooks
 {
   constructor(gui_chart, wreq_prec, wreq_len)
   {
@@ -212,7 +212,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     // */
 }
 
-class ClChanData_ACandles_AnyChart extends ClChanData_ACandles
+class ClDataSet_ACandles_AnyChart extends ClDataSet_ACandles
 {
   constructor(recs_size, gui_chart, wreq_key)
   {
@@ -254,5 +254,5 @@ class ClChanData_ACandles_AnyChart extends ClChanData_ACandles
   }
 }
 
-export { ClChanData_ACandles_AnyChart, ClChanData_ABooks_AnyChart, };
+export { ClDataSet_ACandles_AnyChart, ClDataSet_ABooks_AnyChart, };
 
