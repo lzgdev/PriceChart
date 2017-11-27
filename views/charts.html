@@ -61,14 +61,19 @@ body {
 </script>
 <!-- -->
 <script type="module">
-  import { cbEV_OnDocReady_anychart, } from '/js/kkai-dev29.js';
-  import { cbEV_OnDocReady_highcharts, } from '/js/kkai-dev29.js';
-  import { cbEV_OnDocReady_googlecharts, } from '/js/kkai-dev29.js';
+  import {
+            cbEV_OnDocReady_prep,
 
-  import { cbEV_OnDocReady_websocket, } from '/js/kkai-dev29.js';
+            cbEV_OnDocReady_anychart,
+            cbEV_OnDocReady_highcharts,
+            cbEV_OnDocReady_googlecharts,
+
+            cbEV_OnDocReady_websocket,
+         } from '/js/kkai-dev29.js';
 
 /*
   anychart.onDocumentReady(function() {
+      cbEV_OnDocReady_prep();
       cbEV_OnDocReady_anychart();
       cbEV_OnDocReady_websocket();
     });
@@ -76,6 +81,7 @@ body {
 
 //*
   $(function () {
+      cbEV_OnDocReady_prep();
       cbEV_OnDocReady_highcharts();
       cbEV_OnDocReady_websocket();
     });
@@ -84,6 +90,7 @@ body {
 /*
   google.charts.load('current', {'packages':['corechart']});
   google.charts.setOnLoadCallback(function() {
+      cbEV_OnDocReady_prep();
       cbEV_OnDocReady_googlecharts();
       cbEV_OnDocReady_websocket();
     });

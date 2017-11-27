@@ -72,7 +72,15 @@ $(function () {
   -->
 <!-- -->
 <script type="module">
-  import { cbEV_OnDocReady_highcharts, cbEV_OnDocReady_websocket, } from '/js/kkai-dev29.js';
+  import {
+            cbEV_OnDocReady_prep,
+
+            cbEV_OnDocReady_anychart,
+            cbEV_OnDocReady_highcharts,
+            cbEV_OnDocReady_googlecharts,
+
+            cbEV_OnDocReady_websocket,
+         } from '/js/kkai-dev29.js';
 
   $(function () {
       cbEV_OnDocReady_highcharts();

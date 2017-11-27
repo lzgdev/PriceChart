@@ -12,8 +12,6 @@ console.log("main(1) ...");
 
 dbObj = new dev52.ClChanData_DbWriter();
 
-console.log("main(2) ...");
-
 dbObj.dbConnect(db_url, col_name);
 
 console.log("main(99), dbObj:", dbObj, "db:", dbObj.db_database, "col:", dbObj.db_collection);

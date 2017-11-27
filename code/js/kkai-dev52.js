@@ -29,7 +29,8 @@ class ClChanData_DbBase
     }
     else {
       MongoClient.connect(db_url, (err, db) => {
-        if (!err) {
+        console.log("ClChanData_DbBase(onDb_PrepConnect): err:", err);
+        if (err == null) {
           this.db_database = db;
           this.onDb_PrepCollection(name_collection);
         }
@@ -40,24 +41,20 @@ class ClChanData_DbBase
 
   onDb_PrepCollection(name_collection)
   {
-console.log("ClChanData_DbBase(onDb_PrepCollection): 1");
     if (this.db_collection != null) {
-      this.onDb_Prepared();
+      this.onDb_RunPrepared(11);
     }
     else {
       this.db_database.collection(name_collection, { strict: true, }, (err2, col2) => {
-console.log("ClChanData_DbBase(onDb_PrepCollection): 2, err:", err2);
-        if (!err2) {
-          this.db_collection  = col2;
-          this.onDb_Prepared();
-console.log("ClChanData_DbBase(onDb_PrepCollection): 22");
+        if (err2 == null) {
+          this.db_collection = col2;
+          this.onDb_RunPrepared(21);
         }
         else {
           this.db_database.createCollection(name_collection, (err3, col3) => {
-console.log("ClChanData_DbBase(onDb_PrepCollection): 3, err:", err3);
-            if (!err3) {
+            if (err3 == null) {
               this.db_collection = col3;
-              this.onDb_Prepared();
+              this.onDb_RunPrepared(31);
             }
             if (err3) throw err3;
           });
@@ -66,15 +63,24 @@ console.log("ClChanData_DbBase(onDb_PrepCollection): 3, err:", err3);
     }
   }
 
-  onDb_Prepared()
+  onDb_RunPrepared(prep_arg1)
   {
-console.log("ClChanData_DbBase(onDb_Prepared): ", this.db_collection);
+    console.log("ClChanData_DbBase(onDb_RunPrepared): arg1:", prep_arg1);
     // Insert a document in the capped collection
+/*
     this.db_collection.insertOne({a:1}, {w:1}, (err, result) => {
-console.log("ClChanData_DbBase(onDb_Prepared): insertOne");
-        this.db_database.close();
-        this.db_database = null;
+        console.log("ClChanData_DbBase(onDb_RunPrepared): insertOne");
+        this.db_database.close(true, (err1, result1) => {
+            this.onDb_Close(err1, result1);
+          });
       });
+// */
+  }
+
+  onDb_Close(err, result)
+  {
+    console.log("ClChanData_DbBase(onDb_Close): err:", err, "result:", result);
+    this.db_database = null;
   }
 
 //var url = "mongodb://localhost:27017/mydb";
