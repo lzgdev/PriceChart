@@ -1,4 +1,6 @@
 
+const WebSocket = require('ws');
+
 class ClNetClient_Base
 {
   constructor()
@@ -172,11 +174,11 @@ class ClNetClient_BfxWss extends ClNetClient_Base
     };
     this.sock_wss.onopen  = () => {
       //this.sock_wss.send('Ping'); // Send the message 'Ping' to the server
-      $('#log_out2').html('this.sock_wss connected to ' + wss_srvhost);
+      console.log('WebSocket connected to ' + wss_srvhost);
     };
     // Log errors
     this.sock_wss.onerror = (error) => {
-      $('#log_out2').html('WebSocket Error: ' + error);
+      console.log('WebSocket Error: ' + error);
     };
     // Log messages from the server
     this.sock_wss.onmessage = (msg) =>
@@ -202,5 +204,10 @@ class ClNetClient_BfxWss extends ClNetClient_Base
   }
 }
 
-export { ClNetClient_BfxWss, ClNetClient_Base, };
+//export { ClNetClient_BfxWss, ClNetClient_Base, };
+
+module.exports = {
+  ClNetClient_Base:   ClNetClient_Base,
+  ClNetClient_BfxWss: ClNetClient_BfxWss,
+}
 

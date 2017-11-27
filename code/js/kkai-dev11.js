@@ -159,24 +159,34 @@ class ClDataSet_ABooks extends ClDataSet_Array
     // delete/add/update book record in self.loc_book_bids or self.loc_book_asks
     flag_del  = (book_rec.count == 0) ? true : false;
     if  (flag_del) {
-      if (idx_book <  0) {
+      if ((idx_book <  0) || (idx_book >= book_recs.length)) {
         flag_del  = false;
       }
       else {
-        book_recs.kk_delete_at(idx_book);
+        book_recs.splice(idx_book, 1);
       }
     }
     else
     if ((idx_book <  0) || (book_rec.price >  book_recs[idx_book].price)) {
       idx_book = idx_book + 1;
-      book_recs.kk_insert_at(idx_book, book_rec);
+      if ((idx_book <  0) || (idx_book >= book_recs.length)) {
+        book_recs.push(book_rec);
+      }
+      else {
+        book_recs.splice(idx_book, 0, book_rec);
+      }
     }
     else
     if (book_rec.price <  book_recs[idx_book].price) {
-      book_recs.kk_insert_at(idx_book, book_rec);
+      if ((idx_book <  0) || (idx_book >= book_recs.length)) {
+        book_recs.push(book_rec);
+      }
+      else {
+        book_recs.splice(idx_book, 0, book_rec);
+      }
     }
     else {
-      book_recs.kk_update_at(idx_book, book_rec);
+      book_recs.splice(idx_book, 1, book_rec);
     }
     // update .sumamt in self.loc_book_bids or self.loc_book_asks
     var  idx_last, idx_sum;
@@ -366,5 +376,10 @@ class ClDataSet_ACandles extends ClDataSet_Array
   }
 }
 
-export { ClDataSet_ACandles, ClDataSet_ABooks, };
+//export { ClDataSet_ACandles, ClDataSet_ABooks, };
+
+module.exports = {
+  ClDataSet_ACandles: ClDataSet_ACandles,
+  ClDataSet_ABooks:   ClDataSet_ABooks,
+}
 
