@@ -13,9 +13,10 @@ var mapWREQs = [
         { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: true, },
         { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: true, },
 // */
-        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible:  true, },
+//        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible:  true, },
         { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: false, },
-        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: false, },
+        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: true, },
+//        { channel: 'candles', uid: 'container-candle', key: 'trade:5m:tBTCUSD', visible: true, },
       ];
 
 var db_url_p  = "mongodb://localhost:27017";

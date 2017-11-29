@@ -69,7 +69,7 @@ class ClDataSet_DbBase
 
   onDbEV_AddDoc(name_coll, obj_doc, result)
   {
-    console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
+    //console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
   }
 
   onDbEV_RunNext(prep_arg1)
@@ -91,7 +91,7 @@ class ClDataSet_DbBase
 
   onDbEV_Closed()
   {
-    console.log("ClDataSet_DbBase(onDbEV_Closed): db closed.");
+    //console.log("ClDataSet_DbBase(onDbEV_Closed): db closed.");
   }
 
   onDbOP_Connect_impl(db_url, name_coll)

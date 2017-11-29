@@ -17,6 +17,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
   constructor(db_writter, wreq_prec, wreq_len)
   {
     super(wreq_prec, wreq_len)
+    this.flag_loc_time  = true;
     this.loc_db_writter = db_writter;
     this.loc_date_dur   = 30 * 60 * 1000;
     this.loc_name_coll  = null;
@@ -47,10 +48,10 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
         obj_docs.push(this.loc_book_asks[i]);
       }
       // compose this.loc_name_coll
-      var  utc_new = Math.round(this.loc_time_this / this.loc_date_dur) * this.loc_date_dur;
+      var  utc_new = Math.floor(this.loc_time_this / this.loc_date_dur) * this.loc_date_dur;
       this.loc_name_coll  = 'book' + this.req_book_prec + '-' + _eval_name_coll(utc_new);
       this.loc_date_next  = utc_new + this.loc_date_dur;
-//    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 21:", "book:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
+    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 21:", "book:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
       this.loc_db_writter.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
           time: this.loc_time_this,
@@ -66,9 +67,10 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
   constructor(recs_size, db_writter, wreq_key)
   {
     super(recs_size, wreq_key);
+    this.flag_loc_time  = true;
     this.loc_db_writter = db_writter;
     this.loc_gui_recn  = 0;
-    this.loc_mts_sync  = -1;
+    this.loc_mts_sync  = 0;
     this.loc_sync_flag = false;
   }
 
@@ -110,8 +112,17 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
     }
     gui_sers.addPoint(pnt_this, flag_sece);
     // */
-//    console.log('ClDataSet_ACandles_DbOut(onLocRecChg_CB): rec=', candle_rec);
-    this.loc_mts_sync  = candle_rec.mts;
+    if (!flag_sece) {
+      return;
+    }
+    if (this.loc_mts_sync == 0)
+//      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB): recs:", JSON.stringify(this.loc_candle_recs, null, ' '));
+      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB): recs:", JSON.stringify(this.loc_candle_recs));
+    else
+      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB): diff=", candle_rec.mts - this.loc_mts_sync, "rec=", JSON.stringify(candle_rec));
+    if (this.loc_mts_sync <  candle_rec.mts) {
+      this.loc_mts_sync  = candle_rec.mts;
+    }
     this.loc_sync_flag = true;
   }
 }

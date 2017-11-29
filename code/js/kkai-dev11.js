@@ -24,7 +24,7 @@ class ClDataSet_Base
   locAppendData(obj_msg)
   {
     if (this.flag_loc_time) {
-      this.loc_time_this = Date.now();
+      this.onLocTime_impl(obj_msg);
     }
     this.onLocAppendData_impl(obj_msg);
     this.onLocAppendData_CB(null);
@@ -44,6 +44,11 @@ class ClDataSet_Base
 
   onLocCleanData_impl()
   {
+  }
+
+  onLocTime_impl(obj_msg)
+  {
+    this.loc_time_this = Date.now();
   }
 
   onLocAppendData_impl(obj_msg)
@@ -116,7 +121,6 @@ class ClDataSet_ABooks extends ClDataSet_Array
   constructor(wreq_prec, wreq_len)
   {
     super("book");
-    this.flag_loc_time  = true;
     this.req_book_prec  = String(wreq_prec);
     this.req_book_len   = Number(wreq_len);
     this.loc_book_unit  = _eval_book_unit(this.req_book_prec);
@@ -286,6 +290,24 @@ class ClDataSet_ACandles extends ClDataSet_Array
     this.loc_candle_recs.length = 0;
   }
 
+  onLocTime_impl(obj_msg)
+  {
+    if (Number.isInteger(obj_msg[0]) && Array.isArray(obj_msg[1]))
+    {
+      var  val_time, data_msg = obj_msg[1];
+      if (!Array.isArray(data_msg[0]))
+      {
+        val_time = data_msg[0];
+      }
+      else {
+        val_time = data_msg[data_msg.length-1][0];
+      }
+      if (Number.isInteger(val_time)) {
+        this.loc_time_this  = val_time;
+      }
+    }
+  }
+
   onLocRecChg_impl(flag_sece, obj_rec)
   {
     var  flag_chg, rec_index;
@@ -299,22 +321,31 @@ class ClDataSet_ACandles extends ClDataSet_Array
       };
     flag_chg  = false;
     for (rec_index=this.loc_candle_recs.length-1; rec_index >= 0; rec_index--) {
-      if (candle_rec.mts <= this.loc_candle_recs[rec_index].mts) {
+      if (candle_rec.mts >= this.loc_candle_recs[rec_index].mts) {
         break;
       }
     }
-    if ((rec_index >= 0) && (this.loc_candle_recs[rec_index].mts == candle_rec.mts)) {
+    if ((rec_index >= 0) && (this.loc_candle_recs[rec_index].mts == candle_rec.mts))
+    {
       if (this.loc_candle_recs[rec_index].volume != candle_rec.volume) {
         this.loc_candle_recs.splice(rec_index, 1, candle_rec);
         flag_chg  = true;
       }
     }
-    else {
+    else
+    {
       if (this.loc_candle_recs.length+1 >  this.loc_recs_size) {
         this.loc_candle_recs.pop();
       }
-      rec_index = this.loc_candle_recs.length;
-      this.loc_candle_recs.push(candle_rec);
+      if ((rec_index <  0) || (candle_rec.mts >  this.loc_candle_recs[rec_index].mts)) {
+        rec_index ++;
+      }
+      if (rec_index >= this.loc_candle_recs.length) {
+        this.loc_candle_recs.push(candle_rec);
+      }
+      else {
+        this.loc_candle_recs.splice(rec_index, 0, candle_rec);
+      }
       flag_chg  = true;
     }
     if (flag_chg) {
