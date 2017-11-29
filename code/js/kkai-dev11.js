@@ -6,6 +6,8 @@ class ClDataSet_Base
   {
     this.name_chan = name_chan;
     this.chan_id = null;
+    this.flag_loc_time  = false;
+    this.loc_time_this  = 0;
   }
 
   locSet_ChanId(chan_id)
@@ -21,6 +23,9 @@ class ClDataSet_Base
 
   locAppendData(obj_msg)
   {
+    if (this.flag_loc_time) {
+      this.loc_time_this = Date.now();
+    }
     this.onLocAppendData_impl(obj_msg);
     this.onLocAppendData_CB(null);
   }
@@ -111,6 +116,7 @@ class ClDataSet_ABooks extends ClDataSet_Array
   constructor(wreq_prec, wreq_len)
   {
     super("book");
+    this.flag_loc_time  = true;
     this.req_book_prec  = String(wreq_prec);
     this.req_book_len   = Number(wreq_len);
     this.loc_book_unit  = _eval_book_unit(this.req_book_prec);
@@ -130,6 +136,7 @@ class ClDataSet_ABooks extends ClDataSet_Array
     var  amount_rec = Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
     var  book_rec = {
         price:  Number(obj_rec[0]),
+        type:   flag_bids ? 'bid' : 'ask',
         count:  obj_rec[1],
         amount: amount_rec,
         sumamt: 0.0,

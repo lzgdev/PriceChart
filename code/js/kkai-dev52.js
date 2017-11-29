@@ -6,124 +6,178 @@ import { ClDataSet_ABooks, ClDataSet_Array, } from './kkai-dev11.js';
 
 var MongoClient = require('mongodb').MongoClient;
 
+var _CollName_CollSet = 'set-colls';
+
 class ClDataSet_DbBase
 {
   constructor()
   {
-/*
-	def __init__(self, prec, size):
-		self.fdbg_db = False
-		super(TradeBook_DbBase, self).__init__(prec, size)
-		self.db_collection = None
-		self.dbid_price_bids = None
-		self.dbid_price_asks = None
- */
     this.db_database    = null;
-    this.db_collection  = null;
+    this.db_coll_set    = null;
+    this.db_collections = { };
+    this.db_docs_toadd  = [ ];
   }
 
-  onDb_PrepConnect(db_url, name_collection)
+  dbChk_IsDbReady() {
+    return (this.db_database != null) ? true : false;
+  }
+
+  dbChk_IsCollReady(name_coll) {
+    return (((name_coll == _CollName_CollSet) && (this.db_coll_set != null)) ||
+            ((name_coll != null) &&
+             this.db_collections.hasOwnProperty(name_coll))) ? true : false;
+  }
+
+  dbChk_IsReady() {
+    return (this.db_coll_set != null) ? true : false;
+  }
+
+//var url = "mongodb://localhost:27017/mydb";
+  dbOP_Connect(db_url, name_coll)
+  {
+    this.onDbOP_Connect_impl(db_url, name_coll);
+  }
+
+  dbOP_Close()
+  {
+    this.onDbOP_Close_impl();
+  }
+
+  dbOP_LoadBooks()
+  {
+  }
+
+  dbOP_AddColl(name_coll)
+  {
+    this.onDbOP_AddColl_impl(name_coll);
+  }
+
+  dbOP_AddDoc(name_coll, obj_doc)
+  {
+    if ((name_coll == null) || (obj_doc == null)) {
+      return false;
+    }
+    else
+    if (!this.dbChk_IsCollReady(name_coll)) {
+      this.db_docs_toadd.push({ coll: name_coll, doc: obj_doc, });
+    }
+    else {
+      this.onDbOP_AddDoc_impl(name_coll, obj_doc);
+    }
+    return true;
+  }
+
+  onDbEV_AddDoc(name_coll, obj_doc, result)
+  {
+    console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
+  }
+
+  onDbEV_RunNext(prep_arg1)
+  {
+    // Insert a document in the capped collection
+    for (var i=0; i <  this.db_docs_toadd.length; i++)
+    {
+      var name_coll, obj_doc;
+      name_coll = this.db_docs_toadd[i].coll;
+      if (!this.dbChk_IsCollReady(name_coll)) {
+        continue;
+      }
+      obj_doc = this.db_docs_toadd[i].doc;
+      this.db_docs_toadd.splice(i, 1);
+      this.onDbOP_AddDoc_impl(name_coll, obj_doc);
+      break;
+    }
+  }
+
+  onDbEV_Closed()
+  {
+    console.log("ClDataSet_DbBase(onDbEV_Closed): db closed.");
+  }
+
+  onDbOP_Connect_impl(db_url, name_coll)
   {
     if (this.db_database != null) {
-      this.onDb_PrepCollection(name_collection);
+      this.dbOP_AddColl(_CollName_CollSet);
     }
     else {
       MongoClient.connect(db_url, (err, db) => {
-        console.log("ClDataSet_DbBase(onDb_PrepConnect): err:", err);
         if (err == null) {
+          console.log("ClDataSet_DbBase(onDbOP_Connect_impl): db connected to", db_url);
           this.db_database = db;
-          this.onDb_PrepCollection(name_collection);
+          this.dbOP_AddColl(_CollName_CollSet);
         }
         if (err) throw err;
       });
     }
   }
 
-  onDb_PrepCollection(name_collection)
+  onDbOP_Close_impl()
   {
-    if (this.db_collection != null) {
-      this.onDb_RunPrepared(11);
+    console.log("ClDataSet_DbBase(onDbOP_Close_impl): ...");
+    if (this.db_database == null) {
+      return false;
     }
-    else {
-      this.db_database.collection(name_collection, { strict: true, }, (err2, col2) => {
+    this.db_database.close((err, result) => {
+        if (err != null) {
+          this.db_collections = { };
+          this.db_database  = null;
+          this.db_coll_set  = null;
+          this.onDbEV_Closed();
+        }
+      });
+    return true;
+  }
+
+  onDbOP_AddColl_impl(name_coll)
+  {
+    if (name_coll == null) {
+      return false;
+    }
+    else
+    if (this.dbChk_IsCollReady(name_coll)) {
+      this.onDbEV_RunNext(11);
+    }
+    this.db_database.collection(name_coll, { strict: true, }, (err2, col2) => {
         if (err2 == null) {
-          this.db_collection = col2;
-          this.onDb_RunPrepared(21);
+          if (name_coll != _CollName_CollSet) {
+            this.db_collections[name_coll] = col2;
+          }
+          else {
+            this.db_coll_set = col2;
+          }
+          this.onDbEV_RunNext(21);
         }
         else {
-          this.db_database.createCollection(name_collection, (err3, col3) => {
-            if (err3 == null) {
-              this.db_collection = col3;
-              this.onDb_RunPrepared(31);
-            }
-            if (err3) throw err3;
-          });
+          this.db_database.createCollection(name_coll, (err3, col3) => {
+              if (err3 == null) {
+                if (name_coll != _CollName_CollSet) {
+                  this.db_collections[name_coll] = col3;
+                }
+                else {
+                  this.db_coll_set = col3;
+                }
+                this.onDbEV_RunNext(31);
+              }
+            });
         }
       });
+  }
+
+  onDbOP_AddDoc_impl(name_coll, obj_doc)
+  {
+    if ((obj_doc == null) || !this.dbChk_IsCollReady(name_coll)) {
+      return;
     }
-  }
-
-  onDb_RunPrepared(prep_arg1)
-  {
-    console.log("ClDataSet_DbBase(onDb_RunPrepared): arg1:", prep_arg1);
-    // Insert a document in the capped collection
-/*
-    this.db_collection.insertOne({a:1}, {w:1}, (err, result) => {
-        console.log("ClDataSet_DbBase(onDb_RunPrepared): insertOne");
-        this.db_database.close(true, (err1, result1) => {
-            this.onDb_Close(err1, result1);
-          });
+    this.db_collections[name_coll].insertOne(obj_doc, null, (err, result) => {
+        if ((err == null) && (name_coll != _CollName_CollSet)) {
+          this.onDbEV_AddDoc(name_coll, obj_doc, result)
+        }
+        else
+        if (err != null) {
+          console.log("ClDataSet_DbBase(onDbOP_AddDoc_impl) err:", err);
+        }
+        this.onDbEV_RunNext(51);
       });
-// */
-  }
-
-  onDb_Close(err, result)
-  {
-    console.log("ClDataSet_DbBase(onDb_Close): err:", err, "result:", result);
-    this.db_database = null;
-  }
-
-//var url = "mongodb://localhost:27017/mydb";
-  dbConnect(db_url, name_collection)
-  {
-    this.onDb_PrepConnect(db_url, name_collection);
-  }
-
-/*
-	def dbInit(self, db_database):
-		if self.fdbg_db:
-			print("TradeBook_DbBase(dbInit): ...")
-		flag_exist = True if (self.wreq_prec in db_database.collection_names(False)) else False
-		self.db_collection = None if not flag_exist else pymongo.collection.Collection(
-							db_database, self.wreq_prec, False)
-		if self.db_collection == None:
-			return
-		rec_tmp = self.db_collection.find_one({ DBNAME_BOOK_RECTYPE: 'price.extr.bids', })
-		if rec_tmp != None:
-			self.dbid_price_bids = rec_tmp['_id']
-		rec_tmp = self.db_collection.find_one({ DBNAME_BOOK_RECTYPE: 'price.extr.asks', })
-		if rec_tmp != None:
-			self.dbid_price_asks = rec_tmp['_id']
-
-	def dbLoad_Books(self):
-		if self.db_collection == None:
-			return
-		# load TradeBook of bids
-		crr_recs = self.db_collection.find({ DBNAME_BOOK_RECTYPE: 'book.bids', })
-		for doc_rec in crr_recs:
-			rec_update = [ doc_rec['book-price'], doc_rec['book-count'], doc_rec['book-amount'], ]
-			self.upBookRec(rec_update)
-		crr_recs.close()
-		# load TradeBook of asks
-		crr_recs = self.db_collection.find({ DBNAME_BOOK_RECTYPE: 'book.asks', })
-		for doc_rec in crr_recs:
-			rec_update = [ doc_rec['book-price'], doc_rec['book-count'], doc_rec['book-amount'], ]
-			self.upBookRec(rec_update)
-		crr_recs.close()
-  */
-
-  dbLoad_Books()
-  {
   }
 }
 
@@ -137,16 +191,16 @@ class ClDataSet_DbWriter extends ClDataSet_DbBase
 
 	def dbInit(self, db_database):
 		super(TradeBook_DbWrite, self).dbInit(db_database)
-		if (self.db_collection == None):
-			self.db_collection = pymongo.collection.Collection(db_database, self.wreq_prec, True)
+		if (self.db_coll_set == None):
+			self.db_coll_set = pymongo.collection.Collection(db_database, self.wreq_prec, True)
 			if self.fdbg_dbwr:
 				print("TradeBook_DbWrite(dbInit): new collection(write).")
-		if (self.db_collection != None) and (self.dbid_price_bids == None):
-			self.dbid_price_bids = self.db_collection.insert_one({ DBNAME_BOOK_RECTYPE: 'price.extr.bids', }).inserted_id
+		if (self.db_coll_set != None) and (self.dbid_price_bids == None):
+			self.dbid_price_bids = self.db_coll_set.insert_one({ DBNAME_BOOK_RECTYPE: 'price.extr.bids', }).inserted_id
 			if self.fdbg_dbwr:
 				print("TradeBook_DbWrite(dbInit): new price:bids(write).")
-		if (self.db_collection != None) and (self.dbid_price_asks == None):
-			self.dbid_price_asks = self.db_collection.insert_one({ DBNAME_BOOK_RECTYPE: 'price.extr.asks', }).inserted_id
+		if (self.db_coll_set != None) and (self.dbid_price_asks == None):
+			self.dbid_price_asks = self.db_coll_set.insert_one({ DBNAME_BOOK_RECTYPE: 'price.extr.asks', }).inserted_id
 			if self.fdbg_dbwr:
 				print("TradeBook_DbWrite(dbInit): new price:asks(write).")
 
@@ -159,26 +213,26 @@ class ClDataSet_DbWriter extends ClDataSet_DbBase
 		price_min = None if len(list_update) == 0 else list_update[0][0]
 		price_max = None if len(list_update) == 0 else list_update[len(list_update)-1][0]
 		if flag_bids:
-			self.db_collection.find_one_and_update( { '_id': self.dbid_price_bids, },
+			self.db_coll_set.find_one_and_update( { '_id': self.dbid_price_bids, },
 					{ '$set': { DBNAME_BOOK_PRICEEXTR: [ price_min, price_max, ], }, })
 		else:
-			self.db_collection.find_one_and_update( { '_id': self.dbid_price_asks, },
+			self.db_coll_set.find_one_and_update( { '_id': self.dbid_price_asks, },
 					{ '$set': { DBNAME_BOOK_PRICEEXTR: [ price_min, price_max, ], }, })
 		str_rec_type = 'book.bids' if flag_bids else 'book.asks'
 		if   rec_del:
-			self.db_collection.delete_one({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec, })
+			self.db_coll_set.delete_one({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec, })
 		elif rec_new:
-			self.db_collection.insert_one({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec,
+			self.db_coll_set.insert_one({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec,
 						'book-count': rec_update[1], 'book-amount': rec_update[2], })
 		elif rec_up:
-			self.db_collection.find_one_and_update({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec, },
+			self.db_coll_set.find_one_and_update({ DBNAME_BOOK_RECTYPE: str_rec_type, 'book-price': price_rec, },
 						{ '$set': { 'book-count': rec_update[1], 'book-amount': rec_update[2], } })
 
 	def upBookRecs_bgn_ex(self, recs_update):
-		if (self.db_collection == None):
+		if (self.db_coll_set == None):
 			return
-		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.bids', })
-		self.db_collection.delete_many({ DBNAME_BOOK_RECTYPE: 'book.asks', })
+		self.db_coll_set.delete_many({ DBNAME_BOOK_RECTYPE: 'book.bids', })
+		self.db_coll_set.delete_many({ DBNAME_BOOK_RECTYPE: 'book.asks', })
   */
 }
 

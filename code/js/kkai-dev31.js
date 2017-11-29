@@ -9,37 +9,46 @@ class ClNetClient_Base
 
   addObj_DataReceiver(obj_receiver)
   {
-    this.onNetClient_AddReceiver(obj_receiver);
+    this.onNcOP_AddReceiver(obj_receiver);
   }
 
-  netClient_exec()
+  ncOP_Exec()
   {
-    this.onNetClient_Exec_impl();
+    this.onNcOP_Exec_impl();
   }
 
-  dataPrep_subscribe()
+  ncOP_Close()
   {
-    this.onPrep_Subscribe_impl();
+    this.onNcOP_Close_impl();
   }
 
-  dataRecv_message(obj_msg)
+  ncOP_PrepSubscribe()
   {
-    this.onData_Message_impl(obj_msg);
+    this.onNcOP_PrepSubscribe_impl();
   }
 
-  onNetClient_AddReceiver(obj_receiver)
+  ncEV_RecvMessage(obj_msg)
   {
+    this.onNcEV_Message_impl(obj_msg);
   }
 
-  onNetClient_Exec_impl()
-  {
-  }
-
-  onPrep_Subscribe_impl()
+  onNcOP_AddReceiver(obj_receiver)
   {
   }
 
-  onData_Message_impl(obj_msg)
+  onNcOP_Exec_impl()
+  {
+  }
+
+  onNcOP_Close_impl()
+  {
+  }
+
+  onNcOP_PrepSubscribe_impl()
+  {
+  }
+
+  onNcEV_Message_impl(obj_msg)
   {
   }
 }
@@ -53,16 +62,15 @@ class ClNetClient_BfxWss extends ClNetClient_Base
     this.objs_chan_data = [];
   }
 
-  onNetClient_AddReceiver(obj_receiver)
+  onNcOP_AddReceiver(obj_receiver)
   {
     if (obj_receiver != null) {
       this.objs_chan_data.push(obj_receiver);
     }
   }
 
-  onPrep_Subscribe_impl()
+  onNcOP_PrepSubscribe_impl()
   {
-  //function wssBfx_Subscribe(this.sock_wss)
     var  obj_chan;
     for (var i=0; i <  this.objs_chan_data.length; i++)
     {
@@ -87,13 +95,13 @@ class ClNetClient_BfxWss extends ClNetClient_Base
         };
       }
       if (obj_subscribe != null) {
+        //console.log("ClNetClient_BfxWss(onNcOP_PrepSubscribe_impl): send:", JSON.stringify(obj_subscribe));
         this.sock_wss.send(JSON.stringify(obj_subscribe));
-//        $('#log_out2').append('\nwssBfx_Subscribe: ' + JSON.stringify(obj_subscribe));
       }
     }
   }
 
-  onData_Message_impl(obj_msg)
+  onNcEV_Message_impl(obj_msg)
   {
     var obj_chan;
     var cid_msg;
@@ -112,10 +120,10 @@ class ClNetClient_BfxWss extends ClNetClient_Base
         }
       }
       if (handler_msg == null) {
-        $('#log_out2').append('\nwssBfx_OnMsg(unk): chanid:' + cid_msg);
+        console.log("ClNetClient_BfxWss(onNcEV_Message_impl): can't handle data, chanId:", cid_msg, ", obj:", JSON.stringify(obj_msg));
       }
       else {
-  //      $('#log_out2').append('\nwssBfx_OnMsg(obj): chanid:' + cid_msg);
+        //console.log("ClNetClient_BfxWss(onNcEV_Message_impl): handle data, chanId:", cid_msg, ", obj:", JSON.stringify(obj_msg));
         handler_msg.locAppendData(obj_msg);
       }
     }
@@ -143,21 +151,21 @@ class ClNetClient_BfxWss extends ClNetClient_Base
         }
       }
       if (handler_msg == null) {
-        $('#log_out2').append('\nwssBfx_OnMsg: event:' + obj_msg.event + ', chanId:' + cid_msg + ', obj:' + JSON.stringify(obj_msg));
+        console.log("ClNetClient_BfxWss(onNcEV_Message_impl): can't handle subscribe, chanId:", cid_msg, ", obj:", JSON.stringify(obj_msg));
       }
       else {
+        //console.log("ClNetClient_BfxWss(onNcEV_Message_impl): event(book):", obj_msg.event);
         handler_msg.locSet_ChanId(cid_msg);
-//        $('#log_out2').append('\nwssBfx_OnMsg: event(book):' + obj_msg.event);
       }
     }
     else
     {
       // typeof(obj_msg.event) !== 'undefined'
-      $('#log_out2').append('\nwssBfx_OnMsg: obj:' + JSON.stringify(obj_msg));
+      console.log("ClNetClient_BfxWss(onNcEV_Message_impl): can't handle obj", JSON.stringify(obj_msg));
     }
   }
 
-  onNetClient_Exec_impl()
+  onNcOP_Exec_impl()
   {
     var wss_srvproto = 'wss';
     var wss_srvhost = 'api.bitfinex.com';
@@ -173,7 +181,6 @@ class ClNetClient_BfxWss extends ClNetClient_Base
     this.sock_wss.onclose = () => {
     };
     this.sock_wss.onopen  = () => {
-      //this.sock_wss.send('Ping'); // Send the message 'Ping' to the server
       console.log('WebSocket connected to ' + wss_srvhost);
     };
     // Log errors
@@ -186,21 +193,19 @@ class ClNetClient_BfxWss extends ClNetClient_Base
       var  obj_msg;
       obj_msg  = (typeof(msg.data) === 'string') ? JSON.parse(msg.data) : null;
       if ((obj_msg != null) && (obj_msg.event == 'info')) {
-        this.dataPrep_subscribe();
+        this.ncOP_PrepSubscribe();
       }
       else
       if (obj_msg != null) {
-        this.dataRecv_message(obj_msg);
+        this.ncEV_RecvMessage(obj_msg);
       }
-/*
-      if ((num_msg_max != 0) && (num_msg_rcv >= num_msg_max)) {
-        $('#log_out2').append('\nClose websocket!!');
-        this.sock_wss.close();
-      }
-// */
     };
     this.sock_wss.onerror = (error) => {
     };
+  }
+
+  onNcOP_Close_impl()
+  {
   }
 }
 
