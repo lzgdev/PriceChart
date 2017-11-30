@@ -2,10 +2,11 @@
 
 class ClDataSet_Base
 {
-  constructor(name_chan)
+  constructor(name_chan, wreq_args)
   {
     this.name_chan = name_chan;
     this.chan_id = null;
+    this.wreq_args = wreq_args;
     this.flag_loc_time  = false;
     this.loc_time_this  = 0;
   }
@@ -24,7 +25,7 @@ class ClDataSet_Base
   locAppendData(obj_msg)
   {
     if (this.flag_loc_time) {
-      this.onLocTime_impl(obj_msg);
+      this.loc_time_this = Date.now();
     }
     this.onLocAppendData_impl(obj_msg);
     this.onLocAppendData_CB(null);
@@ -46,11 +47,6 @@ class ClDataSet_Base
   {
   }
 
-  onLocTime_impl(obj_msg)
-  {
-    this.loc_time_this = Date.now();
-  }
-
   onLocAppendData_impl(obj_msg)
   {
   }
@@ -62,9 +58,9 @@ class ClDataSet_Base
 
 class ClDataSet_Array extends ClDataSet_Base
 {
-  constructor(name_chan)
+  constructor(name_chan, wreq_args)
   {
-    super(name_chan);
+    super(name_chan, wreq_args);
   }
 
   onLocAppendData_impl(obj_msg)
@@ -116,14 +112,45 @@ function _eval_book_unit(str_prec)
   return book_unit;
 }
 
+class ClDataSet_Ticker extends ClDataSet_Base
+{
+  constructor(wreq_args)
+  {
+    super('ticker', wreq_args);
+  }
+
+  onLocAppendData_impl(obj_msg)
+  {
+    var data_msg = obj_msg[1];
+    if (Array.isArray(data_msg) && data_msg.length == 10)
+    {
+      var  ticker_rec = {
+          bid:        Number(data_msg[0]),
+          bid_size:   Number(data_msg[1]),
+          ask:        Number(data_msg[2]),
+          ask_size:   Number(data_msg[3]),
+          daily_change:   Number(data_msg[4]),
+          daily_change_perc:  Number(data_msg[5]),
+          last_price: Number(data_msg[6]),
+          volume:     Number(data_msg[7]),
+          high:       Number(data_msg[8]),
+          low:        Number(data_msg[9]),
+        };
+      this.onLocRecChg_CB(ticker_rec, 0);
+    }
+  }
+
+  onLocRecChg_CB(ticker_rec, rec_index)
+  {
+  }
+}
+
 class ClDataSet_ABooks extends ClDataSet_Array
 {
-  constructor(wreq_prec, wreq_len)
+  constructor(wreq_args)
   {
-    super("book");
-    this.req_book_prec  = String(wreq_prec);
-    this.req_book_len   = Number(wreq_len);
-    this.loc_book_unit  = _eval_book_unit(this.req_book_prec);
+    super("book", wreq_args);
+    this.loc_book_unit  = _eval_book_unit(this.wreq_args.prec);
     this.loc_book_bids  = [];
     this.loc_book_asks  = [];
   }
@@ -277,10 +304,9 @@ class ClDataSet_ABooks extends ClDataSet_Array
 
 class ClDataSet_ACandles extends ClDataSet_Array
 {
-  constructor(recs_size, wreq_key)
+  constructor(recs_size, wreq_args)
   {
-    super("candles");
-    this.req_candles_key = String(wreq_key);
+    super("candles", wreq_args);
     this.loc_recs_size   = recs_size;
     this.loc_candle_recs = [];
   }
@@ -288,24 +314,6 @@ class ClDataSet_ACandles extends ClDataSet_Array
   onLocCleanData_impl()
   {
     this.loc_candle_recs.length = 0;
-  }
-
-  onLocTime_impl(obj_msg)
-  {
-    if (Number.isInteger(obj_msg[0]) && Array.isArray(obj_msg[1]))
-    {
-      var  val_time, data_msg = obj_msg[1];
-      if (!Array.isArray(data_msg[0]))
-      {
-        val_time = data_msg[0];
-      }
-      else {
-        val_time = data_msg[data_msg.length-1][0];
-      }
-      if (Number.isInteger(val_time)) {
-        this.loc_time_this  = val_time;
-      }
-    }
   }
 
   onLocRecChg_impl(flag_sece, obj_rec)
@@ -417,6 +425,7 @@ class ClDataSet_ACandles extends ClDataSet_Array
 //export { ClDataSet_ACandles, ClDataSet_ABooks, };
 
 module.exports = {
+  ClDataSet_Ticker:   ClDataSet_Ticker,
   ClDataSet_ACandles: ClDataSet_ACandles,
   ClDataSet_ABooks:   ClDataSet_ABooks,
 }

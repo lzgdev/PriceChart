@@ -7,16 +7,12 @@ const dev52 = require('../../code/js/kkai-dev52.js');
 var obj_netclient = null;
 var obj_dbwritter = null;
 
+
 var mapWREQs = [
-/*
-        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible: true, },
-        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: true, },
-        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: true, },
-// */
-//        { channel:    'book', uid: 'container-bookP0', prec: 'P0', len: 100, visible:  true, },
-        { channel:    'book', uid: 'container-bookP1', prec: 'P1', len: 100, visible: false, },
-        { channel: 'candles', uid: 'container-candle', key: 'trade:1m:tBTCUSD', visible: true, },
-//        { channel: 'candles', uid: 'container-candle', key: 'trade:5m:tBTCUSD', visible: true, },
+        { channel:  'ticker', uid: 'container-ticker', visible:  true, wreq_args: { symbol: 'tBTCUSD', }, },
+        { channel:    'book', uid: 'container-bookP0', visible:  true, wreq_args: { symbol: 'tBTCUSD', prec: 'P0', freq: 'F0', len: 100, }, },
+        { channel:    'book', uid: 'container-bookP1', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P1', freq: 'F0', len: 100, }, },
+        { channel: 'candles', uid: 'container-candle', visible: false, wreq_args: { key: 'trade:1m:tBTCUSD', }, },
       ];
 
 var db_url_p  = "mongodb://localhost:27017";
@@ -42,8 +38,6 @@ obj_dbwritter = new dev52.ClDataSet_DbWriter();
 
 obj_dbwritter.dbOP_Connect(db_url_p + '/' + db_name, coll_name);
 
-console.log("main(99), obj_dbwritter:", obj_dbwritter, "db:", obj_dbwritter.db_database, "col:", obj_dbwritter.db_collection);
-
 //*
 obj_netclient = new dev31.ClNetClient_BfxWss();
 
@@ -55,12 +49,16 @@ for (var mi=0; mi < mapWREQs.length; mi++)
       continue;
     }
     chan_obj = null;
+    if (map_unit.channel == 'ticker') {
+      chan_obj = new dev51.ClDataSet_Ticker_DbOut(obj_dbwritter, map_unit.wreq_args);
+    }
+    else
     if (map_unit.channel == 'book') {
-      chan_obj = new dev51.ClDataSet_ABooks_DbOut(obj_dbwritter, map_unit.prec, map_unit.len);
+      chan_obj = new dev51.ClDataSet_ABooks_DbOut(obj_dbwritter, map_unit.wreq_args);
     }
     else
     if (map_unit.channel == 'candles') {
-      chan_obj = new dev51.ClDataSet_ACandles_DbOut(1000, obj_dbwritter, map_unit.key);
+      chan_obj = new dev51.ClDataSet_ACandles_DbOut(1000, obj_dbwritter, map_unit.wreq_args);
     }
 
     if ((chan_obj != null) && (obj_netclient != null)) {

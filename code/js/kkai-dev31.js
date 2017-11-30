@@ -74,30 +74,15 @@ class ClNetClient_BfxWss extends ClNetClient_Base
     var  obj_chan;
     for (var i=0; i <  this.objs_chan_data.length; i++)
     {
-      var  obj_subscribe = null;
+      var  obj_subscribe;
       obj_chan = this.objs_chan_data[i];
-      if (obj_chan.name_chan == 'book')
-      {
-        obj_subscribe = {
+      obj_subscribe = {
           'event': 'subscribe', 'channel': obj_chan.name_chan,
-          'symbol': 'tBTCUSD',
-          'prec': obj_chan.req_book_prec,
-          'freq': 'F0',
-          'len':  obj_chan.req_book_len,
         };
+      for (const prop in obj_chan.wreq_args) {
+        obj_subscribe[prop] = obj_chan.wreq_args[prop];
       }
-      else
-      if (obj_chan.name_chan == 'candles')
-      {
-        obj_subscribe = {
-          'event': 'subscribe', 'channel': obj_chan.name_chan,
-          'key': obj_chan.req_candles_key,
-        };
-      }
-      if (obj_subscribe != null) {
-        //console.log("ClNetClient_BfxWss(onNcOP_PrepSubscribe_impl): send:", JSON.stringify(obj_subscribe));
-        this.sock_wss.send(JSON.stringify(obj_subscribe));
-      }
+      this.sock_wss.send(JSON.stringify(obj_subscribe));
     }
   }
 
@@ -132,22 +117,18 @@ class ClNetClient_BfxWss extends ClNetClient_Base
     {
       var handler_msg = null;
       cid_msg = Number(obj_msg.chanId);
-      for (var i=0; i <  this.objs_chan_data.length; i++) {
+      for (var i=0; (handler_msg == null) && (i <  this.objs_chan_data.length); i++)
+      {
         obj_chan = this.objs_chan_data[i];
         if (obj_chan.name_chan != obj_msg.channel) {
           continue;
         }
-        if ((obj_msg.channel == 'book') &&
-            (obj_msg.prec == obj_chan.req_book_prec) &&
-            (obj_msg.len  == this.objs_chan_data[i].req_book_len)) {
-          handler_msg = obj_chan;
-          break;
-        }
-        else
-        if ((obj_msg.channel == 'candles') &&
-            (obj_msg.key == obj_chan.req_candles_key)) {
-          handler_msg = obj_chan;
-          break;
+        handler_msg = obj_chan;
+        for (const prop in obj_chan.wreq_args) {
+          if (obj_chan.wreq_args[prop] != obj_msg[prop]) {
+            handler_msg = null;
+            break;
+          }
         }
       }
       if (handler_msg == null) {
