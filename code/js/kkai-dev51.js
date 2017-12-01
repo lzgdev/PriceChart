@@ -49,7 +49,7 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
           time: utc_now,
           data: ticker_rec,
         });
-      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll);
+      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
   }
 }
@@ -102,7 +102,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
           time: utc_now,
           data: obj_docs,
         });
-      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll);
+      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
   }
 }
@@ -162,7 +162,7 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
           data: obj_docs,
         });
       this.loc_mts_sync   = utc_now;
-      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll);
+      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
   }
 }

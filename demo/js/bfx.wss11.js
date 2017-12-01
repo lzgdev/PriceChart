@@ -17,7 +17,6 @@ var mapWREQs = [
 
 var db_url_p  = "mongodb://localhost:27017";
 var db_name   = "bfx-pub";
-var coll_name = "info0";
 
 process.on('SIGINT', function() {
   console.log("WARN: caught interrupt signal ...");
@@ -36,7 +35,7 @@ console.log("main(1) ...");
 
 obj_dbwritter = new dev52.ClDataSet_DbWriter();
 
-obj_dbwritter.dbOP_Connect(db_url_p + '/' + db_name, coll_name);
+obj_dbwritter.dbOP_Connect(db_url_p + '/' + db_name);
 
 //*
 obj_netclient = new dev31.ClNetClient_BfxWss();

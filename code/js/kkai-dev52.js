@@ -15,7 +15,7 @@ class ClDataSet_DbBase
     this.db_database    = null;
     this.db_coll_set    = null;
     this.db_collections = { };
-    this.db_docs_toadd  = [ ];
+    this.db_docs_towrite  = [ ];
   }
 
   dbChk_IsDbReady() {
@@ -28,14 +28,9 @@ class ClDataSet_DbBase
              this.db_collections.hasOwnProperty(name_coll))) ? true : false;
   }
 
-  dbChk_IsReady() {
-    return (this.db_coll_set != null) ? true : false;
-  }
-
-//var url = "mongodb://localhost:27017/mydb";
-  dbOP_Connect(db_url, name_coll)
+  dbOP_Connect(db_url)
   {
-    this.onDbOP_Connect_impl(db_url, name_coll);
+    this.onDbOP_Connect_impl(db_url);
   }
 
   dbOP_Close()
@@ -47,9 +42,9 @@ class ClDataSet_DbBase
   {
   }
 
-  dbOP_AddColl(name_coll)
+  dbOP_AddColl(name_coll, wreq_chan, wreq_args)
   {
-    this.onDbOP_AddColl_impl(name_coll);
+    this.onDbOP_AddColl_impl(name_coll, wreq_chan, wreq_args);
   }
 
   dbOP_AddDoc(name_coll, obj_doc)
@@ -59,7 +54,7 @@ class ClDataSet_DbBase
     }
     else
     if (!this.dbChk_IsCollReady(name_coll)) {
-      this.db_docs_toadd.push({ coll: name_coll, doc: obj_doc, });
+      this.db_docs_towrite.push({ coll: name_coll, doc: obj_doc, });
     }
     else {
       this.onDbOP_AddDoc_impl(name_coll, obj_doc);
@@ -69,21 +64,21 @@ class ClDataSet_DbBase
 
   onDbEV_AddDoc(name_coll, obj_doc, result)
   {
-    //console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
+//    console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
   }
 
   onDbEV_RunNext(prep_arg1)
   {
     // Insert a document in the capped collection
-    for (var i=0; i <  this.db_docs_toadd.length; i++)
+    for (var i=0; i <  this.db_docs_towrite.length; i++)
     {
       var name_coll, obj_doc;
-      name_coll = this.db_docs_toadd[i].coll;
+      name_coll = this.db_docs_towrite[i].coll;
       if (!this.dbChk_IsCollReady(name_coll)) {
         continue;
       }
-      obj_doc = this.db_docs_toadd[i].doc;
-      this.db_docs_toadd.splice(i, 1);
+      obj_doc = this.db_docs_towrite[i].doc;
+      this.db_docs_towrite.splice(i, 1);
       this.onDbOP_AddDoc_impl(name_coll, obj_doc);
       break;
     }
@@ -94,17 +89,17 @@ class ClDataSet_DbBase
     //console.log("ClDataSet_DbBase(onDbEV_Closed): db closed.");
   }
 
-  onDbOP_Connect_impl(db_url, name_coll)
+  onDbOP_Connect_impl(db_url)
   {
     if (this.db_database != null) {
-      this.dbOP_AddColl(_CollName_CollSet);
+      this.dbOP_AddColl(_CollName_CollSet, null, null);
     }
     else {
       MongoClient.connect(db_url, (err, db) => {
         if (err == null) {
           console.log("ClDataSet_DbBase(onDbOP_Connect_impl): db connected to", db_url);
           this.db_database = db;
-          this.dbOP_AddColl(_CollName_CollSet);
+          this.dbOP_AddColl(_CollName_CollSet, null, null);
         }
         if (err) throw err;
       });
@@ -128,7 +123,7 @@ class ClDataSet_DbBase
     return true;
   }
 
-  onDbOP_AddColl_impl(name_coll)
+  onDbOP_AddColl_impl(name_coll, wreq_chan, wreq_args)
   {
     if (name_coll == null) {
       return false;
@@ -139,22 +134,27 @@ class ClDataSet_DbBase
     }
     this.db_database.collection(name_coll, { strict: true, }, (err2, col2) => {
         if (err2 == null) {
-          if (name_coll != _CollName_CollSet) {
-            this.db_collections[name_coll] = col2;
+          if (name_coll == _CollName_CollSet) {
+            this.db_coll_set = col2;
           }
           else {
-            this.db_coll_set = col2;
+            this.db_collections[name_coll] = col2;
           }
           this.onDbEV_RunNext(21);
         }
         else {
           this.db_database.createCollection(name_coll, (err3, col3) => {
               if (err3 == null) {
-                if (name_coll != _CollName_CollSet) {
-                  this.db_collections[name_coll] = col3;
+                if (name_coll == _CollName_CollSet) {
+                  this.db_coll_set = col3;
                 }
                 else {
-                  this.db_coll_set = col3;
+                  this.db_collections[name_coll] = col3;
+                  this.db_docs_towrite.unshift({ coll: _CollName_CollSet, doc: {
+                        coll: name_coll,
+                        channel: wreq_chan,
+                        reqargs: wreq_args,
+                      }, });
                 }
                 this.onDbEV_RunNext(31);
               }
@@ -168,7 +168,9 @@ class ClDataSet_DbBase
     if ((obj_doc == null) || !this.dbChk_IsCollReady(name_coll)) {
       return;
     }
-    this.db_collections[name_coll].insertOne(obj_doc, null, (err, result) => {
+    var db_coll = (name_coll == _CollName_CollSet) ? this.db_coll_set :
+                        this.db_collections[name_coll];
+    db_coll.insertOne(obj_doc, null, (err, result) => {
         if ((err == null) && (name_coll != _CollName_CollSet)) {
           this.onDbEV_AddDoc(name_coll, obj_doc, result)
         }
@@ -181,8 +183,24 @@ class ClDataSet_DbBase
   }
 }
 
+class ClDataSet_DbReader extends ClDataSet_DbBase
+{
+  constructor()
+  {
+    super();
+  }
+
+}
+
 class ClDataSet_DbWriter extends ClDataSet_DbBase
 {
+  constructor()
+  {
+    super();
+  }
+
+}
+
 /*
 //class TradeBook_DbWrite(TradeBook_DbBase):
 	def __init__(self, prec, size):
@@ -234,7 +252,6 @@ class ClDataSet_DbWriter extends ClDataSet_DbBase
 		self.db_coll_set.delete_many({ DBNAME_BOOK_RECTYPE: 'book.bids', })
 		self.db_coll_set.delete_many({ DBNAME_BOOK_RECTYPE: 'book.asks', })
   */
-}
 
 /*
 class AdpBitfinexWSS(websocket.WebSocketApp):
