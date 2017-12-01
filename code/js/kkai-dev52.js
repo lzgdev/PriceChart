@@ -15,6 +15,7 @@ class ClDataSet_DbBase
     this.db_database    = null;
     this.db_coll_set    = null;
     this.db_collections = { };
+    this.db_docs_toload   = [ ];
     this.db_docs_towrite  = [ ];
   }
 
@@ -38,8 +39,9 @@ class ClDataSet_DbBase
     this.onDbOP_Close_impl();
   }
 
-  dbOP_LoadBooks()
+  dbOP_LoadColl(name_coll, find_args, dataset)
   {
+    this.onDbOP_LoadColl_impl(name_coll, find_args, dataset);
   }
 
   dbOP_AddColl(name_coll, wreq_chan, wreq_args)
@@ -64,13 +66,30 @@ class ClDataSet_DbBase
 
   onDbEV_AddDoc(name_coll, obj_doc, result)
   {
-//    console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
+    console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
   }
 
   onDbEV_RunNext(prep_arg1)
   {
+    var  i;
+    for (i=0; i <  this.db_docs_toload.length;  i++)
+    {
+      var name_coll, find_args, dataset;
+      name_coll = this.db_docs_toload[i].coll;
+      if (!this.dbChk_IsCollReady(name_coll)) {
+        continue;
+      }
+      find_args = this.db_docs_toload[i].find_args;
+      dataset   = this.db_docs_toload[i].dataset;
+      this.db_docs_toload.splice(i, 1);
+      if (dataset != null) {
+        this.db_collections[name_coll].find(find_args).sort('time', 1).forEach((obj_msg) => {
+            dataset.locAppendData(1001, obj_msg);
+          });
+      }
+    }
     // Insert a document in the capped collection
-    for (var i=0; i <  this.db_docs_towrite.length; i++)
+    for (i=0; i <  this.db_docs_towrite.length; i++)
     {
       var name_coll, obj_doc;
       name_coll = this.db_docs_towrite[i].coll;
@@ -123,6 +142,23 @@ class ClDataSet_DbBase
     return true;
   }
 
+  onDbOP_LoadColl_impl(name_coll, find_args, dataset)
+  {
+    if (name_coll == null) {
+      return false;
+    }
+    this.db_docs_toload.push({ coll: name_coll,
+        find_args: find_args,
+        dataset: dataset,
+      });
+    if (this.dbChk_IsCollReady(name_coll)) {
+      this.onDbEV_RunNext(51);
+    }
+    else {
+      this.onDbOP_AddColl_impl(name_coll, null, null);
+    }
+  }
+
   onDbOP_AddColl_impl(name_coll, wreq_chan, wreq_args)
   {
     if (name_coll == null) {
@@ -133,7 +169,8 @@ class ClDataSet_DbBase
       this.onDbEV_RunNext(11);
     }
     this.db_database.collection(name_coll, { strict: true, }, (err2, col2) => {
-        if (err2 == null) {
+        if (err2 == null)
+        {
           if (name_coll == _CollName_CollSet) {
             this.db_coll_set = col2;
           }
@@ -142,7 +179,9 @@ class ClDataSet_DbBase
           }
           this.onDbEV_RunNext(21);
         }
-        else {
+        else
+        if ((wreq_chan != null) && (wreq_args != null))
+        {
           this.db_database.createCollection(name_coll, (err3, col3) => {
               if (err3 == null) {
                 if (name_coll == _CollName_CollSet) {
@@ -346,6 +385,7 @@ class AdpBitfinexWSS(websocket.WebSocketApp):
 // */
 
 module.exports = {
+  ClDataSet_DbReader: ClDataSet_DbReader,
   ClDataSet_DbWriter: ClDataSet_DbWriter,
   ClDataSet_DbBase: ClDataSet_DbBase,
 }

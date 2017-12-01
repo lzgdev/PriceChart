@@ -22,12 +22,16 @@ class ClDataSet_Base
     this.onLocCleanData_CB();
   }
 
-  locAppendData(obj_msg)
+  locAppendData(data_src, obj_msg)
   {
     if (this.flag_loc_time) {
       this.loc_time_this = Date.now();
     }
-    this.onLocAppendData_impl(obj_msg);
+if (data_src == 1001) {
+console.log("ClDataSet_Base(locAppendData):", JSON.stringify(obj_msg));
+return;
+}
+    this.onLocAppendData_impl(data_src, obj_msg);
     this.onLocAppendData_CB(null);
   }
 
@@ -47,7 +51,7 @@ class ClDataSet_Base
   {
   }
 
-  onLocAppendData_impl(obj_msg)
+  onLocAppendData_impl(data_src, obj_msg)
   {
   }
 
@@ -63,7 +67,7 @@ class ClDataSet_Array extends ClDataSet_Base
     super(name_chan, wreq_args);
   }
 
-  onLocAppendData_impl(obj_msg)
+  onLocAppendData_impl(data_src, obj_msg)
   {
     var data_msg = obj_msg[1];
     if (!Array.isArray(data_msg))
@@ -119,7 +123,7 @@ class ClDataSet_Ticker extends ClDataSet_Base
     super('ticker', wreq_args);
   }
 
-  onLocAppendData_impl(obj_msg)
+  onLocAppendData_impl(data_src, obj_msg)
   {
     var data_msg = obj_msg[1];
     if (Array.isArray(data_msg) && data_msg.length == 10)

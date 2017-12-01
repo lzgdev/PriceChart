@@ -4,7 +4,11 @@ const dev31 = require('../../code/js/kkai-dev31.js');
 const dev51 = require('../../code/js/kkai-dev51.js');
 const dev52 = require('../../code/js/kkai-dev52.js');
 
+var flag_netclient  = true;
+//flag_netclient  = false;
+
 var obj_netclient = null;
+var obj_dbreader  = null;
 var obj_dbwritter = null;
 
 
@@ -33,38 +37,66 @@ process.on('SIGINT', function() {
 
 console.log("main(1) ...");
 
-obj_dbwritter = new dev52.ClDataSet_DbWriter();
+if (!flag_netclient) {
+  obj_dbreader  = new dev52.ClDataSet_DbReader();
+  obj_dbreader.dbOP_Connect(db_url_p + '/' + db_name);
+}
+else {
+  obj_dbwritter = new dev52.ClDataSet_DbWriter();
+  obj_dbwritter.dbOP_Connect(db_url_p + '/' + db_name);
+}
 
-obj_dbwritter.dbOP_Connect(db_url_p + '/' + db_name);
+if (flag_netclient) {
+  obj_netclient = new dev31.ClNetClient_BfxWss();
+}
 
-//*
-obj_netclient = new dev31.ClNetClient_BfxWss();
+var test_dataset_book = null;
 
 for (var mi=0; mi < mapWREQs.length; mi++)
 {
-    var chan_obj;
-    var map_unit = mapWREQs[mi];
-    if (!map_unit.visible) {
-      continue;
+  var chan_obj;
+  var map_unit = mapWREQs[mi];
+  if (!map_unit.visible) {
+    continue;
+  }
+  chan_obj = null;
+  if (map_unit.channel == 'ticker') {
+    if (!flag_netclient) {
+      chan_obj = new dev51.ClDataSet_Ticker_DbIn(obj_dbreader, map_unit.wreq_args);
     }
-    chan_obj = null;
-    if (map_unit.channel == 'ticker') {
+    else {
       chan_obj = new dev51.ClDataSet_Ticker_DbOut(obj_dbwritter, map_unit.wreq_args);
     }
-    else
-    if (map_unit.channel == 'book') {
+  }
+  else
+  if (map_unit.channel == 'book') {
+    if (!flag_netclient) {
+      chan_obj = new dev51.ClDataSet_ABooks_DbIn(obj_dbwritter, map_unit.wreq_args);
+test_dataset_book = chan_obj;
+    }
+    else {
       chan_obj = new dev51.ClDataSet_ABooks_DbOut(obj_dbwritter, map_unit.wreq_args);
     }
-    else
-    if (map_unit.channel == 'candles') {
+  }
+  else
+  if (map_unit.channel == 'candles') {
+    if (!flag_netclient) {
+      chan_obj = new dev51.ClDataSet_ACandles_DbIn(1000, obj_dbwritter, map_unit.wreq_args);
+    }
+    else {
       chan_obj = new dev51.ClDataSet_ACandles_DbOut(1000, obj_dbwritter, map_unit.wreq_args);
     }
+  }
 
-    if ((chan_obj != null) && (obj_netclient != null)) {
-      obj_netclient.addObj_DataReceiver(chan_obj);
-    }
+  if ((chan_obj != null) && (obj_netclient != null)) {
+    obj_netclient.addObj_DataReceiver(chan_obj);
+  }
 }
 
-obj_netclient.ncOP_Exec();
-// */
+if (!flag_netclient) {
+  obj_dbreader.dbOP_LoadColl('book-P0-201712011100', test_dataset_book);
+}
+else {
+  obj_netclient.ncOP_Exec();
+}
 

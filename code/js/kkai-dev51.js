@@ -12,6 +12,16 @@ function _eval_name_coll(time_utc)
   return name_tmp;
 }
 
+class ClDataSet_Ticker_DbIn extends dev11.ClDataSet_Ticker
+{
+  constructor(db_reader, wreq_args)
+  {
+    super(wreq_args);
+    this.flag_loc_time  = true;
+    this.loc_db_reader  = db_reader;
+  }
+}
+
 class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
 {
   constructor(db_writter, wreq_args)
@@ -51,6 +61,16 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
         });
       this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
+  }
+}
+
+class ClDataSet_ABooks_DbIn extends dev11.ClDataSet_ABooks
+{
+  constructor(db_reader, wreq_args)
+  {
+    super(wreq_args);
+    this.flag_loc_time  = true;
+    this.loc_db_reader  = db_reader;
   }
 }
 
@@ -104,6 +124,15 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
         });
       this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
+  }
+}
+
+class ClDataSet_ACandles_DbIn extends dev11.ClDataSet_ACandles
+{
+  constructor(recs_size, db_reader, wreq_args)
+  {
+    super(recs_size, wreq_args);
+    this.loc_db_reader  = db_reader;
   }
 }
 
@@ -168,6 +197,9 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
 }
 
 module.exports = {
+  ClDataSet_Ticker_DbIn:    ClDataSet_Ticker_DbIn,
+  ClDataSet_ABooks_DbIn:    ClDataSet_ABooks_DbIn,
+  ClDataSet_ACandles_DbIn:  ClDataSet_ACandles_DbIn,
   ClDataSet_Ticker_DbOut:   ClDataSet_Ticker_DbOut,
   ClDataSet_ACandles_DbOut: ClDataSet_ACandles_DbOut,
   ClDataSet_ABooks_DbOut:   ClDataSet_ABooks_DbOut,
