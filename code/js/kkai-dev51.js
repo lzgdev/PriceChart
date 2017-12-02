@@ -20,6 +20,10 @@ class ClDataSet_Ticker_DbIn extends dev11.ClDataSet_Ticker
     this.flag_loc_time  = true;
     this.loc_db_reader  = db_reader;
   }
+
+  onLocRecChg_CB(ticker_rec, rec_index)
+  {
+  }
 }
 
 class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
@@ -71,6 +75,11 @@ class ClDataSet_ABooks_DbIn extends dev11.ClDataSet_ABooks
     super(wreq_args);
     this.flag_loc_time  = true;
     this.loc_db_reader  = db_reader;
+  }
+
+  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  {
+//    console.log("ClDataSet_ABooks_DbIn(onLocRecChg_CB): rec:", JSON.stringify(book_rec));
   }
 }
 
@@ -133,6 +142,10 @@ class ClDataSet_ACandles_DbIn extends dev11.ClDataSet_ACandles
   {
     super(recs_size, wreq_args);
     this.loc_db_reader  = db_reader;
+  }
+
+  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
+  {
   }
 }
 

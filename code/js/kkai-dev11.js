@@ -27,17 +27,19 @@ class ClDataSet_Base
     if (this.flag_loc_time) {
       this.loc_time_this = Date.now();
     }
+/*
 if (data_src == 1001) {
 console.log("ClDataSet_Base(locAppendData):", JSON.stringify(obj_msg));
 return;
 }
+// */
     this.onLocAppendData_impl(data_src, obj_msg);
     this.onLocAppendData_CB(null);
   }
 
-  locRecChg(flag_sece, obj_rec)
+  locRecChg(flag_sece, data_src, obj_rec)
   {
-    this.onLocRecChg_impl(flag_sece, obj_rec)
+    this.onLocRecChg_impl(flag_sece, data_src, obj_rec)
   }
 
   onLocCleanData_CB()
@@ -55,7 +57,7 @@ return;
   {
   }
 
-  onLocRecChg_impl(flag_sece, obj_rec)
+  onLocRecChg_impl(flag_sece, data_src, obj_rec)
   {
   }
 }
@@ -69,15 +71,12 @@ class ClDataSet_Array extends ClDataSet_Base
 
   onLocAppendData_impl(data_src, obj_msg)
   {
-    var data_msg = obj_msg[1];
-    if (!Array.isArray(data_msg))
-    {
-    }
-    else
-    {
-      if (!Array.isArray(data_msg[0]))
+    var data_msg;
+    if (data_src == 1001) {
+      data_msg  = obj_msg['data'];
+      if (!Array.isArray(data_msg))
       {
-        this.locRecChg(true, data_msg);
+        this.locRecChg(true, data_src, data_msg);
       }
       else
       {
@@ -85,10 +84,35 @@ class ClDataSet_Array extends ClDataSet_Base
         this.locCleanData(data_msg);
         i_end = data_msg.length-1;
         for (i=0; i <  i_end; i++) {
-          this.locRecChg(false, data_msg[i]);
+          this.locRecChg(false, data_src, data_msg[i]);
         }
         if (i_end >= 0) {
-          this.locRecChg( true, data_msg[i]);
+          this.locRecChg( true, data_src, data_msg[i]);
+        }
+      }
+    }
+    else {
+      data_msg  = obj_msg[1];
+      if (!Array.isArray(data_msg))
+      {
+      }
+      else
+      {
+        if (!Array.isArray(data_msg[0]))
+        {
+          this.locRecChg(true, data_src, data_msg);
+        }
+        else
+        {
+          var  i, i_end;
+          this.locCleanData(data_msg);
+          i_end = data_msg.length-1;
+          for (i=0; i <  i_end; i++) {
+            this.locRecChg(false, data_src, data_msg[i]);
+          }
+          if (i_end >= 0) {
+            this.locRecChg( true, data_src, data_msg[i]);
+          }
         }
       }
     }
@@ -165,20 +189,30 @@ class ClDataSet_ABooks extends ClDataSet_Array
     this.loc_book_asks.length = 0;
   }
 
-  onLocRecChg_impl(flag_sece, obj_rec)
+  onLocRecChg_impl(flag_sece, data_src, obj_rec)
   {
-    var  flag_bids  = (obj_rec[2] >  0.0) ? true : false;
-    var  amount_rec = Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
-    var  book_rec = {
+    var  flag_bids;
+    var  book_rec;
+    var  idx_book, idx_bgn, idx_end;
+    var  flag_del;
+    var  book_recs;
+    if (data_src == 1001) {
+      flag_bids  = (obj_rec['type'] == 'bid') ? true : false;
+      book_rec   = obj_rec;
+    }
+    else {
+      var  amount_rec;
+      flag_bids  = (obj_rec[2] >  0.0) ? true : false;
+      amount_rec = Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
+      book_rec   = {
         price:  Number(obj_rec[0]),
         type:   flag_bids ? 'bid' : 'ask',
         count:  obj_rec[1],
         amount: amount_rec,
         sumamt: 0.0,
       };
-    var  idx_book, idx_bgn, idx_end;
-    var  flag_del;
-    var  book_recs = flag_bids ? this.loc_book_bids : this.loc_book_asks;
+    }
+    book_recs = flag_bids ? this.loc_book_bids : this.loc_book_asks;
     // locate the book record from self.loc_book_bids or self.loc_book_asks
     idx_bgn = 0; idx_end = book_recs.length - 1;
     while (idx_bgn < idx_end)
@@ -320,10 +354,15 @@ class ClDataSet_ACandles extends ClDataSet_Array
     this.loc_candle_recs.length = 0;
   }
 
-  onLocRecChg_impl(flag_sece, obj_rec)
+  onLocRecChg_impl(flag_sece, data_src, obj_rec)
   {
     var  flag_chg, rec_index;
-    var  candle_rec = {
+    var  candle_rec;
+    if (data_src == 1001) {
+      candle_rec = obj_rec;
+    }
+    else {
+      candle_rec = {
         mts:    Number(obj_rec[0]),
         open:   Number(obj_rec[1]),
         close:  Number(obj_rec[2]),
@@ -331,6 +370,7 @@ class ClDataSet_ACandles extends ClDataSet_Array
         low:    Number(obj_rec[4]),
         volume: Number(obj_rec[5]),
       };
+    }
     flag_chg  = false;
     for (rec_index=this.loc_candle_recs.length-1; rec_index >= 0; rec_index--) {
       if (candle_rec.mts >= this.loc_candle_recs[rec_index].mts) {
