@@ -5,7 +5,7 @@ const dev51 = require('../../code/js/kkai-dev51.js');
 const dev52 = require('../../code/js/kkai-dev52.js');
 
 var flag_netclient  = true;
-//flag_netclient  = false;
+flag_netclient  = false;
 
 var obj_netclient = null;
 var obj_dbreader  = null;
@@ -71,7 +71,7 @@ for (var mi=0; mi < mapWREQs.length; mi++)
   else
   if (map_unit.channel == 'book') {
     if (!flag_netclient) {
-      chan_obj = new dev51.ClDataSet_ABooks_DbIn(obj_dbwritter, map_unit.wreq_args);
+      chan_obj = new dev51.ClDataSet_ABooks_DbIn(obj_dbreader, map_unit.wreq_args);
 test_dataset_book = chan_obj;
     }
     else {
@@ -81,7 +81,7 @@ test_dataset_book = chan_obj;
   else
   if (map_unit.channel == 'candles') {
     if (!flag_netclient) {
-      chan_obj = new dev51.ClDataSet_ACandles_DbIn(1000, obj_dbwritter, map_unit.wreq_args);
+      chan_obj = new dev51.ClDataSet_ACandles_DbIn(1000, obj_dbreader, map_unit.wreq_args);
     }
     else {
       chan_obj = new dev51.ClDataSet_ACandles_DbOut(1000, obj_dbwritter, map_unit.wreq_args);
@@ -94,7 +94,8 @@ test_dataset_book = chan_obj;
 }
 
 if (!flag_netclient) {
-  obj_dbreader.dbOP_LoadColl('book-P0-201712011100', test_dataset_book);
+  var coll_name = "book-P0-201712021330";
+  obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_book, {}, {'time': 1});
 }
 else {
   obj_netclient.ncOP_Exec();

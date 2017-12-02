@@ -55,11 +55,11 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
       this.loc_date_next  = utc_new + this.loc_date_dur;
       // add collection and docs
 //    console.log("ClDataSet_Ticker_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(ticker_rec));
+      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
       this.loc_db_writter.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
           data: ticker_rec,
         });
-      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
   }
 }
@@ -118,11 +118,11 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
       this.loc_date_next  = utc_new + this.loc_date_dur;
 //    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
+      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
       this.loc_db_writter.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
           data: obj_docs,
         });
-      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
   }
 }
@@ -186,12 +186,12 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
       this.loc_date_next  = utc_new + this.loc_date_dur;
 //      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
+      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
       this.loc_db_writter.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
           data: obj_docs,
         });
       this.loc_mts_sync   = utc_now;
-      this.loc_db_writter.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
     }
   }
 }
