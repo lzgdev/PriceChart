@@ -16,6 +16,7 @@ class ClDataSet_DbBase
     this.db_database    = null;
     this.db_coll_set    = null;
     this.db_collections = { };
+    this.db_todo_count  = 0;
     this.db_todo_coll_add    = [ ];
     this.db_todo_coll_load   = [ ];
     this.db_todo_docs_write  = [ ];
@@ -81,9 +82,15 @@ class ClDataSet_DbBase
 
   _dbOP_RunNext(run_arg0)
   {
+    if (this.db_todo_count >= 2) {
+      return false;
+    }
+    this.db_todo_count ++;
     setImmediate(() => {
         this.onDbEV_RunNext(run_arg0);
+        this.db_todo_count --;
       });
+    return true;
   }
 
   onDbEV_AddColl(name_coll, result)
@@ -102,7 +109,7 @@ class ClDataSet_DbBase
     if (this.db_database == null) {
       return false;
     }
-    console.log("ClDataSet_DbBase(onDbEV_RunNext): arg0=", run_arg0);
+//    console.log("ClDataSet_DbBase(onDbEV_RunNext), arg0:", run_arg0, "count:", this.db_todo_count);
     // try to add collections
     while (this.db_todo_coll_add.length > 0)
     {
@@ -144,6 +151,7 @@ class ClDataSet_DbBase
       this.onDbOP_AddDoc_impl(name_coll, obj_doc);
       break;
     }
+    return true;
   }
 
   onDbEV_Closed()
@@ -153,7 +161,7 @@ class ClDataSet_DbBase
 
   onDbOP_Connect_impl(db_url)
   {
-    MongoClient.connect(db_url, (err, db) => {
+    MongoClient.connect(db_url, { }, (err, db) => {
         if (err == null) {
           console.log("ClDataSet_DbBase(onDbOP_Connect_impl): db connected to", db_url);
           this.db_database = db;
