@@ -1,5 +1,6 @@
 
-from adapters import AdpBitfinexWSS
+#from adapters import AdpBitfinexWSS
+from code.py import AdpBitfinexWSS
 
 from pymongo import MongoClient
 

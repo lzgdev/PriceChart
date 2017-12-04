@@ -20,3 +20,5 @@ pip install requests
 #
 pip install pymongo
 
+pip install websocket-client
+
