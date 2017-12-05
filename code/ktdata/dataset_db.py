@@ -9,8 +9,9 @@ def _eval_name_coll(mtime_utc):
 	return name_tmp
 
 class CTDataSet_Ticker_DbIn(CTDataSet_Ticker):
-	def __init__(self, db_reader, wreq_args):
+	def __init__(self, logger, db_reader, wreq_args):
 		super(CTDataSet_Ticker_DbIn, self).__init__(wreq_args)
+		self.logger   = logger
 		self.flag_loc_time  = True
 		self.loc_db_reader  = db_reader
 
@@ -18,8 +19,9 @@ class CTDataSet_Ticker_DbIn(CTDataSet_Ticker):
 		pass
 
 class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
-	def __init__(self, db_writer, wreq_args):
+	def __init__(self, logger, db_writer, wreq_args):
 		super(CTDataSet_Ticker_DbOut, self).__init__(wreq_args)
+		self.logger   = logger
 		self.flag_loc_time  = True
 		self.loc_db_writer = db_writer
 		self.loc_date_dur   = 30 * 60 * 1000
@@ -50,19 +52,21 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
 				})
 
 class CTDataSet_ABooks_DbIn(CTDataSet_ABooks):
-	def __init__(self, db_reader, wreq_args):
+	def __init__(self, logger, db_reader, wreq_args):
 		super(CTDataSet_ABooks_DbIn, self).__init__(wreq_args)
+		self.logger   = logger
 		self.flag_loc_time  = True
 		self.loc_db_reader  = db_reader
 
 	def onLocRecChg_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
-		#console.log("CTDataSet_ABooks_DbIn(onLocRecChg_CB): rec:", JSON.stringify(book_rec))
+		#self.logger.info("CTDataSet_ABooks_DbIn(onLocRecChg_CB): rec=" + str(book_rec))
 		pass
 
 class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
-	def __init__(self, db_writer, wreq_args):
+	def __init__(self, logger, db_writer, wreq_args):
 		super(CTDataSet_ABooks_DbOut, self).__init__(wreq_args)
 		self.flag_loc_time  = True
+		self.logger   = logger
 		self.loc_db_writer = db_writer
 
 		self.loc_date_dur   = 30 * 60 * 1000
@@ -99,16 +103,18 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 				})
 
 class CTDataSet_ACandles_DbIn(CTDataSet_ACandles):
-	def __init__(self, recs_size, db_reader, wreq_args):
+	def __init__(self, logger, db_reader, recs_size, wreq_args):
 		super(CTDataSet_ACandles_DbIn, self).__init__(recs_size, wreq_args)
+		self.logger   = logger
 		self.loc_db_reader  = db_reader
 
 	def onLocRecChg_CB(self, flag_sece, candle_rec, rec_index):
 		pass
 
 class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
-	def __init__(self, recs_size, db_writer, wreq_args):
+	def __init__(self, logger, db_writer, recs_size, wreq_args):
 		super(CTDataSet_ACandles_DbOut, self).__init__(recs_size, wreq_args)
+		self.logger   = logger
 		self.loc_db_writer = db_writer
 
 		self.loc_date_dur   = 30 * 60 * 1000
@@ -151,5 +157,4 @@ class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
 					'data': obj_docs,
 				})
 			self.loc_mts_sync   = utc_now
-
 

@@ -57,20 +57,20 @@ for map_idx, map_unit in enumerate(mapWREQs):
 
 	if map_unit['channel'] == 'ticker':
 		if not flag_netclient:
-			chan_obj = CTDataSet_Ticker_DbIn(obj_dbreader, map_unit['wreq_args'])
+			chan_obj = CTDataSet_Ticker_DbIn(logger, obj_dbreader, map_unit['wreq_args'])
 		else:
-			chan_obj = CTDataSet_Ticker_DbOut(obj_dbwriter, map_unit['wreq_args'])
+			chan_obj = CTDataSet_Ticker_DbOut(logger, obj_dbwriter, map_unit['wreq_args'])
 	elif map_unit['channel'] == 'book':
 		if not flag_netclient:
-			chan_obj = CTDataSet_ABooks_DbIn(obj_dbreader, map_unit['wreq_args'])
+			chan_obj = CTDataSet_ABooks_DbIn(logger, obj_dbreader, map_unit['wreq_args'])
 			test_dataset_book = chan_obj
 		else:
-			chan_obj = CTDataSet_ABooks_DbOut(obj_dbwriter, map_unit['wreq_args'])
+			chan_obj = CTDataSet_ABooks_DbOut(logger, obj_dbwriter, map_unit['wreq_args'])
 	elif map_unit['channel'] == 'candles':
 		if not flag_netclient:
-			chan_obj = CTDataSet_ACandles_DbIn(1000, obj_dbreader, map_unit['wreq_args'])
+			chan_obj = CTDataSet_ACandles_DbIn(logger, obj_dbreader, 1000, map_unit['wreq_args'])
 		else:
-			chan_obj = CTDataSet_ACandles_DbOut(1000, obj_dbwriter, map_unit['wreq_args'])
+			chan_obj = CTDataSet_ACandles_DbOut(logger, obj_dbwriter, 1000, map_unit['wreq_args'])
 
 	if chan_obj != None and obj_netclient != None:
 		obj_netclient.addObj_DataReceiver(chan_obj)
@@ -79,5 +79,6 @@ if flag_netclient:
 	obj_netclient.run_forever()
 else:
 	coll_name = "book-P0-201712021330"
-	#obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_book, {}, {'time': 1})
+	coll_name = "book-P1-201712051400"
+	obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_book, {}, [('time', 1)])
 

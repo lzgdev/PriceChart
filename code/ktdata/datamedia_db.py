@@ -58,17 +58,22 @@ class KTDataMedia_DbBase(object):
 		if dataset == None:
 			return False
 		if not self.dbChk_IsCollReady(name_coll):
+			self.dbOP_AddColl(name_coll, None, None)
+		if not self.dbChk_IsCollReady(name_coll):
 			return False
 		return self.onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args)
 
 	def onDbEV_AddColl(self, name_coll):
 		#self.logger.info("KTDataMedia_DbBase(onDbEV_AddColl): name_coll=" + name_coll)
+		pass
 
 	def onDbEV_AddDoc(self, name_coll, obj_doc, result):
 		#self.logger.info("KTDataMedia_DbBase(onDbEV_AddDoc): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
+		pass
 
 	def onDbEV_Closed(self):
 		#self.logger.info("KTDataMedia_DbBase(onDbEV_Closed): db closed.")
+		pass
 
 	def onDbOP_Connect_impl(self, db_uri, db_name):
 		self.db_client = pymongo.MongoClient(db_uri)
@@ -105,7 +110,8 @@ class KTDataMedia_DbBase(object):
 		return True
 
 	def onDbOP_LoadColl_impl(self, name_coll, dataset, find_args, sort_args):
-		ret_cur = self.db_collection.find(find_args, None, 0, 0, False, CursorType.NON_TAILABLE, sort_args)
+		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
+		ret_cur = db_coll.find(find_args, None, 0, 0, False, pymongo.CursorType.NON_TAILABLE, sort_args)
 		for obj_msg in ret_cur:
 			dataset.locAppendData(1001, obj_msg)
 
