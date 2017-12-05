@@ -1,8 +1,6 @@
 
 import time
 
-from decimal import Decimal
-
 class CTDataSet_Base(object):
 	def __init__(self, name_chan, wreq_args):
 		self.name_chan = name_chan
@@ -78,16 +76,16 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		data_msg = obj_msg[1]
 		if isinstance(data_msg, list) and len(data_msg) == 10:
 			ticker_rec = {
-					'bid':        Decimal(data_msg[0]),
-					'bid_size':   Decimal(data_msg[1]),
-					'ask':        Decimal(data_msg[2]),
-					'ask_size':   Decimal(data_msg[3]),
-					'daily_change':   Decimal(data_msg[4]),
-					'daily_change_perc':  Decimal(data_msg[5]),
-					'last_price': Decimal(data_msg[6]),
-					'volume':     Decimal(data_msg[7]),
-					'high':       Decimal(data_msg[8]),
-					'low':        Decimal(data_msg[9]),
+					'bid':        data_msg[0],
+					'bid_size':   data_msg[1],
+					'ask':        data_msg[2],
+					'ask_size':   data_msg[3],
+					'daily_change':   data_msg[4],
+					'daily_change_perc':  data_msg[5],
+					'last_price': data_msg[6],
+					'volume':     data_msg[7],
+					'high':       data_msg[8],
+					'low':        data_msg[9],
 				}
 			self.onLocRecChg_CB(ticker_rec, 0)
 
@@ -113,7 +111,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			flag_bids  = True if obj_rec[2] >  0.0 else False
 			amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
 			book_rec   = {
-					'price':  Decimal(obj_rec[0]),
+					'price':  obj_rec[0],
 					'type':   'bid' if flag_bids else 'ask',
 					'count':  int(obj_rec[1]),
 					'amount': amount_rec,
@@ -225,11 +223,11 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		else:
 			candle_rec = {
 					'mts':    int(obj_rec[0]),
-					'open':   Decimal(obj_rec[1]),
-					'close':  Decimal(obj_rec[2]),
-					'high':   Decimal(obj_rec[3]),
-					'low':    Decimal(obj_rec[4]),
-					'volume': Decimal(obj_rec[5]),
+					'open':   obj_rec[1],
+					'close':  obj_rec[2],
+					'high':   obj_rec[3],
+					'low':    obj_rec[4],
+					'volume': obj_rec[5],
 				}
 		flag_chg  = False
 		rec_index = len(self.loc_candle_recs) - 1;
