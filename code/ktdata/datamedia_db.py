@@ -1,0 +1,129 @@
+import websocket
+import _thread
+import time
+
+import hmac
+import hashlib
+import json
+
+import pymongo
+
+COLLNAME_CollSet = 'set-colls'
+
+class KTDataMedia_DbBase(object):
+	def __init__(self, logger):
+		self.logger = logger
+		self.db_dburi  = None
+		self.db_dbname = None
+		self.db_client = None
+		self.db_database    = None
+		self.db_coll_set    = None
+		self.db_collections = { }
+
+	def dbChk_IsDbReady(self):
+		return True if (self.db_database != None) else False
+
+	def dbChk_IsCollReady(self, name_coll):
+		if (name_coll == COLLNAME_CollSet) and (self.db_coll_set != None):
+			return True
+		if (name_coll != None) and (name_coll in self.db_collections):
+			return True
+		return False
+
+	def dbOP_Connect(self, db_uri, db_name):
+		if self.db_database != None:
+			return True
+		self.db_dburi  = db_uri
+		self.db_dbname = db_name
+		self.onDbOP_Connect_impl(self.db_dburi, self.db_dbname)
+
+	def dbOP_Close(self):
+		self.onDbOP_Close_impl()
+
+	def dbOP_AddColl(self, name_coll, wreq_chan, wreq_args):
+		if name_coll == None:
+			return False
+		if self.dbChk_IsCollReady(name_coll):
+			return True
+		return self.onDbOP_AddColl_impl(name_coll, wreq_chan, wreq_args)
+
+	def dbOP_AddDoc(self, name_coll, obj_doc):
+		if obj_doc == None:
+			return False
+		if not self.dbChk_IsCollReady(name_coll):
+			return False 
+		return self.onDbOP_AddDoc_impl(name_coll, obj_doc)
+
+	def dbOP_LoadColl(self, name_coll, dataset, find_args, sort_args):
+		if dataset == None:
+			return False
+		if not self.dbChk_IsCollReady(name_coll):
+			return False
+		return self.onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args)
+
+	def onDbEV_AddColl(self, name_coll):
+		self.logger.info("KTDataMedia_DbBase(onDbEV_AddColl): name_coll=" + name_coll)
+
+	def onDbEV_AddDoc(self, name_coll, obj_doc, result):
+		self.logger.info("KTDataMedia_DbBase(onDbEV_AddDoc): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
+
+	def onDbEV_Closed(self):
+		self.logger.info("KTDataMedia_DbBase(onDbEV_Closed): db closed.")
+
+	def onDbOP_Connect_impl(self, db_uri, db_name):
+		self.db_client = pymongo.MongoClient(db_uri)
+		self.db_database = pymongo.database.Database(self.db_client, db_name)
+		self.dbOP_AddColl(COLLNAME_CollSet, None, None)
+
+	def onDbOP_Close_impl(self):
+		self.logger.info("KTDataMedia_DbBase(onDbOP_Close_impl): ...")
+		if self.db_database == None:
+			return False
+		self.db_client.close()
+		return True
+
+	def onDbOP_AddColl_impl(self, name_coll, wreq_chan, wreq_args):
+		db_coll = None
+		if name_coll in self.db_database.collection_names(False):
+			db_coll = pymongo.collection.Collection(self.db_database, name_coll, False)
+			if   (db_coll != None) and (name_coll == COLLNAME_CollSet):
+				self.db_coll_set = db_coll
+			elif (db_coll != None) and (name_coll != COLLNAME_CollSet):
+				self.db_collections[name_coll] = db_coll
+		if db_coll == None:
+			db_coll = pymongo.collection.Collection(self.db_database, name_coll, True)
+			if   (db_coll != None) and (name_coll == COLLNAME_CollSet):
+				self.db_coll_set = db_coll
+			elif (db_coll != None) and (name_coll != COLLNAME_CollSet):
+				self.db_collections[name_coll] = db_coll
+				self.dbOP_AddDoc(COLLNAME_CollSet, {
+							'coll': name_coll,
+							'channel': wreq_chan,
+							'reqargs': wreq_args,
+						})
+				self.onDbEV_AddColl(name_coll)
+		return True
+
+	def onDbOP_LoadColl_impl(self, name_coll, dataset, find_args, sort_args):
+		ret_cur = self.db_collection.find(find_args, None, 0, 0, False, CursorType.NON_TAILABLE, sort_args)
+		for obj_msg in ret_cur:
+			dataset.locAppendData(1001, obj_msg)
+
+	def onDbOP_AddDoc_impl(self, name_coll, obj_doc):
+		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
+		#self.logger.info("KTDataMedia_DbBase(onDbOP_AddDoc_impl): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
+		return False
+		ret_ins = db_coll.insertOne(obj_doc, False)
+		if (name_coll != COLLNAME_CollSet):
+			self.onDbEV_AddDoc(name_coll, obj_doc, ret_ins)
+
+
+class KTDataMedia_DbReader(KTDataMedia_DbBase):
+	def __init__(self, logger):
+		super(KTDataMedia_DbReader, self).__init__(logger)
+
+class KTDataMedia_DbWriter(KTDataMedia_DbBase):
+	def __init__(self, logger):
+		super(KTDataMedia_DbWriter, self).__init__(logger)
+
+

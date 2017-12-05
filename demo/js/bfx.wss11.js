@@ -9,7 +9,7 @@ flag_netclient  = false;
 
 var obj_netclient = null;
 var obj_dbreader  = null;
-var obj_dbwritter = null;
+var obj_dbwriter = null;
 
 
 var mapWREQs = [
@@ -25,8 +25,8 @@ var db_name   = "bfx-pub";
 process.on('SIGINT', function() {
   console.log("WARN: caught interrupt signal ...");
 /*
-  if (obj_dbwritter != null) {
-    obj_dbwritter.dbOP_Close();
+  if (obj_dbwriter != null) {
+    obj_dbwriter.dbOP_Close();
   }
   else {
     process.exit();
@@ -42,8 +42,8 @@ if (!flag_netclient) {
   obj_dbreader.dbOP_Connect(db_url_p + '/' + db_name);
 }
 else {
-  obj_dbwritter = new dev52.ClDataSet_DbWriter();
-  obj_dbwritter.dbOP_Connect(db_url_p + '/' + db_name);
+  obj_dbwriter = new dev52.ClDataSet_DbWriter();
+  obj_dbwriter.dbOP_Connect(db_url_p + '/' + db_name);
 }
 
 if (flag_netclient) {
@@ -65,7 +65,7 @@ for (var mi=0; mi < mapWREQs.length; mi++)
       chan_obj = new dev51.ClDataSet_Ticker_DbIn(obj_dbreader, map_unit.wreq_args);
     }
     else {
-      chan_obj = new dev51.ClDataSet_Ticker_DbOut(obj_dbwritter, map_unit.wreq_args);
+      chan_obj = new dev51.ClDataSet_Ticker_DbOut(obj_dbwriter, map_unit.wreq_args);
     }
   }
   else
@@ -75,7 +75,7 @@ for (var mi=0; mi < mapWREQs.length; mi++)
 test_dataset_book = chan_obj;
     }
     else {
-      chan_obj = new dev51.ClDataSet_ABooks_DbOut(obj_dbwritter, map_unit.wreq_args);
+      chan_obj = new dev51.ClDataSet_ABooks_DbOut(obj_dbwriter, map_unit.wreq_args);
     }
   }
   else
@@ -84,7 +84,7 @@ test_dataset_book = chan_obj;
       chan_obj = new dev51.ClDataSet_ACandles_DbIn(1000, obj_dbreader, map_unit.wreq_args);
     }
     else {
-      chan_obj = new dev51.ClDataSet_ACandles_DbOut(1000, obj_dbwritter, map_unit.wreq_args);
+      chan_obj = new dev51.ClDataSet_ACandles_DbOut(1000, obj_dbwriter, map_unit.wreq_args);
     }
   }
 
