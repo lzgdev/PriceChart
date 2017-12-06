@@ -7,6 +7,7 @@ import hashlib
 import json
 
 import pymongo
+import copy
 
 COLLNAME_CollSet = 'set-colls'
 
@@ -54,14 +55,14 @@ class KTDataMedia_DbBase(object):
 			return False 
 		return self.onDbOP_AddDoc_impl(name_coll, obj_doc)
 
-	def dbOP_LoadColl(self, name_coll, dataset, find_args, sort_args):
+	def dbOP_LoadColl(self, name_coll, dataset, find_args, sort_args, flag_clean):
 		if dataset == None:
 			return False
 		if not self.dbChk_IsCollReady(name_coll):
 			self.dbOP_AddColl(name_coll, None, None)
 		if not self.dbChk_IsCollReady(name_coll):
 			return False
-		return self.onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args)
+		return self.onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args, flag_clean)
 
 	def onDbEV_AddColl(self, name_coll):
 		#self.logger.info("KTDataMedia_DbBase(onDbEV_AddColl): name_coll=" + name_coll)
@@ -109,18 +110,23 @@ class KTDataMedia_DbBase(object):
 				self.onDbEV_AddColl(name_coll)
 		return True
 
-	def onDbOP_LoadColl_impl(self, name_coll, dataset, find_args, sort_args):
+	def onDbOP_LoadColl_impl(self, name_coll, dataset, find_args, sort_args, flag_clean):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
 		ret_cur = db_coll.find(find_args, None, 0, 0, False, pymongo.CursorType.NON_TAILABLE, sort_args)
+		if flag_clean:
+			dataset.locAppendData(1001, None)
 		for obj_msg in ret_cur:
-			dataset.locAppendData(1001, obj_msg)
+			db_doc  = copy.copy(obj_msg)
+			del db_doc['_id']
+			dataset.locAppendData(1001, db_doc)
 
 	def onDbOP_AddDoc_impl(self, name_coll, obj_doc):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
 		#self.logger.info("KTDataMedia_DbBase(onDbOP_AddDoc_impl): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
-		ret_ins = db_coll.insert_one(obj_doc)
+		db_doc  = copy.copy(obj_doc)
+		ret_ins = db_coll.insert_one(db_doc)
 		if (name_coll != COLLNAME_CollSet):
-			self.onDbEV_AddDoc(name_coll, obj_doc, ret_ins)
+			self.onDbEV_AddDoc(name_coll, db_doc, ret_ins)
 
 
 class KTDataMedia_DbReader(KTDataMedia_DbBase):

@@ -40,16 +40,16 @@ class CTNetClient_Base(websocket.WebSocketApp):
 		pass
 
 	def onNcEV_Open_impl(self):
-		pass
+		self.logger.info("WebSocket Opened!")
 
 	def onNcEV_Message_impl(self, message):
 		pass
 
 	def onNcEV_Error_impl(self, error):
-		self.logger.error('WebSocket Error: ' + str(error))
+		self.logger.error("WebSocket Error: " + str(error))
 
 	def onNcEV_Close_impl(self):
-		pass
+		self.logger.warning("WebSocket Closed!")
 
 class CTNetClient_BfxWss(CTNetClient_Base):
 	def __init__(self, logger, url_ws):
@@ -59,18 +59,6 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 	def onNcOP_AddReceiver(self, obj_receiver):
 		if (obj_receiver != None):
 			self.objs_chan_data.append(obj_receiver)
-
-	def onNcEV_Open_impl(self):
-		self.logger.info('WebSocket connected!')
-		run_times = 15
-		def run(*args):
-			for i in range(run_times):
-				time.sleep(1)
-				self.logger.info('wait ...')
-			time.sleep(1)
-			self.close()
-			self.logger.info('thread terminating...')
-		_thread.start_new_thread(run, ())
 
 	def onNcEV_Message_impl(self, message):
 		obj_msg  = None
@@ -122,5 +110,4 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 				handler_msg.locSet_ChanId(cid_msg)
 		else:
 			self.logger.error("CTNetClient_BfxWss(onNcEV_Message_data): can't handle obj=" + str(obj_msg))
-
 

@@ -46,15 +46,11 @@ class CTDataSet_Array(CTDataSet_Base):
 
 	def onLocAppendData_impl(self, data_src, obj_msg):
 		if (data_src == 1001):
-			data_msg  = obj_msg['data']
-			if not isinstance(data_msg, list):
-				self.locRecChg(True, data_src, data_msg)
-			else:
+			data_msg  = obj_msg
+			if data_msg == None:
 				self.locCleanData()
-				idx_end = len(data_msg) - 1
-				for rec_idx, rec_data in enumerate(data_msg):
-					self.locRecChg(False if rec_idx < idx_end else True,
-								data_src, rec_data)
+			else:
+				self.locRecChg(True, data_src, data_msg)
 		else:
 			data_msg  = obj_msg[1]
 			if not isinstance(data_msg, list):
@@ -73,21 +69,25 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		super(CTDataSet_Ticker, self).__init__('ticker', wreq_args)
 
 	def onLocAppendData_impl(self, data_src, obj_msg):
-		data_msg = obj_msg[1]
-		if isinstance(data_msg, list) and len(data_msg) == 10:
-			ticker_rec = {
-					'bid':        data_msg[0],
-					'bid_size':   data_msg[1],
-					'ask':        data_msg[2],
-					'ask_size':   data_msg[3],
-					'daily_change':   data_msg[4],
-					'daily_change_perc':  data_msg[5],
-					'last_price': data_msg[6],
-					'volume':     data_msg[7],
-					'high':       data_msg[8],
-					'low':        data_msg[9],
-				}
+		if (data_src == 1001):
+			ticker_rec = obj_msg
 			self.onLocRecChg_CB(ticker_rec, 0)
+		else:
+			data_msg = obj_msg[1]
+			if isinstance(data_msg, list) and len(data_msg) == 10:
+				ticker_rec = {
+						'bid':        data_msg[0],
+						'bid_size':   data_msg[1],
+						'ask':        data_msg[2],
+						'ask_size':   data_msg[3],
+						'daily_change':   data_msg[4],
+						'daily_change_perc':  data_msg[5],
+						'last_price': data_msg[6],
+						'volume':     data_msg[7],
+						'high':       data_msg[8],
+						'low':        data_msg[9],
+					}
+				self.onLocRecChg_CB(ticker_rec, 0)
 
 	def onLocRecChg_CB(self, ticker_rec, rec_index):
 		pass
