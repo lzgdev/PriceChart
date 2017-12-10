@@ -62,6 +62,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 
 	def onNcEV_Message_impl(self, message):
 		obj_msg  = None
+		#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_impl): msg=" + message)
 		if isinstance(message, str):
 			obj_msg  = json.loads(message)
 		if isinstance(obj_msg, dict) and (obj_msg['event'] == 'info'):
