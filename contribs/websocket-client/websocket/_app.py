@@ -197,9 +197,10 @@ class WebSocketApp(object):
                 thread.start()
 
             while self.sock.connected:
+                if not self._run_kkai_step():
+                    break
                 r, w, e = select.select(
                     (self.sock.sock, ), (), (), ping_timeout or 10) # Use a 10 second timeout to avoid to wait forever on close
-                self._run_kkai_step()
                 if not self.keep_running:
                     break
 
@@ -246,7 +247,7 @@ class WebSocketApp(object):
             self.sock = None
 
     def _run_kkai_step(self):
-        pass
+        return True
 
     def _get_close_args(self, data):
         """ this functions extracts the code, reason from the close body
