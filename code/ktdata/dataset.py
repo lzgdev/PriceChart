@@ -1,6 +1,9 @@
 
 import time
 
+def utTime_utcmts_now():
+	return int(round(time.time() * 1000))
+
 class CTDataSet_Base(object):
 	def __init__(self, name_chan, wreq_args):
 		self.name_chan = name_chan
@@ -8,6 +11,7 @@ class CTDataSet_Base(object):
 		self.wreq_args = wreq_args
 		self.flag_loc_time  = False
 		self.loc_time_this  = 0
+		self.flag_loc_term  = False
 
 	def locSet_ChanId(self, chan_id):
 		self.chan_id = chan_id
@@ -18,7 +22,7 @@ class CTDataSet_Base(object):
 
 	def locAppendData(self, data_src, obj_msg):
 		if (self.flag_loc_time):
-			self.loc_time_this = int(round(time.time() * 1000))
+			self.loc_time_this = utTime_utcmts_now()
 		self.onLocAppendData_impl(data_src, obj_msg)
 		self.onLocAppendData_CB(None)
 

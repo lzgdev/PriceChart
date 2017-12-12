@@ -6,10 +6,8 @@ import time
 
 import logging
 
-import json
-
-import threading
 import multiprocessing
+import ntplib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
@@ -52,9 +50,14 @@ class Process_Net2Db(multiprocessing.Process):
 		self.info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
 		# debug code
 		self.logger.info("Process(" + self.info_app + ") running ...")
+
+		#c = ntplib.NTPClient()
+		#r = c.request('europe.pool.ntp.org', version=3)
+		#print("NTP: offset=" + str(r.offset))
+
 		# create netclient and db writer object
 		time.sleep(5)
-		"""
+#		"""
 		url_bfx  = "wss://api.bitfinex.com/ws/2"
 		self.obj_netclient = CTNetClient_BfxWss(self.logger, url_bfx)
 		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
@@ -77,7 +80,7 @@ class Process_Net2Db(multiprocessing.Process):
 				self.obj_netclient.addObj_DataReceiver(obj_chan)
 
 		self.obj_netclient.run_forever()
-		"""
+#		"""
 		self.proc_stat['exit'] = True
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
@@ -103,21 +106,23 @@ def _sighand_chld(signum, frame):
 			task_pop = g_tasks.pop(idx_task)
 			print("Signal handler(chld) join process=" + str(task_pop) + ", stat=" + str(task_pop.proc_stat))
 			task_pop.join()
+			del task_pop
 
 signal.signal( 2, _sighand_intr)
 signal.signal(17, _sighand_chld)
 
-t1 = Process_Net2Db(logger, g_smgr.dict({ 'keep':  True, 'exit': False, 'pid': 0, }))
-g_tasks.append(t1)
+g_tasks.append(Process_Net2Db(logger, g_smgr.dict({ 'keep':  True, 'exit': False, 'pid': 0, })))
 
 flag_run_dbg01 = False
 
 if flag_run_dbg01:
-	t1.run()
+	for t in range(0, len(g_tasks)):
+		g_tasks[t].run()
 	print("main(dbg01): finish.")
 else:
 	print("main(bgn): pid:", pid_root)
-	t1.start()
+	for t in range(0, len(g_tasks)):
+		g_tasks[t].start()
 	while len(g_tasks) > 0:
 		print("main: wait ...")
 		time.sleep(2)

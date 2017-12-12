@@ -5,8 +5,22 @@ import math
 from .dataset import CTDataSet_Ticker, CTDataSet_ABooks, CTDataSet_ACandles
 
 def _eval_name_coll(mtime_utc):
-	name_tmp = time.strftime("%Y%m%d%H%M", time.gmtime(mtime_utc / 1000))
+	name_tmp = time.strftime("%Y%m%d%H%M%S", time.gmtime(mtime_utc / 1000))
 	return name_tmp
+
+class _DBC_TimeRange:
+	def __init__(self, mts_now, mts_num):
+		self.mts_num = mts_num
+		self.mts_bgn = 0
+		self.mts_nxt = 0
+		self.mts_end = 0
+		self.setRng(mts_now)
+
+	def setRng(mts_now, mts_num=0):
+		mts_num = self.mts_num if mts_num <= 0 else mts_num
+		mts_new = math.floor(mts_now / mts_num) * mts_num
+		self.mts_bgn = mts_new
+		self.mts_nxt = mts_new + mts_num
 
 class CTDataSet_Ticker_DbIn(CTDataSet_Ticker):
 	def __init__(self, logger, db_reader, wreq_args):
@@ -31,17 +45,17 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
 		self.loc_date_next  = 0
 
 	def onLocRecChg_CB(self, ticker_rec, rec_index):
-		utc_now = self.loc_time_this
-		if (utc_now <  self.loc_date_next):
+		mts_now = self.loc_time_this
+		if (mts_now <  self.loc_date_next):
 			# add update doc
 			out_doc  = ticker_rec
-			out_doc['mts'] = utc_now
+			out_doc['mts'] = mts_now
 			if self.flag_dbg_rec:
 				self.logger.info("CTDataSet_Ticker_DbOut(onLocRecChg_CB): rec_new=" + str(out_doc))
 			self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
 		else:
 			# compose self.loc_name_coll
-			utc_new = math.floor(utc_now / self.loc_date_dur) * self.loc_date_dur
+			utc_new = math.floor(mts_now / self.loc_date_dur) * self.loc_date_dur
 			self.loc_name_coll  = 'ticker-' + _eval_name_coll(utc_new)
 			self.loc_date_next  = utc_new + self.loc_date_dur
 			# add collection
@@ -50,7 +64,7 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
 			self.loc_db_writer.dbOP_AddColl(self.loc_name_coll, self.name_chan, self.wreq_args)
 			# add doc from snapshot
 			out_doc  = ticker_rec
-			out_doc['mts'] = utc_now
+			out_doc['mts'] = mts_now
 			if self.flag_dbg_rec:
 				self.logger.info("CTDataSet_Ticker_DbOut(onLocRecChg_CB): rec_snp=" + str(out_doc))
 			self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
@@ -83,17 +97,17 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 	def onLocRecChg_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
 		if not flag_sece:
 			return
-		utc_now = self.loc_time_this
-		if utc_now <  self.loc_date_next:
+		mts_now = self.loc_time_this
+		if mts_now <  self.loc_date_next:
 			# add update doc
 			out_doc  = book_rec
-			out_doc['mts'] = utc_now
+			out_doc['mts'] = mts_now
 			if self.flag_dbg_rec:
 				self.logger.info("CTDataSet_ABooks_DbOut(onLocRecChg_CB): rec_new=" + str(out_doc))
 			self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
 		else:
 			# compose self.loc_name_coll
-			utc_new = math.floor(utc_now / self.loc_date_dur) * self.loc_date_dur
+			utc_new = math.floor(mts_now / self.loc_date_dur) * self.loc_date_dur
 			self.loc_name_coll  = 'book-' + self.wreq_args['prec'] + '-' + _eval_name_coll(utc_new)
 			self.loc_date_next  = utc_new + self.loc_date_dur
 			# add collection
@@ -103,13 +117,13 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 			# add docs from snapshot
 			for book_rec in self.loc_book_bids:
 				out_doc  = book_rec
-				out_doc['mts'] = utc_now
+				out_doc['mts'] = mts_now
 				if self.flag_dbg_rec:
 					self.logger.info("CTDataSet_ABooks_DbOut(onLocRecChg_CB): rec_bid=" + str(out_doc))
 				self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
 			for book_rec in self.loc_book_asks:
 				out_doc  = book_rec
-				out_doc['mts'] = utc_now
+				out_doc['mts'] = mts_now
 				if self.flag_dbg_rec:
 					self.logger.info("CTDataSet_ABooks_DbOut(onLocRecChg_CB): rec_ask=" + str(out_doc))
 				self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
@@ -147,16 +161,16 @@ class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
 		if len(self.loc_candle_recs) <= 1:
 			return
 		candle_rec = self.loc_candle_recs[len(self.loc_candle_recs)-2]
-		utc_now = candle_rec['mts']
-		if utc_now <  self.loc_date_next and utc_now >  self.loc_mts_sync:
+		mts_now = candle_rec['mts']
+		if mts_now <  self.loc_date_next and mts_now >  self.loc_mts_sync:
 			# add update doc
 			out_doc  = candle_rec
 			if self.flag_dbg_rec:
 				self.logger.info("CTDataSet_ACandles_DbOut(onLocRecChg_CB): rec_new=" + str(out_doc))
 			self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
-		elif utc_now >= self.loc_date_next:
+		elif mts_now >= self.loc_date_next:
 			# compose self.loc_name_coll
-			utc_new  = math.floor(utc_now / self.loc_date_dur) * self.loc_date_dur
+			utc_new  = math.floor(mts_now / self.loc_date_dur) * self.loc_date_dur
 			self.loc_name_coll  = 'candles-' + self.loc_name_key + '-' + _eval_name_coll(utc_new)
 			self.loc_date_next  = utc_new + self.loc_date_dur
 			# add collection
@@ -165,13 +179,13 @@ class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
 			self.loc_db_writer.dbOP_AddColl(self.loc_name_coll, self.name_chan, self.wreq_args)
 			# add docs from snapshot
 			for out_idx, candle_rec in enumerate(self.loc_candle_recs):
-				if candle_rec['mts'] >  utc_now:
+				if candle_rec['mts'] >  mts_now:
 					continue
 				out_doc = candle_rec
 				if self.flag_dbg_rec:
 					self.logger.info("CTDataSet_ACandles_DbOut(onLocRecChg_CB): rec_snp=" + str(out_doc))
 				self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, out_doc)
 		# update self.loc_mts_sync
-		self.loc_mts_sync   = utc_now
+		self.loc_mts_sync   = mts_now
 
 
