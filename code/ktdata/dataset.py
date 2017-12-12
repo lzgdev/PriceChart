@@ -7,8 +7,8 @@ def utTime_utcmts_now():
 class CTDataSet_Base(object):
 	def __init__(self, name_chan, wreq_args):
 		self.name_chan = name_chan
-		self.chan_id = None
 		self.wreq_args = wreq_args
+		self.chan_id = None
 		self.flag_loc_time  = False
 		self.loc_time_this  = 0
 		self.flag_loc_term  = False
