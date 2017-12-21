@@ -4,17 +4,13 @@ import math
 
 from .dataset import CTDataSet_Ticker, CTDataSet_ABooks, CTDataSet_ACandles
 
-def _eval_name_coll(mtime_utc):
-	name_tmp = time.strftime("%Y%m%d%H%M%S", time.gmtime(mtime_utc / 1000))
-	return name_tmp
-
 class CTDbOut_Adapter:
 	def __init__(self, logger, db_writer, name_chan, wreq_args, name_pref, mts_num):
 		self.name_chan  = name_chan
 		self.wreq_args  = wreq_args
 		self.logger   = logger
 		self.loc_db_writer  = db_writer
-		self.flag_dbg_rec   = True
+		self.flag_dbg_rec   = False
 		self.stat_fin = False
 		self.mts_num  = mts_num
 		self.mts_bgn  = 0
@@ -23,6 +19,8 @@ class CTDbOut_Adapter:
 		self.mts_nxt  = 0
 		self.loc_name_pref  = name_pref
 		self.loc_name_coll  = None
+
+		self.flag_dbg_rec   = False
 
 	def colAppend(self, mts_now):
 		# re-asign self.mts_dbc and self.mts_nxt
@@ -77,7 +75,6 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
 		self.flag_loc_time  = True
 		self.logger   = logger
 		self.flag_dbg_rec   = True
-		self.loc_db_writer  = db_writer
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, self.name_chan, self.wreq_args,
 						'ticker', 30*60*1000)
 
@@ -86,6 +83,8 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
 		out_doc  = ticker_rec
 		out_doc['mts'] = mts_now
 		self.loc_db_adapter.docAppend(out_doc)
+		if self.loc_db_adapter.stat_fin:
+			self.flag_loc_term  = True
 
 class CTDataSet_ABooks_DbIn(CTDataSet_ABooks):
 	def __init__(self, logger, db_reader, wreq_args):
@@ -105,7 +104,6 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 		self.flag_loc_time  = True
 		self.logger   = logger
 		self.flag_dbg_rec   = True
-		self.loc_db_writer  = db_writer
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, self.name_chan, self.wreq_args,
 						'book-' + self.wreq_args['prec'], 30*60*1000)
 
@@ -127,6 +125,8 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 				out_doc  = book_rec
 				out_doc['mts'] = mts_now
 				self.loc_db_adapter.docAppend(out_doc)
+		if self.loc_db_adapter.stat_fin:
+			self.flag_loc_term  = True
 
 def _extr_cname_key(wreq_key):
 	i1  =  wreq_key.find(':')
@@ -165,6 +165,6 @@ class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
 			candle_rec = self.loc_candle_recs[idx_rec]
 			if self.loc_db_adapter.docAppend(candle_rec):
 				self.loc_out_count += 1
-			elif self.loc_db_adapter.stat_fin:
-				self.flag_loc_term  = True
+		if self.loc_db_adapter.stat_fin:
+			self.flag_loc_term  = True
 

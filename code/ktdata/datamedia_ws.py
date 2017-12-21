@@ -1,3 +1,6 @@
+
+import os
+
 import websocket
 
 import hmac
@@ -8,6 +11,8 @@ class CTNetClient_Base(websocket.WebSocketApp):
 	def __init__(self, logger, url_ws):
 		super(CTNetClient_Base, self).__init__(url_ws)
 		self.logger   = logger
+		self.pid_this = os.getpid()
+		self.inf_this = 'WebSocket(pid=' + str(self.pid_this) + ')'
 		self.on_open  = CTNetClient_Base.ncEV_Open
 		self.on_message = CTNetClient_Base.ncEV_Message
 		self.on_error = CTNetClient_Base.ncEV_Error
@@ -38,23 +43,49 @@ class CTNetClient_Base(websocket.WebSocketApp):
 		pass
 
 	def onNcEV_Open_impl(self):
-		self.logger.info("WebSocket Opened!")
+		self.logger.info(self.inf_this + " websocket Opened!")
 
 	def onNcEV_Message_impl(self, message):
 		pass
 
 	def onNcEV_Error_impl(self, error):
-		self.logger.error("WebSocket Error: " + str(error))
+		self.logger.info(self.inf_this + " websocket Error: " + str(error))
 
 	def onNcEV_Close_impl(self):
-		self.logger.warning("WebSocket Closed!")
+		self.logger.info(self.inf_this + " websocket Closed!")
 
 class CTNetClient_BfxWss(CTNetClient_Base):
-	def __init__(self, logger, url_ws):
+	def __init__(self, logger, tok_task, tok_this, url_ws):
 		super(CTNetClient_BfxWss, self).__init__(logger, url_ws)
+		self.tok_task = tok_task
+		self.tok_this = tok_this
 		self.objs_chan_data = []
+		self.num_chan_subscribed   = 0
+		self.num_chan_unsubscribed = 0
+		self.flag_data_active = False
+		self.flag_data_finish = False
 
-		self.dbg_count = 0
+	def ncOP_Send_Subscribe(self):
+		for idx_chan, obj_chan in enumerate(self.objs_chan_data):
+			obj_subscribe = {
+					'event': 'subscribe',
+					'channel': obj_chan.name_chan,
+				}
+			for wreq_key, wreq_value in obj_chan.wreq_args.items():
+				obj_subscribe[wreq_key] = wreq_value
+			txt_wreq = json.dumps(obj_subscribe)
+			self.send(txt_wreq)
+
+	def ncOP_Send_Unsubscribe(self):
+		for idx_chan, obj_chan in enumerate(self.objs_chan_data):
+			if obj_chan.chan_id <= 0:
+				continue
+			obj_subscribe = {
+					'event': 'unsubscribe',
+					'chanId': obj_chan.chan_id,
+				}
+			txt_wreq = json.dumps(obj_subscribe)
+			self.send(txt_wreq)
 
 	def onNcOP_AddReceiver(self, obj_receiver):
 		if (obj_receiver != None):
@@ -84,15 +115,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 		ver_msg  = obj_msg['version']
 		code_msg = obj_msg['code'] if 'code' in obj_msg else None
 		if ver_msg == 2 and code_msg == None:
-			for idx_chan, obj_chan in enumerate(self.objs_chan_data):
-				obj_subscribe = {
-						'event': 'subscribe',
-						'channel': obj_chan.name_chan,
-					}
-				for wreq_key, wreq_value in obj_chan.wreq_args.items():
-					obj_subscribe[wreq_key] = wreq_value
-				txt_wreq = json.dumps(obj_subscribe)
-				self.send(txt_wreq)
+			self.ncOP_Send_Subscribe()
 
 	def onNcEV_Message_sbsc(self, evt_msg, obj_msg):
 		handler_msg = None
@@ -105,14 +128,29 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 				for wreq_key, wreq_value in obj_chan.wreq_args.items():
 					if obj_msg[wreq_key] != str(wreq_value):
 						handler_msg = None
-						break
 			if handler_msg != None:
 				handler_msg.locSet_ChanId(cid_msg)
+				self.num_chan_subscribed += 1
 			else:
 				self.logger.error("CTNetClient_BfxWss(onNcEV_Message_sbsc): can't handle subscribe, chanId:" +
 								str(cid_msg) + ", obj:" + str(obj_msg))
+			if self.num_chan_subscribed >  0 and self.num_chan_subscribed == len(self.objs_chan_data):
+				if self.tok_task.value <  self.tok_this:
+					with self.tok_task.get_lock():
+						self.tok_task.value = self.tok_this
+						self.flag_data_active = True
+					#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
+				os.kill(os.getppid(), 12) # SIG_USR2
 		elif evt_msg == 'unsubscribed':
-			self.logger.error("CTNetClient_BfxWss(onNcEV_Message_sbsc): unsubscribed chanId:" +
+			for idx_chan, obj_chan in enumerate(self.objs_chan_data):
+				if obj_chan.chan_id != cid_msg:
+					continue
+				handler_msg = obj_chan
+			if handler_msg != None:
+				handler_msg.locSet_ChanId(-1)
+				self.num_chan_unsubscribed += 1
+			else:
+				self.logger.error("CTNetClient_BfxWss(onNcEV_Message_sbsc): can't handle unsubscribe, chanId:" +
 								str(cid_msg) + ", obj:" + str(obj_msg))
 
 	def onNcEV_Message_data(self, obj_msg):
@@ -134,7 +172,13 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 			self.send(json.dumps({ 'event': 'unsubscribe', 'chanId': cid_msg, }))
 
 	def _run_kkai_step(self):
-		self.logger.warning("WebSocket KKAI Check: count=" + str(self.dbg_count))
-		self.dbg_count += 1
-		return False if (self.dbg_count >  20) else True
+		#self.logger.warning(self.inf_this + "websocket KKAI Check: ...")
+		if self.flag_data_active:
+			if self.tok_task.value != self.tok_this:
+				self.flag_data_active = False
+				self.ncOP_Send_Unsubscribe()
+		if (not self.flag_data_finish) and (self.num_chan_unsubscribed >  0) and (
+			self.num_chan_unsubscribed == len(self.objs_chan_data)):
+			self.flag_data_finish = True
+		return not self.flag_data_finish
 
