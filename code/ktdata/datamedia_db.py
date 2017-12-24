@@ -41,35 +41,35 @@ class KTDataMedia_DbBase(object):
 	def dbOP_Close(self):
 		self.onDbOP_Close_impl()
 
-	def dbOP_AddColl(self, name_coll, wreq_chan, wreq_args):
+	def dbOP_CollAdd(self, name_coll, wreq_chan, wreq_args):
 		if name_coll == None:
 			return False
 		if self.dbChk_IsCollReady(name_coll):
 			return True
-		return self.onDbOP_AddColl_impl(name_coll, wreq_chan, wreq_args)
+		return self.onDbOP_CollAdd_impl(name_coll, wreq_chan, wreq_args)
 
-	def dbOP_AddDoc(self, name_coll, obj_doc):
+	def dbOP_DocAdd(self, name_coll, obj_doc):
 		if obj_doc == None:
 			return False
 		if not self.dbChk_IsCollReady(name_coll):
 			return False 
-		return self.onDbOP_AddDoc_impl(name_coll, obj_doc)
+		return self.onDbOP_DocAdd_impl(name_coll, obj_doc)
 
-	def dbOP_LoadColl(self, name_coll, dataset, find_args, sort_args, flag_clean):
+	def dbOP_CollLoad(self, name_coll, dataset, find_args, sort_args, flag_clean):
 		if dataset == None:
 			return False
 		if not self.dbChk_IsCollReady(name_coll):
-			self.dbOP_AddColl(name_coll, None, None)
+			self.dbOP_CollAdd(name_coll, None, None)
 		if not self.dbChk_IsCollReady(name_coll):
 			return False
-		return self.onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args, flag_clean)
+		return self.onDbOP_CollLoad_impl(name_coll, dataset, find_args, sort_args, flag_clean)
 
-	def onDbEV_AddColl(self, name_coll):
-		#self.logger.info("KTDataMedia_DbBase(onDbEV_AddColl): name_coll=" + name_coll)
+	def onDbEV_CollAdd(self, name_coll):
+		#self.logger.info("KTDataMedia_DbBase(onDbEV_CollAdd): name_coll=" + name_coll)
 		pass
 
-	def onDbEV_AddDoc(self, name_coll, obj_doc, result):
-		#self.logger.info("KTDataMedia_DbBase(onDbEV_AddDoc): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
+	def onDbEV_DocAdd(self, name_coll, obj_doc, result):
+		#self.logger.info("KTDataMedia_DbBase(onDbEV_DocAdd): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
 		pass
 
 	def onDbEV_Closed(self):
@@ -79,7 +79,7 @@ class KTDataMedia_DbBase(object):
 	def onDbOP_Connect_impl(self, db_uri, db_name):
 		self.db_client = pymongo.MongoClient(db_uri)
 		self.db_database = pymongo.database.Database(self.db_client, db_name)
-		self.dbOP_AddColl(COLLNAME_CollSet, None, None)
+		self.dbOP_CollAdd(COLLNAME_CollSet, None, None)
 
 	def onDbOP_Close_impl(self):
 		self.logger.info("KTDataMedia_DbBase(onDbOP_Close_impl): ...")
@@ -88,7 +88,7 @@ class KTDataMedia_DbBase(object):
 		self.db_client.close()
 		return True
 
-	def onDbOP_AddColl_impl(self, name_coll, wreq_chan, wreq_args):
+	def onDbOP_CollAdd_impl(self, name_coll, wreq_chan, wreq_args):
 		db_coll = None
 		if name_coll in self.db_database.collection_names(False):
 			db_coll = pymongo.collection.Collection(self.db_database, name_coll, False)
@@ -102,15 +102,15 @@ class KTDataMedia_DbBase(object):
 				self.db_coll_set = db_coll
 			elif (db_coll != None) and (name_coll != COLLNAME_CollSet):
 				self.db_collections[name_coll] = db_coll
-				self.dbOP_AddDoc(COLLNAME_CollSet, {
+				self.dbOP_DocAdd(COLLNAME_CollSet, {
 							'coll': name_coll,
 							'channel': wreq_chan,
 							'reqargs': wreq_args,
 						})
-				self.onDbEV_AddColl(name_coll)
+				self.onDbEV_CollAdd(name_coll)
 		return True
 
-	def onDbOP_LoadColl_impl(self, name_coll, dataset, find_args, sort_args, flag_clean):
+	def onDbOP_CollLoad_impl(self, name_coll, dataset, find_args, sort_args, flag_clean):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
 		ret_cur = db_coll.find(find_args, None, 0, 0, False, pymongo.CursorType.NON_TAILABLE, sort_args)
 		if flag_clean:
@@ -120,13 +120,13 @@ class KTDataMedia_DbBase(object):
 			del db_doc['_id']
 			dataset.locAppendData(1001, db_doc)
 
-	def onDbOP_AddDoc_impl(self, name_coll, obj_doc):
+	def onDbOP_DocAdd_impl(self, name_coll, obj_doc):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
-		#self.logger.info("KTDataMedia_DbBase(onDbOP_AddDoc_impl): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
+		#self.logger.info("KTDataMedia_DbBase(onDbOP_DocAdd_impl): name_coll=" + name_coll + ", obj_doc=" + str(obj_doc))
 		db_doc  = copy.copy(obj_doc)
 		ret_ins = db_coll.insert_one(db_doc)
 		if (name_coll != COLLNAME_CollSet):
-			self.onDbEV_AddDoc(name_coll, db_doc, ret_ins)
+			self.onDbEV_DocAdd(name_coll, db_doc, ret_ins)
 
 
 class KTDataMedia_DbReader(KTDataMedia_DbBase):

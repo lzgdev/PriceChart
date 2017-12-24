@@ -95,7 +95,7 @@ test_dataset_book = chan_obj;
 
 if (!flag_netclient) {
   var coll_name = "book-P0-201712021330";
-  obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_book, {}, {'time': 1});
+  obj_dbreader.dbOP_CollLoad(coll_name, test_dataset_book, {}, {'time': 1});
 }
 else {
   obj_netclient.ncOP_Exec();

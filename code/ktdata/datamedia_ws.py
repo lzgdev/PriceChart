@@ -17,9 +17,10 @@ class CTNetClient_Base(websocket.WebSocketApp):
 		self.on_message = CTNetClient_Base.ncEV_Message
 		self.on_error = CTNetClient_Base.ncEV_Error
 		self.on_close = CTNetClient_Base.ncEV_Close
+		self.flag_log_intv = False
 
-	def addObj_DataReceiver(self, obj_receiver):
-		self.onNcOP_AddReceiver(obj_receiver)
+	def addObj_DataReceiver(self, obj_receiver, tok_channel):
+		self.onNcOP_AddReceiver(obj_receiver, tok_channel)
 
 	def ncOP_Exec():
 		self.onNcOP_Exec_impl()
@@ -36,23 +37,25 @@ class CTNetClient_Base(websocket.WebSocketApp):
 	def ncEV_Close(self):
 		self.onNcEV_Close_impl()
 
-	def onNcOP_AddReceiver(obj_receiver):
+	def onNcOP_AddReceiver(self, obj_receiver, tok_channel):
 		pass
 
 	def onNcOP_Exec_impl():
 		pass
 
 	def onNcEV_Open_impl(self):
-		self.logger.info(self.inf_this + " websocket Opened!")
+		if self.flag_log_intv:
+			self.logger.info(self.inf_this + " websocket Opened!")
 
 	def onNcEV_Message_impl(self, message):
 		pass
 
 	def onNcEV_Error_impl(self, error):
-		self.logger.info(self.inf_this + " websocket Error: " + str(error))
+		self.logger.error(self.inf_this + " websocket Error: " + str(error))
 
 	def onNcEV_Close_impl(self):
-		self.logger.info(self.inf_this + " websocket Closed!")
+		if self.flag_log_intv:
+			self.logger.info(self.inf_this + " websocket Closed!")
 
 class CTNetClient_BfxWss(CTNetClient_Base):
 	def __init__(self, logger, tok_task, tok_this, url_ws):
@@ -60,9 +63,12 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 		self.tok_task = tok_task
 		self.tok_this = tok_this
 		self.objs_chan_data = []
+		self.toks_chan_data = []
+		self.flag_chan_actv = []
 		self.num_chan_subscribed   = 0
 		self.num_chan_unsubscribed = 0
-		self.flag_data_active = False
+		self.cntd_task_finish = -1
+		self.flag_task_active = False
 		self.flag_data_finish = False
 
 	def ncOP_Send_Subscribe(self):
@@ -87,9 +93,11 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 			txt_wreq = json.dumps(obj_subscribe)
 			self.send(txt_wreq)
 
-	def onNcOP_AddReceiver(self, obj_receiver):
+	def onNcOP_AddReceiver(self, obj_receiver, tok_channel):
 		if (obj_receiver != None):
 			self.objs_chan_data.append(obj_receiver)
+			self.toks_chan_data.append(tok_channel)
+			self.flag_chan_actv.append(False)
 
 	def onNcEV_Message_impl(self, message):
 		#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_impl): msg=" + message)
@@ -109,7 +117,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 			elif (evt_msg == 'subscribed') or (evt_msg == 'unsubscribed'):
 				self.onNcEV_Message_sbsc(evt_msg, obj_msg)
 		else:
-			self.logger.error("CTNetClient_BfxWss(onNcEV_Message_impl): can't handle msg=" + message)
+			self.logger.error(self.inf_this + " (mesg): can't handle msg=" + message)
 
 	def onNcEV_Message_info(self, obj_msg):
 		ver_msg  = obj_msg['version']
@@ -118,67 +126,98 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 			self.ncOP_Send_Subscribe()
 
 	def onNcEV_Message_sbsc(self, evt_msg, obj_msg):
-		handler_msg = None
+		idx_handler = -1
 		cid_msg = obj_msg['chanId']
+		flag_subscribed   = False
+		flag_unsubscribed = False
 		if   evt_msg == 'subscribed':
 			for idx_chan, obj_chan in enumerate(self.objs_chan_data):
 				if obj_chan.name_chan != obj_msg['channel']:
 					continue
-				handler_msg = obj_chan
+				idx_handler = idx_chan
 				for wreq_key, wreq_value in obj_chan.wreq_args.items():
 					if obj_msg[wreq_key] != str(wreq_value):
-						handler_msg = None
-			if handler_msg != None:
-				handler_msg.locSet_ChanId(cid_msg)
-				self.num_chan_subscribed += 1
+						idx_handler = -1
+			if idx_handler <  0:
+				self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
+								str(cid_msg) + ", obj=" + str(obj_msg))
 			else:
-				self.logger.error("CTNetClient_BfxWss(onNcEV_Message_sbsc): can't handle subscribe, chanId:" +
-								str(cid_msg) + ", obj:" + str(obj_msg))
-			if self.num_chan_subscribed >  0 and self.num_chan_subscribed == len(self.objs_chan_data):
-				if self.tok_task.value <  self.tok_this:
-					with self.tok_task.get_lock():
-						self.tok_task.value = self.tok_this
-						self.flag_data_active = True
-					#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
-				os.kill(os.getppid(), 12) # SIG_USR2
+				self.objs_chan_data[idx_handler].locSet_ChanId(cid_msg)
+				if self.toks_chan_data[idx_handler].value <  self.tok_this:
+					with self.toks_chan_data[idx_handler].get_lock():
+						self.toks_chan_data[idx_handler].value = self.tok_this
+				self.flag_chan_actv[idx_handler] =  True
+				self.num_chan_subscribed += 1
+				flag_subscribed   = True
+				if self.flag_log_intv:
+					self.logger.info(self.inf_this + " (sbsc): chan(idx=" +
+								str(idx_handler) + ") subscribed, chanId=" + str(cid_msg))
 		elif evt_msg == 'unsubscribed':
 			for idx_chan, obj_chan in enumerate(self.objs_chan_data):
 				if obj_chan.chan_id != cid_msg:
 					continue
-				handler_msg = obj_chan
-			if handler_msg != None:
-				handler_msg.locSet_ChanId(-1)
-				self.num_chan_unsubscribed += 1
+				idx_handler = idx_chan
+			if idx_handler <  0:
+				self.logger.error(self.inf_this + " (sbsc): can't handle unsubscribe, chanId=" + str(cid_msg) +
+								", obj=" + str(obj_msg))
 			else:
-				self.logger.error("CTNetClient_BfxWss(onNcEV_Message_sbsc): can't handle unsubscribe, chanId:" +
-								str(cid_msg) + ", obj:" + str(obj_msg))
+				self.objs_chan_data[idx_handler].locSet_ChanId(-1)
+				self.flag_chan_actv[idx_handler] = False
+				self.num_chan_unsubscribed += 1
+				flag_unsubscribed = True
+				if self.flag_log_intv:
+					self.logger.info(self.inf_this + " (sbsc): chan(idx=" + str(idx_handler) +
+							") unsubscribed, chanId=" + str(cid_msg))
+		if   flag_subscribed and (
+			self.num_chan_subscribed   == len(self.objs_chan_data)):
+				if self.tok_task.value <  self.tok_this:
+					with self.tok_task.get_lock():
+						self.tok_task.value = self.tok_this
+						self.flag_task_active = True
+					#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
+		elif flag_unsubscribed and (
+			self.num_chan_unsubscribed == len(self.objs_chan_data)):
+			self.flag_data_finish = True
 
 	def onNcEV_Message_data(self, obj_msg):
-		flag_term = False
-		handler_msg = None
+		idx_handler = -1
 		cid_msg = obj_msg[0]
-		for idx_chan, obj_chan in enumerate(self.objs_chan_data):
-			if cid_msg == obj_chan.chan_id:
-				handler_msg = obj_chan
+		for idx_chan in range(0, len(self.objs_chan_data)):
+			if cid_msg == self.objs_chan_data[idx_chan].chan_id:
+				idx_handler = idx_chan
 				break
-		if handler_msg == None:
-			self.logger.error("CTNetClient_BfxWss(onNcEV_Message_data): can't handle data, chanId:" + str(cid_msg) + ", obj:" + str(obj_msg))
+		if   idx_handler <  0:
+			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(cid_msg) + ", data:" + str(obj_msg))
+		elif not self.flag_chan_actv[idx_handler]:
+			if self.flag_log_intv:
+				self.logger.warning(self.inf_this + " (data): chan(idx=" + str(idx_handler) +
+						") no longer active, ignore data chanId=" + str(cid_msg))
 		else:
-			#self.logger.debug("CTNetClient_BfxWss(onNcEV_Message_data): handle data, chanId:" + str(cid_msg) + ", obj:" + str(obj_msg))
-			handler_msg.locAppendData(2001, obj_msg)
-			flag_term = handler_msg.flag_loc_term
-		if flag_term:
-			self.logger.info("CTNetClient_BfxWss(onNcEV_Message_data): unsubscribe data, chanId:" + str(cid_msg))
-			self.send(json.dumps({ 'event': 'unsubscribe', 'chanId': cid_msg, }))
+			#self.logger.debug(self.inf_this + "(data): chan(idx=" + str(idx_handler) + ") handle data, data=" + str(obj_msg))
+			self.objs_chan_data[idx_handler].locAppendData(2001, obj_msg)
 
 	def _run_kkai_step(self):
 		#self.logger.warning(self.inf_this + "websocket KKAI Check: ...")
-		if self.flag_data_active:
+		for idx_chan in range(0, len(self.objs_chan_data)):
+			if not self.flag_chan_actv[idx_chan]:
+				continue
+			if self.toks_chan_data[idx_chan].value != self.tok_this:
+				self.flag_chan_actv[idx_chan] =  False
+				if self.flag_log_intv:
+					self.logger.warning(self.inf_this + " (check): chan=" + str(idx_chan) +
+								" no longer active, unsubscribe.")
+				self.send(json.dumps({ 'event': 'unsubscribe', 'chanId': self.objs_chan_data[idx_chan].chan_id, }))
+		if self.flag_task_active:
 			if self.tok_task.value != self.tok_this:
-				self.flag_data_active = False
-				self.ncOP_Send_Unsubscribe()
-		if (not self.flag_data_finish) and (self.num_chan_unsubscribed >  0) and (
-			self.num_chan_unsubscribed == len(self.objs_chan_data)):
-			self.flag_data_finish = True
+				self.flag_task_active = False
+				self.cntd_task_finish = 10
+		if not self.flag_data_finish and self.cntd_task_finish >= 0:
+			self.cntd_task_finish -= 1
+			if self.flag_log_intv:
+				self.logger.warning(self.inf_this + " (check): chan=" + str(idx_chan) +
+								" force finish count=" + str(self.cntd_task_finish) + " ...")
+			if self.cntd_task_finish == 0:
+				self.flag_data_finish =  True
+				self.logger.warning(self.inf_this + " (check): chan=" + str(idx_chan) + " force finish.")
 		return not self.flag_data_finish
 

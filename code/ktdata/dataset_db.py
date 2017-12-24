@@ -34,7 +34,7 @@ class CTDbOut_Adapter:
 		# append collection to database
 		if self.flag_dbg_rec:
 			self.logger.info("CTDbOut_Adapter(colAppend): coll=" + self.loc_name_coll)
-		self.loc_db_writer.dbOP_AddColl(self.loc_name_coll, self.name_chan, self.wreq_args)
+		self.loc_db_writer.dbOP_CollAdd(self.loc_name_coll, self.name_chan, self.wreq_args)
 
 	def docAppend(self, doc_rec):
 		flag_add_col = False
@@ -55,7 +55,7 @@ class CTDbOut_Adapter:
 			return False
 		if self.flag_dbg_rec:
 			self.logger.info("CTDbOut_Adapter(docAppend): rec_snp=" + str(doc_rec))
-		self.loc_db_writer.dbOP_AddDoc(self.loc_name_coll, doc_rec)
+		self.loc_db_writer.dbOP_DocAdd(self.loc_name_coll, doc_rec)
 		return True
 
 class CTDataSet_Ticker_DbIn(CTDataSet_Ticker):

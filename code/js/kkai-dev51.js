@@ -46,7 +46,7 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
     if (utc_now <  this.loc_date_next)
     {
 //    console.log("ClDataSet_Ticker_DbOut(onLocRecChg_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(ticker_rec));
-      this.loc_db_writer.dbOP_AddDoc(this.loc_name_coll, { type: 'update',
+      this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'update',
           time: utc_now,
           data: ticker_rec,
         });
@@ -59,8 +59,8 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
       this.loc_date_next  = utc_new + this.loc_date_dur;
       // add collection and docs
 //    console.log("ClDataSet_Ticker_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(ticker_rec));
-      this.loc_db_writer.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
-      this.loc_db_writer.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
+      this.loc_db_writer.dbOP_CollAdd(this.loc_name_coll, this.name_chan, this.wreq_args);
+      this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
           data: ticker_rec,
         });
@@ -106,7 +106,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
     if (utc_now <  this.loc_date_next)
     {
 //    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(book_rec));
-      this.loc_db_writer.dbOP_AddDoc(this.loc_name_coll, { type: 'update',
+      this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'update',
           time: utc_now,
           data: book_rec,
         });
@@ -127,8 +127,8 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
       this.loc_date_next  = utc_new + this.loc_date_dur;
 //    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
-      this.loc_db_writer.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
-      this.loc_db_writer.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
+      this.loc_db_writer.dbOP_CollAdd(this.loc_name_coll, this.name_chan, this.wreq_args);
+      this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
           data: obj_docs,
         });
@@ -181,7 +181,7 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
     if ((utc_now <  this.loc_date_next) && (utc_now >  this.loc_mts_sync))
     {
 //      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(candle_rec));
-      this.loc_db_writer.dbOP_AddDoc(this.loc_name_coll, { type: 'update',
+      this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'update',
           time: utc_now,
           data: candle_rec,
         });
@@ -199,8 +199,8 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
       this.loc_date_next  = utc_new + this.loc_date_dur;
 //      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
-      this.loc_db_writer.dbOP_AddColl(this.loc_name_coll, this.name_chan, this.wreq_args);
-      this.loc_db_writer.dbOP_AddDoc(this.loc_name_coll, { type: 'snapshot',
+      this.loc_db_writer.dbOP_CollAdd(this.loc_name_coll, this.name_chan, this.wreq_args);
+      this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
           data: obj_docs,
         });

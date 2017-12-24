@@ -39,20 +39,26 @@ mapTasks = [ {
 		]
 	}, ]
 
-print("Process id before forking: {}".format(pid_root))
+print("Process id before forking: pid=" + str(pid_root))
 
 def _util_msec_now():
 	return int(round(time.time() * 1000))
 
 class Process_Net2Db(multiprocessing.Process):
 	tok_tasks = []
+	tok_chans = []
 	cnt_procs = []
 
 	def __init__(self, logger, idx_task, token_new):
 		super(Process_Net2Db, self).__init__()
+		num_jobs = len(mapTasks[idx_task]['jobs'])
 		# expand static members
 		while len(self.tok_tasks) <= idx_task:
 			self.tok_tasks.append(multiprocessing.Value('l', 0))
+		while len(self.tok_chans) <= idx_task:
+			self.tok_chans.append([])
+		while len(self.tok_chans[idx_task]) <  num_jobs:
+			self.tok_chans[idx_task].append(multiprocessing.Value('l', 0))
 		while len(self.cnt_procs) <= idx_task:
 			self.cnt_procs.append(0)
 		self.cnt_procs[idx_task] += 1
@@ -90,7 +96,7 @@ class Process_Net2Db(multiprocessing.Process):
 		#print("NTP: offset=" + str(r.offset))
 
 		# create netclient and db writer object
-		time.sleep(5)
+		#time.sleep(5)
 #		"""
 		url_bfx  = "wss://api.bitfinex.com/ws/2"
 		self.obj_netclient = CTNetClient_BfxWss(self.logger, self.tok_task, self.loc_token_this, url_bfx)
@@ -101,7 +107,7 @@ class Process_Net2Db(multiprocessing.Process):
 			if not map_unit['switch']:
 				continue
 			obj_chan  = None
-			self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
+			#self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
 
 			if   map_unit['channel'] == 'ticker':
 				obj_chan = CTDataSet_Ticker_DbOut(self.logger, self.obj_dbwriter, map_unit['wreq_args'])
@@ -111,7 +117,7 @@ class Process_Net2Db(multiprocessing.Process):
 				obj_chan = CTDataSet_ACandles_DbOut(self.logger, self.obj_dbwriter, 1000, map_unit['wreq_args'])
 
 			if obj_chan != None:
-				self.obj_netclient.addObj_DataReceiver(obj_chan)
+				self.obj_netclient.addObj_DataReceiver(obj_chan, self.tok_chans[self.idx_task][map_idx])
 
 		self.obj_netclient.run_forever()
 #		"""
@@ -190,7 +196,8 @@ while len(g_procs) > 0:
 		proc_pop = g_procs.pop(p)
 		proc_pop.join()
 		if flag_dbg_main:
-			print("main(chld) join process=" + str(proc_pop) + ", tok(task=" + str(proc_pop.tok_task) + ")")
+			print("main(chld) join process=" + str(proc_pop) + ", tok(task=" + str(proc_pop.tok_task) +
+					",chans=" + str(proc_pop.tok_chans[proc_pop.idx_task]))
 		del proc_pop
 	# sleep
 	time.sleep(2)

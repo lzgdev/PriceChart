@@ -152,13 +152,13 @@ if flag_netclient:
 elif test_dataset_ticker != None:
 	#coll_name = "ticker-201712060400"
 	coll_name = "ticker-201712060500"
-	obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_ticker, {}, [('mts', 1)], True)
+	obj_dbreader.dbOP_CollLoad(coll_name, test_dataset_ticker, {}, [('mts', 1)], True)
 elif test_dataset_book != None:
 	coll_name = "book-P1-201712060330"
-	obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_book, {}, [('mts', 1)], True)
+	obj_dbreader.dbOP_CollLoad(coll_name, test_dataset_book, {}, [('mts', 1)], True)
 elif test_dataset_candles != None:
 	coll_name = "candles-1m-201712060530"
-	obj_dbreader.dbOP_LoadColl(coll_name, test_dataset_candles, {}, [('mts', 1)], True)
+	obj_dbreader.dbOP_CollLoad(coll_name, test_dataset_candles, {}, [('mts', 1)], True)
 """
 
 print("Process id before forking: {}".format(pid_parent))

@@ -45,7 +45,7 @@ class ClDataSet_DbBase
     this.onDbOP_Close_impl();
   }
 
-  dbOP_AddColl(name_coll, wreq_chan, wreq_args)
+  dbOP_CollAdd(name_coll, wreq_chan, wreq_args)
   {
     if (name_coll == null) {
       return false;
@@ -57,7 +57,7 @@ class ClDataSet_DbBase
     return true;
   }
 
-  dbOP_AddDoc(name_coll, obj_doc)
+  dbOP_DocAdd(name_coll, obj_doc)
   {
     if ((name_coll == null) || (obj_doc == null)) {
       return false;
@@ -67,13 +67,13 @@ class ClDataSet_DbBase
     return true;
   }
 
-  dbOP_LoadColl(name_coll, dataset, find_args, sort_args)
+  dbOP_CollLoad(name_coll, dataset, find_args, sort_args)
   {
     if (name_coll == null) {
       return false;
     }
     if (!this.dbChk_IsCollReady(name_coll)) {
-      this.dbOP_AddColl(name_coll, null, null);
+      this.dbOP_CollAdd(name_coll, null, null);
     }
     this.db_todo_coll_load.push({ coll: name_coll, dataset: dataset, find_args: find_args, sort_args: sort_args, });
     this._dbOP_RunNext(231);
@@ -93,13 +93,13 @@ class ClDataSet_DbBase
     return true;
   }
 
-  onDbEV_AddColl(name_coll, result)
+  onDbEV_CollAdd(name_coll, result)
   {
-    console.log("ClDataSet_DbBase(onDbEV_AddColl): coll:", name_coll);
+    console.log("ClDataSet_DbBase(onDbEV_CollAdd): coll:", name_coll);
   }
-  onDbEV_AddDoc(name_coll, obj_doc, result)
+  onDbEV_DocAdd(name_coll, obj_doc, result)
   {
-    console.log("ClDataSet_DbBase(onDbEV_AddDoc): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
+    console.log("ClDataSet_DbBase(onDbEV_DocAdd): coll:", name_coll, "result:", result.insertedId, "doc:", JSON.stringify(obj_doc));
   }
 
   onDbEV_RunNext(run_arg0)
@@ -119,7 +119,7 @@ class ClDataSet_DbBase
       if (this.dbChk_IsCollReady(name_coll)) {
         continue;
       }
-      this.onDbOP_AddColl_impl(name_coll, rec_add['channel'], rec_add['reqargs']);
+      this.onDbOP_CollAdd_impl(name_coll, rec_add['channel'], rec_add['reqargs']);
     }
     // try to load documents from a collection
     for (i=0; i <  this.db_todo_coll_load.length;  i++)
@@ -134,7 +134,7 @@ class ClDataSet_DbBase
       sort_args = this.db_todo_coll_load[i].sort_args;
       this.db_todo_coll_load.splice(i, 1);
       if (dataset != null) {
-        this.onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args);
+        this.onDbOP_CollLoad_impl(name_coll, dataset, find_args, sort_args);
       }
       break;
     }
@@ -148,7 +148,7 @@ class ClDataSet_DbBase
       }
       obj_doc = this.db_todo_docs_write[i].doc;
       this.db_todo_docs_write.splice(i, 1);
-      this.onDbOP_AddDoc_impl(name_coll, obj_doc);
+      this.onDbOP_DocAdd_impl(name_coll, obj_doc);
       break;
     }
     return true;
@@ -165,7 +165,7 @@ class ClDataSet_DbBase
         if (err == null) {
           console.log("ClDataSet_DbBase(onDbOP_Connect_impl): db connected to", db_url);
           this.db_database = db;
-          this.dbOP_AddColl(_CollName_CollSet, null, null);
+          this.dbOP_CollAdd(_CollName_CollSet, null, null);
         }
         if (err) throw err;
         this._dbOP_RunNext(501);
@@ -189,7 +189,7 @@ class ClDataSet_DbBase
     return true;
   }
 
-  onDbOP_AddColl_impl(name_coll, wreq_chan, wreq_args)
+  onDbOP_CollAdd_impl(name_coll, wreq_chan, wreq_args)
   {
     this.db_database.collection(name_coll, { strict: true, }, (err2, col2) => {
         if (err2 == null)
@@ -217,7 +217,7 @@ class ClDataSet_DbBase
                         channel: wreq_chan,
                         reqargs: wreq_args,
                       }, });
-                  this.onDbEV_AddColl(name_coll, this.db_collections[name_coll]);
+                  this.onDbEV_CollAdd(name_coll, this.db_collections[name_coll]);
                 }
                 this._dbOP_RunNext(512);
               }
@@ -226,7 +226,7 @@ class ClDataSet_DbBase
     });
   }
 
-  onDbOP_LoadColl_impl(name_coll, dataset, find_args, sort_args)
+  onDbOP_CollLoad_impl(name_coll, dataset, find_args, sort_args)
   {
     var db_cursor, db_coll = this.db_collections[name_coll];
     db_cursor = (sort_args == null) ? db_coll.find(find_args) : db_coll.find(find_args).sort(sort_args);
@@ -236,17 +236,17 @@ class ClDataSet_DbBase
     this._dbOP_RunNext(521);
   }
 
-  onDbOP_AddDoc_impl(name_coll, obj_doc)
+  onDbOP_DocAdd_impl(name_coll, obj_doc)
   {
     var db_coll = (name_coll == _CollName_CollSet) ? this.db_coll_set :
                         this.db_collections[name_coll];
     db_coll.insertOne(obj_doc, null, (err, result) => {
         if ((err == null) && (name_coll != _CollName_CollSet)) {
-          this.onDbEV_AddDoc(name_coll, obj_doc, result)
+          this.onDbEV_DocAdd(name_coll, obj_doc, result)
         }
         else
         if (err != null) {
-          console.log("ClDataSet_DbBase(onDbOP_AddDoc_impl) err:", err);
+          console.log("ClDataSet_DbBase(onDbOP_DocAdd_impl) err:", err);
         }
         this._dbOP_RunNext(531);
       });
