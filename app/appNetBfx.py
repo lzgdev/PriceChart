@@ -29,12 +29,14 @@ str_db_name = 'bfx-pub'
 
 mapTasks = [ {
 	'class': 'task01',
-	#'msec_dur': 1800 * 1000, 'msec_pre': 10 * 1000,
-	'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
+	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
+	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
 	'jobs': [
-		{ 'channel':  'ticker', 'switch': False, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
-		{ 'channel':    'book', 'switch': False, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P0', 'freq': 'F0', 'len': 100, }, },
-		{ 'channel':    'book', 'switch': False, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P1', 'freq': 'F0', 'len': 100, }, },
+		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P0', 'freq': 'F1', 'len': '100', }, },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P1', 'freq': 'F1', 'len': '100', }, },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P2', 'freq': 'F1', 'len': '100', }, },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P3', 'freq': 'F1', 'len': '100', }, },
 		{ 'channel': 'candles', 'switch':  True, 'wreq_args': { 'key': 'trade:1m:tBTCUSD', }, },
 		]
 	}, ]
@@ -89,7 +91,7 @@ class Process_Net2Db(multiprocessing.Process):
 		self.pid_this = os.getpid()
 		self.info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
 		# debug code
-		self.logger.info("Process(" + self.info_app + ") running ...")
+		self.logger.info("Process(" + self.info_app + ") begin ...")
 
 		#c = ntplib.NTPClient()
 		#r = c.request('europe.pool.ntp.org', version=3)
@@ -103,6 +105,9 @@ class Process_Net2Db(multiprocessing.Process):
 		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
+		num_coll_msec  =  3 * 60 * 60 * 1000
+		#num_coll_msec  =  1 * 60 * 60 * 1000
+
 		for map_idx, map_unit in enumerate(mapTasks[self.idx_task]['jobs']):
 			if not map_unit['switch']:
 				continue
@@ -110,11 +115,11 @@ class Process_Net2Db(multiprocessing.Process):
 			#self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
 
 			if   map_unit['channel'] == 'ticker':
-				obj_chan = CTDataSet_Ticker_DbOut(self.logger, self.obj_dbwriter, map_unit['wreq_args'])
+				obj_chan = CTDataSet_Ticker_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, map_unit['wreq_args'])
 			elif map_unit['channel'] == 'book':
-				obj_chan = CTDataSet_ABooks_DbOut(self.logger, self.obj_dbwriter, map_unit['wreq_args'])
+				obj_chan = CTDataSet_ABooks_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, map_unit['wreq_args'])
 			elif map_unit['channel'] == 'candles':
-				obj_chan = CTDataSet_ACandles_DbOut(self.logger, self.obj_dbwriter, 1000, map_unit['wreq_args'])
+				obj_chan = CTDataSet_ACandles_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, 1000, map_unit['wreq_args'])
 
 			if obj_chan != None:
 				self.obj_netclient.addObj_DataReceiver(obj_chan, self.tok_chans[self.idx_task][map_idx])
@@ -124,7 +129,7 @@ class Process_Net2Db(multiprocessing.Process):
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 flag_dbg_main  = False
-flag_run_dbg01 =  True
+flag_run_dbg01 = False
 
 g_procs = []
 
@@ -147,7 +152,7 @@ def _sighand_usr2(signum, frame):
 signal.signal(12, _sighand_usr2)
 
 flag_dbg_main  =  True
-flag_run_dbg01 = False
+flag_run_dbg01 =  False
 
 #
 # Main entrance
@@ -167,8 +172,6 @@ if flag_run_dbg01:
 for t in range(0, len(g_procs)):
 	g_procs[t].start()
 
-#num_procs = 3
-num_procs = 2
 while len(g_procs) > 0:
 	num_procs = len(g_procs)
 	if flag_dbg_main:
@@ -183,12 +186,9 @@ while len(g_procs) > 0:
 			print("main(p=" + str(p) + "): invk=" + str(proc_old.loc_token_invk) +
 					", now=" + str(msec_now) + ", next=" + str(proc_old.loc_token_next))
 		proc_old.loc_token_invk = 0
-		if num_procs <= 0:
-			continue
 		proc_new = Process_Net2Db(logger, proc_old.idx_task, proc_old.loc_token_next)
 		g_procs.append(proc_new)
 		proc_new.start()
-		num_procs -= 1
 	# join terminated child processes
 	for p in range(num_procs-1, -1, -1):
 		if g_procs[p].is_alive():

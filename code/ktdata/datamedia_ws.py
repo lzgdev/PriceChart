@@ -136,8 +136,10 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 					continue
 				idx_handler = idx_chan
 				for wreq_key, wreq_value in obj_chan.wreq_args.items():
-					if obj_msg[wreq_key] != str(wreq_value):
+					if str(obj_msg[wreq_key]) != str(wreq_value):
 						idx_handler = -1
+				if idx_handler >= 0:
+					break
 			if idx_handler <  0:
 				self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
 								str(cid_msg) + ", obj=" + str(obj_msg))

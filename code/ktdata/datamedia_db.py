@@ -21,10 +21,10 @@ class KTDataMedia_DbBase(object):
 		self.db_coll_set    = None
 		self.db_collections = { }
 
-	def dbChk_IsDbReady(self):
+	def dbChk_Db_Ready(self):
 		return True if (self.db_database != None) else False
 
-	def dbChk_IsCollReady(self, name_coll):
+	def dbChk_Coll_Ready(self, name_coll):
 		if (name_coll == COLLNAME_CollSet) and (self.db_coll_set != None):
 			return True
 		if (name_coll != None) and (name_coll in self.db_collections):
@@ -44,23 +44,30 @@ class KTDataMedia_DbBase(object):
 	def dbOP_CollAdd(self, name_coll, wreq_chan, wreq_args):
 		if name_coll == None:
 			return False
-		if self.dbChk_IsCollReady(name_coll):
+		if self.dbChk_Coll_Ready(name_coll):
 			return True
 		return self.onDbOP_CollAdd_impl(name_coll, wreq_chan, wreq_args)
 
 	def dbOP_DocAdd(self, name_coll, obj_doc):
 		if obj_doc == None:
 			return False
-		if not self.dbChk_IsCollReady(name_coll):
+		if not self.dbChk_Coll_Ready(name_coll):
 			return False 
 		return self.onDbOP_DocAdd_impl(name_coll, obj_doc)
+
+	def dbOP_DocFind_One(self, name_coll, find_args, sort_args):
+		if not self.dbChk_Coll_Ready(name_coll):
+			return None
+		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
+		db_doc  = db_coll.find_one(find_args, sort=sort_args)
+		return db_doc
 
 	def dbOP_CollLoad(self, name_coll, dataset, find_args, sort_args, flag_clean):
 		if dataset == None:
 			return False
-		if not self.dbChk_IsCollReady(name_coll):
+		if not self.dbChk_Coll_Ready(name_coll):
 			self.dbOP_CollAdd(name_coll, None, None)
-		if not self.dbChk_IsCollReady(name_coll):
+		if not self.dbChk_Coll_Ready(name_coll):
 			return False
 		return self.onDbOP_CollLoad_impl(name_coll, dataset, find_args, sort_args, flag_clean)
 
