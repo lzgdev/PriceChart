@@ -10,7 +10,7 @@ virtualenv -p python2 venv
 . venv/bin/activate
 
 # for server
-pip install flask uwsgi
+pip install tornado
 
 # for client
 pip install requests
