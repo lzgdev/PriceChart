@@ -1,12 +1,10 @@
 // module kkai-dev22
 
-import { ClDataSet_ACandles, ClDataSet_ABooks, } from './kkai-dev11.js';
-
 class ClDataSet_ABooks_HighCharts extends ClDataSet_ABooks
 {
-  constructor(gui_chart, wreq_prec, wreq_len)
+  constructor(gui_chart, wreq_args)
   {
-    super(wreq_prec, wreq_len)
+    super(wreq_args);
     this.loc_gui_chart = gui_chart;
     this.loc_sync_flag = false;
     this.loc_min_xaxis =  0.0;
@@ -201,9 +199,9 @@ if ((this.num_change % 4) != 0) { return -1; }
 
 class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
 {
-  constructor(recs_size, gui_chart, wreq_key)
+  constructor(recs_size, gui_chart, wreq_args)
   {
-    super(recs_size, wreq_key);
+    super(recs_size, wreq_args);
     this.loc_gui_chart = gui_chart;
     this.loc_gui_recn  = 0;
     this.loc_mts_sync  = -1;
@@ -252,6 +250,4 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
     this.loc_sync_flag = true;
   }
 }
-
-export { ClDataSet_ACandles_HighCharts, ClDataSet_ABooks_HighCharts, };
 

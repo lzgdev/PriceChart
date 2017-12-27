@@ -1,6 +1,4 @@
 
-const WebSocket = require('ws');
-
 class ClNetClient_Base
 {
   constructor()
@@ -188,12 +186,5 @@ class ClNetClient_BfxWss extends ClNetClient_Base
   onNcOP_Close_impl()
   {
   }
-}
-
-//export { ClNetClient_BfxWss, ClNetClient_Base, };
-
-module.exports = {
-  ClNetClient_Base:   ClNetClient_Base,
-  ClNetClient_BfxWss: ClNetClient_BfxWss,
 }
 

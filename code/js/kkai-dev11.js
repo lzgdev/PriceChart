@@ -466,11 +466,3 @@ class ClDataSet_ACandles extends ClDataSet_Array
   }
 }
 
-//export { ClDataSet_ACandles, ClDataSet_ABooks, };
-
-module.exports = {
-  ClDataSet_Ticker:   ClDataSet_Ticker,
-  ClDataSet_ACandles: ClDataSet_ACandles,
-  ClDataSet_ABooks:   ClDataSet_ABooks,
-}
-

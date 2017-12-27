@@ -5,6 +5,8 @@ import tornado.gen
 import tornado.websocket
 
 import os.path
+import math
+import time
 
 gDir_root = os.path.dirname(__file__)
 
@@ -21,16 +23,15 @@ class MainHandler(tornado.web.RequestHandler):
 			return self.render('index.html')
 		elif self.code_entry == 'views':
 			path_pref = 'views'
-		#return self.render(os.path.join(path_pref, path_file), dev_js29_ver=1122)
+		_js_ver = math.floor(time.time() * 1000)
 		return self.render(os.path.join(path_pref, path_file),
-								dev_js29_ver=1122)
-
+								dev_js_ver=_js_ver)
 
 class HomeHandler(tornado.web.StaticFileHandler):
 	def validate_absolute_path(self, root, absolute_path):
 		if self.request.uri == '/':
 			absolute_path = os.path.join(absolute_path, "html")
-		print("HomeHandler: root=" + root + ", absolute_path=" + absolute_path + ", request=" + str(self.request))
+		#print("HomeHandler: root=" + root + ", absolute_path=" + absolute_path + ", request=" + str(self.request))
 		return super(HomeHandler, self).validate_absolute_path(root, absolute_path)
 
 class DemoHandler(tornado.web.RequestHandler):
@@ -69,15 +70,13 @@ class AppChartServer(tornado.web.Application):
 			static_path=os.path.join(gDir_root, 'ui/static'),
 		)
 		handlers = [
-			(r'/views/.*\.html', MainHandler, { 'code_entry': 'views', }),
-			(r'/demo/.*\.html',  DemoHandler),
-			(r'/ws', SocketHandler),
-			(r'/(css/.+\.css)', MiscHandler, { 'path': settings['static_path'] }),
-			(r'/(js/.+\.js)',   MiscHandler, { 'path': settings['static_path'] }),
-			(r'/(favicon.ico)', MiscHandler, { 'path': settings['static_path'] }),
-			#(r'/(favicon.ico)', tornado.web.StaticFileHandler, dict(path=settings['static_path'])),
-			#(r'/(.*)',           HomeHandler, { 'path': 'ui/static', 'default_filename': 'index.html', }),
-			(r'/()',           HomeHandler, { 'path': 'ui/static', 'default_filename': 'index.html', }),
+			(r'/views/.*\.html',    MainHandler, { 'code_entry': 'views', }),
+			(r'/demo/.*\.html',     DemoHandler),
+			(r'/ws',                SocketHandler),
+			(r'/(css/.+\.css)',     MiscHandler, { 'path': settings['static_path'] }),
+			(r'/(js/.+\.js)',       MiscHandler, { 'path': settings['static_path'] }),
+			(r'/(favicon.ico)',     MiscHandler, { 'path': settings['static_path'] }),
+			(r'/()',                HomeHandler, { 'path': 'ui/static', 'default_filename': 'index.html', }),
 		]
 		super(AppChartServer, self).__init__(handlers, **settings)
 

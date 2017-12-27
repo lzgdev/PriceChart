@@ -2,28 +2,22 @@
 <head>
   <title>Price Chart</title>
   <link rel="stylesheet" href="/css/dark.css">
+
   <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 
-<!--
-  <script type="text/javascript" src="https://cdn.anychart.com/js/8.0.1/anychart-bundle.min.js"></script>
-  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-base.min.js"></script>
-  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-stock.min.js"></script>
-  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-exports.min.js"></script>
-  <script type="text/javascript" src="https://cdn.anychart.com/releases/8.0.1/js/anychart-ui.min.js"></script>
-  -->
-
-<!-- -->
   <script type="text/javascript" src="https://code.highcharts.com/stock/highstock.js"></script>
   <script type="text/javascript" src="https://code.highcharts.com/modules/no-data-to-display.js"></script>
   <script type="text/javascript" src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
   <script type="text/javascript" src="https://code.highcharts.com/stock/modules/exporting.js"></script>
 
-<!--
-  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-  -->
-
-  <script type="text/javascript" src="/js/kkai-add00.js"></script>
 <!-- -->
+  <script type="text/javascript" src="/js/kkai-add00.js"></script>
+
+  <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev31.js?version={{ dev_js_ver }}"></script>
+
+  <script type="text/javascript" src="/js/kkai-dev29.js?version={{ dev_js_ver }}"></script>
 
 <style>
 body {
@@ -47,11 +41,16 @@ body {
 <!-- -->
   <h3>Output log1</h3>
   <pre id="log_out1">init(html) log1</pre>
-<!-- -->
-  <div id="container-bookP0"></div>
-  <div id="container-bookP1"></div>
-  <div id="container-candle"></div>
-<!-- -->
+  <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
+  <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
+  <div id="container-root">
+    <div id="container-ticker"></div>
+    <div id="container-bookP0"></div>
+    <div id="container-bookP1"></div>
+    <div id="container-bookP2"></div>
+    <div id="container-bookP3"></div>
+    <div id="container-candle"></div>
+  </div>
   <h3>Output log2</h3>
   <pre id="log_out2">init(html) log2</pre>
 <script type="text/javascript">
@@ -61,41 +60,14 @@ body {
 
 </script>
 <!-- -->
-<script type="module">
-  import {
-            cbEV_OnDocReady_prep,
+<script type="text/javascript">
 
-            cbEV_OnDocReady_anychart,
-            cbEV_OnDocReady_highcharts,
-            cbEV_OnDocReady_googlecharts,
-
-            cbEV_OnDocReady_websocket,
-         } from '/js/kkai-dev29.js';
-
-/*
-  anychart.onDocumentReady(function() {
-      cbEV_OnDocReady_prep();
-      cbEV_OnDocReady_anychart();
-      cbEV_OnDocReady_websocket();
-    });
-// */
-
-//*
   $(function () {
       cbEV_OnDocReady_prep();
       cbEV_OnDocReady_highcharts();
       cbEV_OnDocReady_websocket();
     });
-// */
 
-/*
-  google.charts.load('current', {'packages':['corechart']});
-  google.charts.setOnLoadCallback(function() {
-      cbEV_OnDocReady_prep();
-      cbEV_OnDocReady_googlecharts();
-      cbEV_OnDocReady_websocket();
-    });
-// */
 </script>
 
 </body>

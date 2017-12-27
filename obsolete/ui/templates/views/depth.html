@@ -1,19 +1,25 @@
 <html>
 <head>
   <title>Price Depth</title>
+<!--
   <script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
   <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
-<!--
-  <script type="text/javascript" src="/js/socket.io.min.js"></script>
   -->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/highstock.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/modules/no-data-to-display.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/modules/exporting.js"></script>
 <!-- -->
 
-  <script type="text/javascript" src="/js/kkai-add00.js"></script>
 <!--
-  <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js11_ver }}"></script>
-  <script type="text/javascript" src="/js/kkai-dev21.js?version={{ dev_js21_ver }}"></script>
-  <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js22_ver }}"></script>
+  <script src="https://code.highcharts.com/stock/highstock.js"></script>
+  <script src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
+  <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
   -->
+
+  <script type="text/javascript" src="/js/kkai-add00.js"></script>
+<!-- -->
 
 <style>
 body {
@@ -66,7 +72,15 @@ $(function () {
   -->
 <!-- -->
 <script type="module">
-  import { cbEV_OnDocReady_highcharts, cbEV_OnDocReady_websocket, } from '/js/kkai-dev29.js';
+  import {
+            cbEV_OnDocReady_prep,
+
+            cbEV_OnDocReady_anychart,
+            cbEV_OnDocReady_highcharts,
+            cbEV_OnDocReady_googlecharts,
+
+            cbEV_OnDocReady_websocket,
+         } from '/js/kkai-dev29.js';
 
   $(function () {
       cbEV_OnDocReady_highcharts();

@@ -1,7 +1,5 @@
 // module kkai-dev21
 
-import { ClDataSet_ACandles, ClDataSet_ABooks, } from './kkai-dev11.js';
-
 class ClDataSet_ABooks_AnyChart extends ClDataSet_ABooks
 {
   constructor(gui_chart, wreq_prec, wreq_len)
@@ -253,6 +251,4 @@ class ClDataSet_ACandles_AnyChart extends ClDataSet_ACandles
     this.loc_sync_flag = true;
   }
 }
-
-export { ClDataSet_ACandles_AnyChart, ClDataSet_ABooks_AnyChart, };
 
