@@ -146,7 +146,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     this.loc_sync_flag = false;
   }
 
-  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
   }
@@ -238,7 +238,7 @@ class ClDataSet_ACandles_AnyChart extends ClDataSet_ACandles
     this.loc_sync_flag = false;
   }
 
-  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
     this.loc_gui_datatable.addData([[ candle_rec.mts,
         candle_rec.open,

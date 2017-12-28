@@ -93,7 +93,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     this.loc_sync_flag = false;
   }
 
-  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
   }
@@ -107,26 +107,20 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
     this.loc_gui_chart = gui_chart;
     this.loc_gui_recn  = 0;
     this.loc_mts_sync  = -1;
-    this.loc_sync_flag = false;
   }
 
-  onSyncDataGUI_impl()
+  onLocDataClean_CB()
   {
-//    this.loc_gui_chart.redraw({});
+    this.loc_gui_recn  = 0;
   }
 
-  onLocDataAppend_CB(chan_data)
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
-    if (!this.loc_sync_flag) {
+    var idx_gui;
+    var gui_sers, pnt_this;
+    if (!flag_plus) {
       return 0;
     }
-    this.onSyncDataGUI_impl();
-    this.loc_sync_flag = false;
-  }
-
-  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
-  {
-    var gui_sers, pnt_this;
     gui_sers = this.loc_gui_chart.series[0];
     pnt_this = [
         candle_rec.mts,
@@ -135,21 +129,41 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
         candle_rec.low,
         candle_rec.close,
       ];
-    /*
     if (candle_rec.mts >  this.loc_mts_sync) {
-      gui_sers.addPoint(pnt_this, flag_sece);
+      gui_sers.addPoint(pnt_this, true);
       this.loc_mts_sync  = candle_rec.mts;
+      this.loc_gui_recn ++;
     }
-    else {
-      var gui_index = gui_sers.data.length + rec_index - this.loc_candle_recs.length;
-      if ((gui_index >= 0) && (gui_index <  gui_sers.data.length)) {
-        gui_sers.data[gui_index].update(pnt_this, flag_sece);
+    else
+    if ((idx_gui=gui_sers.data.length-1) >= 0) {
+      if (gui_sers.data[idx_gui].x == candle_rec.mts) {
+        gui_sers.data[idx_gui].update(pnt_this, true);
       }
     }
-    // */
-    gui_sers.addPoint(pnt_this, flag_sece);
-    this.loc_mts_sync  = candle_rec.mts;
-    this.loc_sync_flag = true;
+    return 1;
+  }
+
+  onLocDataSync_CB()
+  {
+    var idx_rec, num_rec;
+    var gui_sers, pnt_this, candle_rec;
+    gui_sers = this.loc_gui_chart.series[0];
+    num_rec  = this.loc_candle_recs.length;
+    for (idx_rec=0; idx_rec <  num_rec; idx_rec++)
+    {
+      candle_rec = this.loc_candle_recs[idx_rec];
+      pnt_this = [
+        candle_rec.mts,
+        candle_rec.open,
+        candle_rec.high,
+        candle_rec.low,
+        candle_rec.close,
+      ];
+      gui_sers.addPoint(pnt_this, false);
+      this.loc_mts_sync  = candle_rec.mts;
+      this.loc_gui_recn ++;
+    }
+    this.loc_gui_chart.redraw({});
   }
 }
 

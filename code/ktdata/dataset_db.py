@@ -84,7 +84,7 @@ class CTDataSet_ABooks_DbIn(CTDataSet_ABooks):
 		self.flag_dbg_rec   = True
 		self.loc_db_reader  = db_reader
 
-	def onLocRecAdd_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
+	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
 
@@ -100,8 +100,8 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 		self.num_recs_wrap  = 240
 		self.cnt_recs_book  = 0
 
-	def onLocRecAdd_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
-		if not flag_sece:
+	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
+		if not flag_plus:
 			return
 		msec_now = self.loc_time_this
 		if self.cnt_recs_book % self.num_recs_wrap != 0:
@@ -136,7 +136,7 @@ class CTDataSet_ACandles_DbIn(CTDataSet_ACandles):
 		self.flag_dbg_rec   = True
 		self.loc_db_reader  = db_reader
 
-	def onLocRecAdd_CB(self, flag_sece, candle_rec, rec_index):
+	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_ACandles_DbIn(onLocRecAdd_CB): rec=" + str(candle_rec))
 
@@ -148,8 +148,8 @@ class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
 						self.name_chan, self.wreq_args, 'candles-' + _extr_cname_key(self.wreq_args['key']))
 		self.loc_out_count  = 0
 
-	def onLocRecAdd_CB(self, flag_sece, candle_rec, rec_index):
-		if not flag_sece:
+	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
+		if not flag_plus:
 			return
 		if len(self.loc_candle_recs) <= 1:
 			return

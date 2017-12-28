@@ -133,7 +133,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     this.loc_sync_flag = false;
   }
 
-  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
   }
@@ -228,7 +228,7 @@ class ClDataSet_ACandles_GoogleCharts extends ClDataSet_ACandles
     this.loc_sync_flag = false;
   }
 
-  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
     if (candle_rec.mts >  this.loc_mts_sync) {
       this.loc_gui_datatable.addRow([ new Date(candle_rec.mts),
@@ -246,7 +246,7 @@ class ClDataSet_ACandles_GoogleCharts extends ClDataSet_ACandles
       }
     }
     this.loc_sync_flag = true;
-    if (flag_sece) {
+    if (flag_plus) {
       this.loc_gui_chart.draw(this.loc_gui_datatable, { legend:'none' });
     }
   }

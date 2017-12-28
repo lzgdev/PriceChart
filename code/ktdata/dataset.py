@@ -26,8 +26,8 @@ class CTDataSet_Base(object):
 		self.onLocDataAppend_impl(data_src, obj_msg)
 		self.onLocDataAppend_CB(None)
 
-	def locRecAdd(self, flag_sece, data_src, obj_rec):
-		self.onLocRecAdd_impl(flag_sece, data_src, obj_rec)
+	def locRecAdd(self, flag_plus, data_src, obj_rec):
+		self.onLocRecAdd_impl(flag_plus, data_src, obj_rec)
 
 	def onLocDataClean_CB(self):
 		pass
@@ -41,7 +41,7 @@ class CTDataSet_Base(object):
 	def onLocDataAppend_impl(self, data_src, obj_msg):
 		pass
 
-	def onLocRecAdd_impl(self, flag_sece, data_src, obj_rec):
+	def onLocRecAdd_impl(self, flag_plus, data_src, obj_rec):
 		pass
 
 class CTDataSet_Array(CTDataSet_Base):
@@ -107,7 +107,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		self.loc_book_bids.clear()
 		self.loc_book_asks.clear()
 
-	def onLocRecAdd_impl(self, flag_sece, data_src, obj_rec):
+	def onLocRecAdd_impl(self, flag_plus, data_src, obj_rec):
 		if (data_src == 1001):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
 			book_rec   = obj_rec
@@ -159,10 +159,10 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			idx_last = idx_sum
 			idx_sum += -1 if flag_bids else 1
 		# invoke callback
-		self.onLocRecAdd_CB(flag_sece, book_rec if flag_del else book_recs[idx_book],
+		self.onLocRecAdd_CB(flag_plus, book_rec if flag_del else book_recs[idx_book],
                 flag_bids, idx_book, flag_del)
 
-	def onLocRecAdd_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
+	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
 		pass
 
 	# develop/debug support
@@ -221,7 +221,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 	def onLocDataClean_impl(self):
 		self.loc_candle_recs.clear()
 
-	def onLocRecAdd_impl(self, flag_sece, data_src, obj_rec):
+	def onLocRecAdd_impl(self, flag_plus, data_src, obj_rec):
 		if (data_src == 1001):
 			candle_rec = obj_rec;
 		else:
@@ -251,8 +251,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 			self.loc_candle_recs.insert(rec_index, candle_rec)
 			flag_chg  = True
 		if (flag_chg):
-			self.onLocRecAdd_CB(flag_sece, candle_rec, rec_index);
+			self.onLocRecAdd_CB(flag_plus, candle_rec, rec_index);
 
-	def onLocRecAdd_CB(self, flag_sece, candle_rec, rec_index):
+	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		pass
 

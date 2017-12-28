@@ -77,7 +77,7 @@ class ClDataSet_ABooks_DbIn extends dev11.ClDataSet_ABooks
     this.loc_db_reader  = db_reader;
   }
 
-  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
 //    console.log("ClDataSet_ABooks_DbIn(onLocRecAdd_CB): rec:", JSON.stringify(book_rec));
   }
@@ -96,9 +96,9 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
     this.loc_date_next  = 0;
   }
 
-  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
-    if (!flag_sece) {
+    if (!flag_plus) {
       return;
     }
     var utc_now;
@@ -144,7 +144,7 @@ class ClDataSet_ACandles_DbIn extends dev11.ClDataSet_ACandles
     this.loc_db_reader  = db_reader;
   }
 
-  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
   }
 }
@@ -167,9 +167,9 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
     this.loc_name_key   = ((i1 < 0) || (i2 < 0)) ? '' : this.wreq_args.key.slice(i1+1, i2);
   }
 
-  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
-    if (!flag_sece) {
+    if (!flag_plus) {
       return;
     }
     if (this.loc_candle_recs.length <= 1) {

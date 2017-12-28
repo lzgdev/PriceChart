@@ -24,6 +24,11 @@ class ClDataSet_Base
     this.onLocDataClean_impl();
     this.onLocDataClean_CB();
   }
+  locRecSync()
+  {
+    this.onLocDataSync_impl();
+    this.onLocDataSync_CB();
+  }
 
   locDataAppend(fmt_data, obj_msg)
   {
@@ -34,9 +39,9 @@ class ClDataSet_Base
     this.onLocDataAppend_CB(null);
   }
 
-  locRecAdd(flag_sece, fmt_data, obj_rec)
+  locRecAdd(flag_plus, fmt_data, obj_rec)
   {
-    this.onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
+    this.onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
   }
 
   onLocDataClean_CB()
@@ -49,12 +54,18 @@ class ClDataSet_Base
   onLocDataClean_impl()
   {
   }
+  onLocDataSync_impl()
+  {
+  }
+  onLocDataSync_CB()
+  {
+  }
 
   onLocDataAppend_impl(fmt_data, obj_msg)
   {
   }
 
-  onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
+  onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
   {
   }
 }
@@ -89,15 +100,13 @@ class ClDataSet_Array extends ClDataSet_Base
     }
     else
     {
-      var  i, i_end;
+      var  idx_rec, num_rec;
+      num_rec = data_msg.length;
       this.locDataClean(data_msg);
-      i_end = data_msg.length-1;
-      for (i=0; i <  i_end; i++) {
-        this.locRecAdd(false, fmt_data, data_msg[i]);
+      for (idx_rec=0; idx_rec <  num_rec; idx_rec++) {
+        this.locRecAdd(false, fmt_data, data_msg[idx_rec]);
       }
-      if (i_end >= 0) {
-        this.locRecAdd( true, fmt_data, data_msg[i]);
-      }
+      this.locRecSync();
     }
   }
 }
@@ -150,7 +159,7 @@ class ClDataSet_ABooks extends ClDataSet_Array
     this.loc_book_asks.length = 0;
   }
 
-  onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
+  onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
   {
     var  flag_bids;
     var  book_rec;
@@ -239,11 +248,11 @@ class ClDataSet_ABooks extends ClDataSet_Array
       idx_last = idx_sum;
     }
     // invoke callback
-    this.onLocRecAdd_CB(flag_sece, flag_del ? book_rec : book_recs[idx_book],
+    this.onLocRecAdd_CB(flag_plus, flag_del ? book_rec : book_recs[idx_book],
                 flag_bids, idx_book, flag_del);
   }
 
-  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
   }
 
@@ -318,7 +327,7 @@ class ClDataSet_ACandles extends ClDataSet_Array
     this.loc_candle_recs.length = 0;
   }
 
-  onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
+  onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
   {
     var  flag_chg, rec_index;
     var  candle_rec;
@@ -368,11 +377,11 @@ class ClDataSet_ACandles extends ClDataSet_Array
       flag_chg  = true;
     }
     if (flag_chg) {
-      this.onLocRecAdd_CB(flag_sece, candle_rec, rec_index);
+      this.onLocRecAdd_CB(flag_plus, candle_rec, rec_index);
     }
   }
 
-  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
   }
 
