@@ -231,7 +231,7 @@ class ClDataSet_DbBase
     var db_cursor, db_coll = this.db_collections[name_coll];
     db_cursor = (sort_args == null) ? db_coll.find(find_args) : db_coll.find(find_args).sort(sort_args);
     db_cursor.forEach((obj_msg) => {
-        dataset.locAppendData(1001, obj_msg);
+        dataset.locDataAppend(1001, obj_msg);
       });
     this._dbOP_RunNext(521);
   }

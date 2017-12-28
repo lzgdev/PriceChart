@@ -196,7 +196,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 						") no longer active, ignore data chanId=" + str(cid_msg))
 		else:
 			#self.logger.debug(self.inf_this + "(data): chan(idx=" + str(idx_handler) + ") handle data, data=" + str(obj_msg))
-			self.objs_chan_data[idx_handler].locAppendData(2001, obj_msg)
+			self.objs_chan_data[idx_handler].locDataAppend(2001, obj_msg)
 
 	def _run_kkai_step(self):
 		#self.logger.warning(self.inf_this + "websocket KKAI Check: ...")

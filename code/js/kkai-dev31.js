@@ -107,7 +107,7 @@ class ClNetClient_BfxWss extends ClNetClient_Base
       }
       else {
         //console.log("ClNetClient_BfxWss(onNcEV_Message_impl): handle data, chanId:", cid_msg, ", obj:", JSON.stringify(obj_msg));
-        handler_msg.locAppendData(2001, obj_msg);
+        handler_msg.locDataAppend(DFMT_BITFINEX, obj_msg);
       }
     }
     else

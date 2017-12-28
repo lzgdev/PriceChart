@@ -131,11 +131,11 @@ if (this.num_change > 50) { return; }
 // */
   }
 
-  onLocCleanData_CB()
+  onLocDataClean_CB()
   {
   }
 
-  onLocAppendData_CB(chan_data)
+  onLocDataAppend_CB(chan_data)
   {
     if (!this.loc_sync_flag) {
       return 0;
@@ -146,7 +146,7 @@ if ((this.num_change % 4) != 0) { return -1; }
     this.loc_sync_flag = false;
   }
 
-  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
   {
     this.loc_sync_flag = true;
   }
@@ -229,7 +229,7 @@ class ClDataSet_ACandles_AnyChart extends ClDataSet_ACandles
   {
   }
 
-  onLocAppendData_CB(chan_data)
+  onLocDataAppend_CB(chan_data)
   {
     if (!this.loc_sync_flag) {
       return 0;
@@ -238,7 +238,7 @@ class ClDataSet_ACandles_AnyChart extends ClDataSet_ACandles
     this.loc_sync_flag = false;
   }
 
-  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
   {
     this.loc_gui_datatable.addData([[ candle_rec.mts,
         candle_rec.open,

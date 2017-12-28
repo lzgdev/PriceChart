@@ -121,11 +121,11 @@ class KTDataMedia_DbBase(object):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
 		ret_cur = db_coll.find(find_args, None, 0, 0, False, pymongo.CursorType.NON_TAILABLE, sort_args)
 		if flag_clean:
-			dataset.locAppendData(1001, None)
+			dataset.locDataAppend(1001, None)
 		for obj_msg in ret_cur:
 			db_doc  = copy.copy(obj_msg)
 			del db_doc['_id']
-			dataset.locAppendData(1001, db_doc)
+			dataset.locDataAppend(1001, db_doc)
 
 	def onDbOP_DocAdd_impl(self, name_coll, obj_doc):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]

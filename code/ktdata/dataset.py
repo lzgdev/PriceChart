@@ -16,66 +16,66 @@ class CTDataSet_Base(object):
 	def locSet_ChanId(self, chan_id):
 		self.chan_id = chan_id
 
-	def locCleanData(self):
-		self.onLocCleanData_impl()
-		self.onLocCleanData_CB()
+	def locDataClean(self):
+		self.onLocDataClean_impl()
+		self.onLocDataClean_CB()
 
-	def locAppendData(self, data_src, obj_msg):
+	def locDataAppend(self, data_src, obj_msg):
 		if (self.flag_loc_time):
 			self.loc_time_this = utTime_utcmts_now()
-		self.onLocAppendData_impl(data_src, obj_msg)
-		self.onLocAppendData_CB(None)
+		self.onLocDataAppend_impl(data_src, obj_msg)
+		self.onLocDataAppend_CB(None)
 
-	def locRecChg(self, flag_sece, data_src, obj_rec):
-		self.onLocRecChg_impl(flag_sece, data_src, obj_rec)
+	def locRecAdd(self, flag_sece, data_src, obj_rec):
+		self.onLocRecAdd_impl(flag_sece, data_src, obj_rec)
 
-	def onLocCleanData_CB(self):
+	def onLocDataClean_CB(self):
 		pass
 
-	def onLocAppendData_CB(self, chan_data):
+	def onLocDataAppend_CB(self, chan_data):
 		pass
 
-	def onLocCleanData_impl(self):
+	def onLocDataClean_impl(self):
 		pass
 
-	def onLocAppendData_impl(self, data_src, obj_msg):
+	def onLocDataAppend_impl(self, data_src, obj_msg):
 		pass
 
-	def onLocRecChg_impl(self, flag_sece, data_src, obj_rec):
+	def onLocRecAdd_impl(self, flag_sece, data_src, obj_rec):
 		pass
 
 class CTDataSet_Array(CTDataSet_Base):
 	def __init__(self, name_chan, wreq_args):
 		super(CTDataSet_Array, self).__init__(name_chan, wreq_args)
 
-	def onLocAppendData_impl(self, data_src, obj_msg):
+	def onLocDataAppend_impl(self, data_src, obj_msg):
 		if (data_src == 1001):
 			data_msg  = obj_msg
 			if data_msg == None:
-				self.locCleanData()
+				self.locDataClean()
 			else:
-				self.locRecChg(True, data_src, data_msg)
+				self.locRecAdd(True, data_src, data_msg)
 		else:
 			data_msg  = obj_msg[1]
 			if not isinstance(data_msg, list):
 				pass
 			elif not isinstance(data_msg[0], list):
-				self.locRecChg(True, data_src, data_msg)
+				self.locRecAdd(True, data_src, data_msg)
 			else:
-				self.locCleanData()
+				self.locDataClean()
 				idx_end = len(data_msg) - 1
 				for rec_idx, rec_data in enumerate(data_msg):
-					self.locRecChg(False if rec_idx < idx_end else True,
+					self.locRecAdd(False if rec_idx < idx_end else True,
 								data_src, rec_data)
 
 class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, wreq_args):
 		super(CTDataSet_Ticker, self).__init__('ticker', wreq_args)
 
-	def onLocAppendData_impl(self, data_src, obj_msg):
+	def onLocDataAppend_impl(self, data_src, obj_msg):
 		if (data_src == 1001):
 			ticker_rec = obj_msg
-			self.onLocRecChg_CB(ticker_rec, 0)
+			self.onLocRecAdd_CB(ticker_rec, 0)
 		else:
 			data_msg = obj_msg[1]
 			if isinstance(data_msg, list) and len(data_msg) == 10:
@@ -91,9 +91,9 @@ class CTDataSet_Ticker(CTDataSet_Base):
 						'high':       data_msg[8],
 						'low':        data_msg[9],
 					}
-				self.onLocRecChg_CB(ticker_rec, 0)
+				self.onLocRecAdd_CB(ticker_rec, 0)
 
-	def onLocRecChg_CB(self, ticker_rec, rec_index):
+	def onLocRecAdd_CB(self, ticker_rec, rec_index):
 		pass
 
 
@@ -103,11 +103,11 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		self.loc_book_bids  = []
 		self.loc_book_asks  = []
 
-	def onLocCleanData_impl(self):
+	def onLocDataClean_impl(self):
 		self.loc_book_bids.clear()
 		self.loc_book_asks.clear()
 
-	def onLocRecChg_impl(self, flag_sece, data_src, obj_rec):
+	def onLocRecAdd_impl(self, flag_sece, data_src, obj_rec):
 		if (data_src == 1001):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
 			book_rec   = obj_rec
@@ -159,10 +159,10 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			idx_last = idx_sum
 			idx_sum += -1 if flag_bids else 1
 		# invoke callback
-		self.onLocRecChg_CB(flag_sece, book_rec if flag_del else book_recs[idx_book],
+		self.onLocRecAdd_CB(flag_sece, book_rec if flag_del else book_recs[idx_book],
                 flag_bids, idx_book, flag_del)
 
-	def onLocRecChg_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
+	def onLocRecAdd_CB(self, flag_sece, book_rec, flag_bids, idx_book, flag_del):
 		pass
 
 	# develop/debug support
@@ -218,10 +218,10 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		self.loc_recs_size   = recs_size
 		self.loc_candle_recs = []
 
-	def onLocCleanData_impl(self):
+	def onLocDataClean_impl(self):
 		self.loc_candle_recs.clear()
 
-	def onLocRecChg_impl(self, flag_sece, data_src, obj_rec):
+	def onLocRecAdd_impl(self, flag_sece, data_src, obj_rec):
 		if (data_src == 1001):
 			candle_rec = obj_rec;
 		else:
@@ -251,8 +251,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 			self.loc_candle_recs.insert(rec_index, candle_rec)
 			flag_chg  = True
 		if (flag_chg):
-			self.onLocRecChg_CB(flag_sece, candle_rec, rec_index);
+			self.onLocRecAdd_CB(flag_sece, candle_rec, rec_index);
 
-	def onLocRecChg_CB(self, flag_sece, candle_rec, rec_index):
+	def onLocRecAdd_CB(self, flag_sece, candle_rec, rec_index):
 		pass
 

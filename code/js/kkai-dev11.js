@@ -1,5 +1,8 @@
 // module kkai-dev11
 
+const DFMT_KKAIPRIV = 1001;
+const DFMT_BITFINEX = 2001;
+
 class ClDataSet_Base
 {
   constructor(name_chan, wreq_args)
@@ -16,48 +19,42 @@ class ClDataSet_Base
     this.chan_id = chan_id;
   }
 
-  locCleanData()
+  locDataClean()
   {
-    this.onLocCleanData_impl();
-    this.onLocCleanData_CB();
+    this.onLocDataClean_impl();
+    this.onLocDataClean_CB();
   }
 
-  locAppendData(data_src, obj_msg)
+  locDataAppend(fmt_data, obj_msg)
   {
     if (this.flag_loc_time) {
       this.loc_time_this = Date.now();
     }
-/*
-if (data_src == 1001) {
-console.log("ClDataSet_Base(locAppendData):", JSON.stringify(obj_msg));
-return;
-}
-// */
-    this.onLocAppendData_impl(data_src, obj_msg);
-    this.onLocAppendData_CB(null);
+    this.onLocDataAppend_impl(fmt_data, obj_msg);
+    this.onLocDataAppend_CB(null);
   }
 
-  locRecChg(flag_sece, data_src, obj_rec)
+  locRecAdd(flag_sece, fmt_data, obj_rec)
   {
-    this.onLocRecChg_impl(flag_sece, data_src, obj_rec)
+    this.onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
   }
 
-  onLocCleanData_CB()
+  onLocDataClean_CB()
   {
   }
-  onLocAppendData_CB(chan_data)
+  onLocDataAppend_CB(chan_data)
   {
   }
 
-  onLocCleanData_impl()
+  onLocDataClean_impl()
   {
   }
 
-  onLocAppendData_impl(data_src, obj_msg)
+  onLocDataAppend_impl(fmt_data, obj_msg)
   {
   }
 
-  onLocRecChg_impl(flag_sece, data_src, obj_rec)
+  onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
   {
   }
 }
@@ -69,75 +66,40 @@ class ClDataSet_Array extends ClDataSet_Base
     super(name_chan, wreq_args);
   }
 
-  onLocAppendData_impl(data_src, obj_msg)
+  onLocDataAppend_impl(fmt_data, obj_msg)
   {
-    var data_msg;
-    if (data_src == 1001) {
-      data_msg  = obj_msg['data'];
-      if (!Array.isArray(data_msg))
-      {
-        this.locRecChg(true, data_src, data_msg);
-      }
-      else
-      {
-        var  i, i_end;
-        this.locCleanData(data_msg);
-        i_end = data_msg.length-1;
-        for (i=0; i <  i_end; i++) {
-          this.locRecChg(false, data_src, data_msg[i]);
-        }
-        if (i_end >= 0) {
-          this.locRecChg( true, data_src, data_msg[i]);
-        }
-      }
-    }
-    else {
-      data_msg  = obj_msg[1];
-      if (!Array.isArray(data_msg))
-      {
-      }
-      else
-      {
-        if (!Array.isArray(data_msg[0]))
-        {
-          this.locRecChg(true, data_src, data_msg);
-        }
-        else
-        {
-          var  i, i_end;
-          this.locCleanData(data_msg);
-          i_end = data_msg.length-1;
-          for (i=0; i <  i_end; i++) {
-            this.locRecChg(false, data_src, data_msg[i]);
-          }
-          if (i_end >= 0) {
-            this.locRecChg( true, data_src, data_msg[i]);
-          }
-        }
-      }
-    }
-  }
-}
+    var data_msg = null;
 
-function _eval_book_unit(str_prec)
-{
-  var  book_unit = 1.0;
-  if (str_prec == 'P0') {
-    book_unit = Number(  0.1).toFixed(1);
+    if (fmt_data == DFMT_KKAIPRIV) {
+      data_msg  = obj_msg['data'];
+    }
+    else
+	if (fmt_data == DFMT_BITFINEX)
+    {
+      data_msg  = obj_msg[1];
+    }
+
+    if (!Array.isArray(data_msg))
+    {
+    }
+    else
+    if (!Array.isArray(data_msg[0]))
+    {
+      this.locRecAdd(true, fmt_data, data_msg);
+    }
+    else
+    {
+      var  i, i_end;
+      this.locDataClean(data_msg);
+      i_end = data_msg.length-1;
+      for (i=0; i <  i_end; i++) {
+        this.locRecAdd(false, fmt_data, data_msg[i]);
+      }
+      if (i_end >= 0) {
+        this.locRecAdd( true, fmt_data, data_msg[i]);
+      }
+    }
   }
-  else
-  if (str_prec == 'P1') {
-    book_unit = Number(  1.0);
-  }
-  else
-  if (str_prec == 'P2') {
-    book_unit = Number( 10.0);
-  }
-  else
-  if (str_prec == 'P3') {
-    book_unit = Number(100.0);
-  }
-  return book_unit;
 }
 
 class ClDataSet_Ticker extends ClDataSet_Base
@@ -147,7 +109,7 @@ class ClDataSet_Ticker extends ClDataSet_Base
     super('ticker', wreq_args);
   }
 
-  onLocAppendData_impl(data_src, obj_msg)
+  onLocDataAppend_impl(fmt_data, obj_msg)
   {
     var data_msg = obj_msg[1];
     if (Array.isArray(data_msg) && data_msg.length == 10)
@@ -164,11 +126,11 @@ class ClDataSet_Ticker extends ClDataSet_Base
           high:       Number(data_msg[8]),
           low:        Number(data_msg[9]),
         };
-      this.onLocRecChg_CB(ticker_rec, 0);
+      this.onLocRecAdd_CB(ticker_rec, 0);
     }
   }
 
-  onLocRecChg_CB(ticker_rec, rec_index)
+  onLocRecAdd_CB(ticker_rec, rec_index)
   {
   }
 }
@@ -178,29 +140,31 @@ class ClDataSet_ABooks extends ClDataSet_Array
   constructor(wreq_args)
   {
     super("book", wreq_args);
-    this.loc_book_unit  = _eval_book_unit(this.wreq_args.prec);
     this.loc_book_bids  = [];
     this.loc_book_asks  = [];
   }
 
-  onLocCleanData_impl()
+  onLocDataClean_impl()
   {
     this.loc_book_bids.length = 0;
     this.loc_book_asks.length = 0;
   }
 
-  onLocRecChg_impl(flag_sece, data_src, obj_rec)
+  onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
   {
     var  flag_bids;
     var  book_rec;
     var  idx_book, idx_bgn, idx_end;
     var  flag_del;
     var  book_recs;
-    if (data_src == 1001) {
+    if (fmt_data == DFMT_KKAIPRIV)
+    {
       flag_bids  = (obj_rec['type'] == 'bid') ? true : false;
       book_rec   = obj_rec;
     }
-    else {
+    else
+	if (fmt_data == DFMT_BITFINEX)
+    {
       var  amount_rec;
       flag_bids  = (obj_rec[2] >  0.0) ? true : false;
       amount_rec = Number(flag_bids ? obj_rec[2] : (0.0 - obj_rec[2]));
@@ -275,11 +239,11 @@ class ClDataSet_ABooks extends ClDataSet_Array
       idx_last = idx_sum;
     }
     // invoke callback
-    this.onLocRecChg_CB(flag_sece, flag_del ? book_rec : book_recs[idx_book],
+    this.onLocRecAdd_CB(flag_sece, flag_del ? book_rec : book_recs[idx_book],
                 flag_bids, idx_book, flag_del);
   }
 
-  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
   {
   }
 
@@ -349,19 +313,22 @@ class ClDataSet_ACandles extends ClDataSet_Array
     this.loc_candle_recs = [];
   }
 
-  onLocCleanData_impl()
+  onLocDataClean_impl()
   {
     this.loc_candle_recs.length = 0;
   }
 
-  onLocRecChg_impl(flag_sece, data_src, obj_rec)
+  onLocRecAdd_impl(flag_sece, fmt_data, obj_rec)
   {
     var  flag_chg, rec_index;
     var  candle_rec;
-    if (data_src == 1001) {
+    if (fmt_data == DFMT_KKAIPRIV)
+    {
       candle_rec = obj_rec;
     }
-    else {
+    else
+	if (fmt_data == DFMT_BITFINEX)
+    {
       candle_rec = {
         mts:    Number(obj_rec[0]),
         open:   Number(obj_rec[1]),
@@ -401,11 +368,11 @@ class ClDataSet_ACandles extends ClDataSet_Array
       flag_chg  = true;
     }
     if (flag_chg) {
-      this.onLocRecChg_CB(flag_sece, candle_rec, rec_index);
+      this.onLocRecAdd_CB(flag_sece, candle_rec, rec_index);
     }
   }
 
-  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
   {
   }
 

@@ -3,7 +3,7 @@ var obj_netclient = null;
 
 var mapWREQs = [
         { channel:  'ticker', uid: 'container-ticker', visible: false, wreq_args: { symbol: 'tBTCUSD', }, },
-        { channel:    'book', uid: 'container-bookP0', visible:  true, wreq_args: { symbol: 'tBTCUSD', prec: 'P0', freq: 'F1', len: '100', }, },
+        { channel:    'book', uid: 'container-bookP0', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P0', freq: 'F1', len: '100', }, },
         { channel:    'book', uid: 'container-bookP1', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P1', freq: 'F1', len: '100', }, },
         { channel:    'book', uid: 'container-bookP2', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P2', freq: 'F1', len: '100', }, },
         { channel:    'book', uid: 'container-bookP3', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P3', freq: 'F1', len: '100', }, },
@@ -65,19 +65,19 @@ function cbEV_OnDocReady_highcharts()
         series: [
           {
             name: 'Bids',
-            step: true,
+            step: 'right',
             color: '#009F00',
             data: [ ],
           },
           {
             name: 'Tick',
-            step: true,
+            step: 'center',
             color: '#FFD700',
             data: [ ],
           },
           {
             name: 'Asks',
-            step: true,
+            step: 'left',
             color: '#9F0000',
             data: [ ],
           },

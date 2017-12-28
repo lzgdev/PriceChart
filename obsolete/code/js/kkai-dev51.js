@@ -21,7 +21,7 @@ class ClDataSet_Ticker_DbIn extends dev11.ClDataSet_Ticker
     this.loc_db_reader  = db_reader;
   }
 
-  onLocRecChg_CB(ticker_rec, rec_index)
+  onLocRecAdd_CB(ticker_rec, rec_index)
   {
   }
 }
@@ -39,13 +39,13 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
     this.loc_date_next  = 0;
   }
 
-  onLocRecChg_CB(ticker_rec, rec_index)
+  onLocRecAdd_CB(ticker_rec, rec_index)
   {
     var utc_now;
     utc_now = this.loc_time_this;
     if (utc_now <  this.loc_date_next)
     {
-//    console.log("ClDataSet_Ticker_DbOut(onLocRecChg_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(ticker_rec));
+//    console.log("ClDataSet_Ticker_DbOut(onLocRecAdd_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(ticker_rec));
       this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'update',
           time: utc_now,
           data: ticker_rec,
@@ -58,7 +58,7 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
       this.loc_name_coll  = 'ticker-' + _eval_name_coll(utc_new);
       this.loc_date_next  = utc_new + this.loc_date_dur;
       // add collection and docs
-//    console.log("ClDataSet_Ticker_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(ticker_rec));
+//    console.log("ClDataSet_Ticker_DbOut(onLocRecAdd_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(ticker_rec));
       this.loc_db_writer.dbOP_CollAdd(this.loc_name_coll, this.name_chan, this.wreq_args);
       this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'snapshot',
           time: utc_now,
@@ -77,9 +77,9 @@ class ClDataSet_ABooks_DbIn extends dev11.ClDataSet_ABooks
     this.loc_db_reader  = db_reader;
   }
 
-  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
   {
-//    console.log("ClDataSet_ABooks_DbIn(onLocRecChg_CB): rec:", JSON.stringify(book_rec));
+//    console.log("ClDataSet_ABooks_DbIn(onLocRecAdd_CB): rec:", JSON.stringify(book_rec));
   }
 }
 
@@ -96,7 +96,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
     this.loc_date_next  = 0;
   }
 
-  onLocRecChg_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
+  onLocRecAdd_CB(flag_sece, book_rec, flag_bids, idx_book, flag_del)
   {
     if (!flag_sece) {
       return;
@@ -105,7 +105,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
     utc_now = this.loc_time_this;
     if (utc_now <  this.loc_date_next)
     {
-//    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(book_rec));
+//    console.log("ClDataSet_ABooks_DbOut(onLocRecAdd_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(book_rec));
       this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'update',
           time: utc_now,
           data: book_rec,
@@ -125,7 +125,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
       var  utc_new = Math.floor(utc_now / this.loc_date_dur) * this.loc_date_dur;
       this.loc_name_coll  = 'book-' + this.wreq_args.prec + '-' + _eval_name_coll(utc_new);
       this.loc_date_next  = utc_new + this.loc_date_dur;
-//    console.log("ClDataSet_ABooks_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
+//    console.log("ClDataSet_ABooks_DbOut(onLocRecAdd_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
       this.loc_db_writer.dbOP_CollAdd(this.loc_name_coll, this.name_chan, this.wreq_args);
       this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'snapshot',
@@ -144,7 +144,7 @@ class ClDataSet_ACandles_DbIn extends dev11.ClDataSet_ACandles
     this.loc_db_reader  = db_reader;
   }
 
-  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
   {
   }
 }
@@ -167,7 +167,7 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
     this.loc_name_key   = ((i1 < 0) || (i2 < 0)) ? '' : this.wreq_args.key.slice(i1+1, i2);
   }
 
-  onLocRecChg_CB(flag_sece, candle_rec, rec_index)
+  onLocRecAdd_CB(flag_sece, candle_rec, rec_index)
   {
     if (!flag_sece) {
       return;
@@ -180,7 +180,7 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
     utc_now = candle_rec.mts;
     if ((utc_now <  this.loc_date_next) && (utc_now >  this.loc_mts_sync))
     {
-//      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(candle_rec));
+//      console.log("ClDataSet_ACandles_DbOut(onLocRecAdd_CB) 11:", "coll:", this.loc_name_coll, "doc:", JSON.stringify(candle_rec));
       this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'update',
           time: utc_now,
           data: candle_rec,
@@ -197,7 +197,7 @@ class ClDataSet_ACandles_DbOut extends dev11.ClDataSet_ACandles
       var  utc_new = Math.floor(utc_now / this.loc_date_dur) * this.loc_date_dur;
       this.loc_name_coll  = 'candles-' + this.loc_name_key + '-' + _eval_name_coll(utc_new);
       this.loc_date_next  = utc_new + this.loc_date_dur;
-//      console.log("ClDataSet_ACandles_DbOut(onLocRecChg_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
+//      console.log("ClDataSet_ACandles_DbOut(onLocRecAdd_CB) 21:", "coll:", this.loc_name_coll, "docs:", JSON.stringify(obj_docs));
       // add collection and docs
       this.loc_db_writer.dbOP_CollAdd(this.loc_name_coll, this.name_chan, this.wreq_args);
       this.loc_db_writer.dbOP_DocAdd(this.loc_name_coll, { type: 'snapshot',
