@@ -5,6 +5,11 @@ class ClNetClient_Base
   {
   }
 
+  ncChk_HaveRecvs()
+  {
+    return this.onNcChk_HaveRecvs_impl();
+  }
+
   addObj_DataReceiver(obj_receiver)
   {
     this.onNcOP_AddReceiver(obj_receiver);
@@ -30,6 +35,11 @@ class ClNetClient_Base
     this.onNcEV_Message_impl(obj_msg);
   }
 
+  onNcChk_HaveRecvs_impl()
+  {
+    return false;
+  }
+
   onNcOP_AddReceiver(obj_receiver)
   {
   }
@@ -53,11 +63,17 @@ class ClNetClient_Base
 
 class ClNetClient_BfxWss extends ClNetClient_Base
 {
-  constructor()
+  constructor(url_wss)
   {
     super();
+    this.url_wss   = url_wss;
     this.sock_wss  = null;
     this.objs_chan_data = [];
+  }
+
+  onNcChk_HaveRecvs_impl()
+  {
+    return (this.objs_chan_data.length > 0) ? true : false;
   }
 
   onNcOP_AddReceiver(obj_receiver)
@@ -146,21 +162,17 @@ class ClNetClient_BfxWss extends ClNetClient_Base
 
   onNcOP_Exec_impl()
   {
-    var wss_srvproto = 'wss';
-    var wss_srvhost = 'api.bitfinex.com';
-    var wss_srvport = null;
-    var wss_srvpath = null;
+    var url_wss_def = 'wss://api.bitfinex.com/ws/2';
+    var url_wss;
 
-    wss_srvpath = '/ws/2';
-    this.sock_wss = new WebSocket(wss_srvproto + '://' + wss_srvhost
-                      + ((wss_srvport === null) ? '' : (':' + wss_srvport))
-                      + ((wss_srvpath === null) ? '' : wss_srvpath));
+    url_wss = (this.url_wss == null) ? url_wss_def : this.url_wss;
+    this.sock_wss = new WebSocket(url_wss);
 
     // When the connection is open, send some data to the server
     this.sock_wss.onclose = () => {
     };
     this.sock_wss.onopen  = () => {
-      console.log('WebSocket connected to ' + wss_srvhost);
+      console.log('WebSocket connected to ' + url_wss);
     };
     // Log errors
     this.sock_wss.onerror = (error) => {

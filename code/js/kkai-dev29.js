@@ -7,17 +7,24 @@ var mapWREQs = [
         { channel:    'book', uid: 'container-bookP1', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P1', freq: 'F1', len: '100', }, },
         { channel:    'book', uid: 'container-bookP2', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P2', freq: 'F1', len: '100', }, },
         { channel:    'book', uid: 'container-bookP3', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P3', freq: 'F1', len: '100', }, },
-        { channel: 'candles', uid: 'container-candle', visible:  true, wreq_args: {    key: 'trade:1m:tBTCUSD', }, },
+        { channel: 'candles', uid: 'container-candle', visible: false, wreq_args: {    key: 'trade:1m:tBTCUSD', }, },
       ];
 
-function cbEV_OnDocReady_prep()
+function cbEV_OnDocReady_prep(url_wss=null)
 {
-  obj_netclient = new ClNetClient_BfxWss();
+  obj_netclient = new ClNetClient_BfxWss(url_wss);
 }
 
 function cbEV_OnDocReady_highcharts()
 {
   var mi;
+
+  for (mi=0; mi < mapWREQs.length; mi++)
+  {
+    var map_unit = mapWREQs[mi], gui_unit;
+    gui_unit = document.getElementById(map_unit.uid);
+    map_unit.visible = (gui_unit == null || gui_unit.hidden) ? false : true;
+  }
 
   for (mi=0; mi < mapWREQs.length; mi++)
   {
@@ -139,7 +146,9 @@ function cbEV_OnDocReady_highcharts()
 
 function cbEV_OnDocReady_websocket()
 {
-  obj_netclient.ncOP_Exec();
+  if (obj_netclient.ncChk_HaveRecvs()) {
+    obj_netclient.ncOP_Exec();
+  }
 }
 
 function _onUI_Test01()

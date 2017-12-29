@@ -5,12 +5,20 @@ import tornado.gen
 import tornado.websocket
 
 import os.path
+import sys
 import math
 import time
 
-gDir_root = os.path.dirname(__file__)
+import logging
 
+gDir_root = os.path.dirname(__file__)
 gDir_ui_static = os.path.join(gDir_root, 'ui/static')
+
+sys.path.insert(0, os.path.abspath(os.path.join(gDir_root, 'code')))
+
+from ktsrv  import WebSockHandler
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class MainHandler(tornado.web.RequestHandler):
 	def initialize(self, code_entry):
@@ -50,18 +58,6 @@ class MiscHandler(tornado.web.StaticFileHandler):
 			return os.path.join(gDir_root, 'code/js', path_file)
 		return super(MiscHandler, self).validate_absolute_path(root, absolute_path)
 
-class SocketHandler(tornado.websocket.WebSocketHandler):
-	def check_origin(self, origin):
-		return True
-
-	def open(self):
-		if self not in cl:
-			cl.append(self)
-
-	def on_close(self):
-		if self in cl:
-			cl.remove(self)
-
 class AppChartServer(tornado.web.Application):
 	def __init__(self):
 		settings = dict(
@@ -72,7 +68,7 @@ class AppChartServer(tornado.web.Application):
 		handlers = [
 			(r'/views/.*\.html',    MainHandler, { 'code_entry': 'views', }),
 			(r'/demo/.*\.html',     DemoHandler),
-			(r'/ws',                SocketHandler),
+			(r'/ws/(.*)',           WebSockHandler),
 			(r'/(css/.+\.css)',     MiscHandler, { 'path': settings['static_path'] }),
 			(r'/(js/.+\.js)',       MiscHandler, { 'path': settings['static_path'] }),
 			(r'/(favicon.ico)',     MiscHandler, { 'path': settings['static_path'] }),
