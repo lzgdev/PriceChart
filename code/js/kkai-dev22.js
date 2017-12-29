@@ -1,17 +1,54 @@
 // module kkai-dev22
 
+var __gmark_runintv_guisync_abooks = false;
+var __gmark_runintv_guisync_stamp  = 1;
+var __glist_runintv_guisync_abooks = [];
+
+function __runintv_guisync_abooks()
+{
+  var idx_abooks;
+  __gmark_runintv_guisync_stamp ++;
+  //console.log("gui sync: " + __gmark_runintv_guisync_stamp + " ...");
+  for (idx_abooks=__glist_runintv_guisync_abooks.length-1; idx_abooks >= 0; idx_abooks--)
+  {
+    var flag_del = false, flag_syn = false;
+    var obj_abooks = __glist_runintv_guisync_abooks[idx_abooks];
+    if (obj_abooks.loc_sync_mark == 0) {
+      flag_del =  true;
+    }
+    else
+    if (__gmark_runintv_guisync_stamp >= (obj_abooks.loc_sync_mark+2)) {
+      flag_del =  true;
+      flag_syn =  true;
+    }
+    if (flag_syn) {
+      obj_abooks.syncDataGUI();
+    }
+    if (flag_del) {
+      __glist_runintv_guisync_abooks.splice(idx_abooks, 1);
+    }
+  }
+}
+
 class ClDataSet_ABooks_HighCharts extends ClDataSet_ABooks
 {
   constructor(gui_chart, wreq_args)
   {
     super(wreq_args);
     this.loc_gui_chart = gui_chart;
-    this.loc_sync_flag = false;
+    this.loc_sync_mark = 0;
     this.loc_min_xaxis =  0.0;
     this.loc_max_xaxis = -1.0;
     this.loc_min_yaxis =  0.0;
     this.loc_max_yaxis = -1.0;
-this.num_change = 0;
+
+    this.num_change = 0;
+  }
+
+  syncDataGUI()
+  {
+    this.onSyncDataGUI_impl();
+    this.loc_sync_mark = 0;
   }
 
   onSyncDataGUI_impl()
@@ -82,20 +119,25 @@ this.num_change = 0;
   {
   }
 
-  onLocDataAppend_CB(chan_data)
-  {
-    if (!this.loc_sync_flag) {
-      return 0;
-    }
-this.num_change ++;
-if ((this.num_change % 4) != 0) { return -1; }
-    this.onSyncDataGUI_impl();
-    this.loc_sync_flag = false;
-  }
-
   onLocRecAdd_CB(flag_plus, book_rec, flag_bids, idx_book, flag_del)
   {
-    this.loc_sync_flag = true;
+    if (!flag_plus) {
+      return 0;
+    }
+    if (!__gmark_runintv_guisync_abooks) {
+      __gmark_runintv_guisync_abooks = true;
+      setInterval(__runintv_guisync_abooks, 25);
+    }
+    this.loc_sync_mark = __gmark_runintv_guisync_stamp;
+    if (__glist_runintv_guisync_abooks.indexOf(this) < 0) {
+      __glist_runintv_guisync_abooks.push(this);
+    }
+    return 1;
+  }
+
+  onLocDataSync_CB()
+  {
+    this.syncDataGUI();
   }
 }
 
