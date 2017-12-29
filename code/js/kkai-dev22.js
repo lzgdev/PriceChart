@@ -159,27 +159,32 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
   onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
   {
     var idx_gui;
-    var gui_sers, pnt_this;
+    var gui_ohlc, pnt_ohlc, gui_vol, pnt_vol;
     if (!flag_plus) {
       return 0;
     }
-    gui_sers = this.loc_gui_chart.series[0];
-    pnt_this = [
+    gui_ohlc = (this.loc_gui_chart.series.length <= 0) ? null : this.loc_gui_chart.series[0];
+    gui_vol  = (this.loc_gui_chart.series.length <= 1) ? null : this.loc_gui_chart.series[1];
+    pnt_ohlc = [
         candle_rec.mts,
         candle_rec.open,
         candle_rec.high,
         candle_rec.low,
         candle_rec.close,
       ];
+    pnt_vol = [
+        candle_rec.mts,
+        candle_rec.volume,
+      ];
     if (candle_rec.mts >  this.loc_mts_sync) {
-      gui_sers.addPoint(pnt_this, true);
+      gui_ohlc.addPoint(pnt_ohlc, true);
       this.loc_mts_sync  = candle_rec.mts;
       this.loc_gui_recn ++;
     }
     else
-    if ((idx_gui=gui_sers.data.length-1) >= 0) {
-      if (gui_sers.data[idx_gui].x == candle_rec.mts) {
-        gui_sers.data[idx_gui].update(pnt_this, true);
+    if ((idx_gui=gui_ohlc.data.length-1) >= 0) {
+      if (gui_ohlc.data[idx_gui].x == candle_rec.mts) {
+        gui_ohlc.data[idx_gui].update(pnt_ohlc, true);
       }
     }
     return 1;
@@ -188,20 +193,30 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
   onLocDataSync_CB()
   {
     var idx_rec, num_rec;
-    var gui_sers, pnt_this, candle_rec;
-    gui_sers = this.loc_gui_chart.series[0];
+    var candle_rec, gui_ohlc, pnt_ohlc, gui_vol, pnt_vol;
+    gui_ohlc = (this.loc_gui_chart.series.length <= 0) ? null : this.loc_gui_chart.series[0];
+    gui_vol  = (this.loc_gui_chart.series.length <= 1) ? null : this.loc_gui_chart.series[1];
     num_rec  = this.loc_candle_recs.length;
     for (idx_rec=0; idx_rec <  num_rec; idx_rec++)
     {
       candle_rec = this.loc_candle_recs[idx_rec];
-      pnt_this = [
-        candle_rec.mts,
-        candle_rec.open,
-        candle_rec.high,
-        candle_rec.low,
-        candle_rec.close,
-      ];
-      gui_sers.addPoint(pnt_this, false);
+      if (gui_ohlc != null) {
+        pnt_ohlc = [
+            candle_rec.mts,
+            candle_rec.open,
+            candle_rec.high,
+            candle_rec.low,
+            candle_rec.close,
+          ];
+        gui_ohlc.addPoint(pnt_ohlc, false);
+      }
+      if (gui_vol != null) {
+        pnt_vol = [
+            candle_rec.mts,
+            candle_rec.volume,
+          ];
+        gui_vol.addPoint(pnt_vol, false);
+      }
       this.loc_mts_sync  = candle_rec.mts;
       this.loc_gui_recn ++;
     }

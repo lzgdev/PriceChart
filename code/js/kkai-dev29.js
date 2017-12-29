@@ -110,11 +110,22 @@ function cbEV_OnDocReady_highcharts()
         series: [
             {
               type: 'candlestick',
+              name: 'OHLC',
               data: [ ],
               dataGrouping: {
                 enabled: false
               }
             },
+/*
+            {
+              type: 'column',
+              name: 'VOL',
+              data: [ ],
+              dataGrouping: {
+                enabled: false
+              }
+            },
+// */
           ],
         });
       chan_obj = new ClDataSet_ACandles_HighCharts(1000, chart_gui, map_unit.wreq_args);
