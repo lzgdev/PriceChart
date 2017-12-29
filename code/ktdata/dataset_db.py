@@ -1,6 +1,7 @@
 
 import time
 import math
+import copy
 
 from .dataset import CTDataSet_Ticker, CTDataSet_ABooks, CTDataSet_ACandles
 
@@ -16,8 +17,6 @@ class CTDbOut_Adapter:
 		self.msec_dbc_nxt   = 0
 		self.loc_name_pref  = name_pref
 		self.loc_name_coll  = None
-
-		self.flag_dbg_rec   = False
 
 	def colAppend(self, msec_now):
 		# re-asign self.msec_dbc_pre and self.msec_dbc_nxt
@@ -39,7 +38,7 @@ class CTDbOut_Adapter:
 	def docAppend(self, doc_rec):
 		msec_doc = doc_rec['mts']
 		# append collection to database
-		if self.msec_dbc_nxt == 0  or msec_doc >= self.msec_dbc_nxt:
+		if msec_doc >= self.msec_dbc_nxt:
 			self.colAppend(msec_doc)
 		# append doc to database
 		if msec_doc <= self.msec_dbc_pre  or msec_doc >= self.msec_dbc_nxt:
@@ -99,29 +98,48 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
 						self.name_chan, self.wreq_args, 'book-' + self.wreq_args['prec'])
 		self.num_recs_wrap  = 240
 		self.cnt_recs_book  = 0
+		self.mts_recs_last  = 0
+
+	def onLocDataSync_CB(self):
+		msec_now = self.loc_time_this
+		# add doc of reset
+		out_doc = { 'type': 'reset', 'mts': msec_now, }
+		self.loc_db_adapter.docAppend(out_doc)
+		# add docs from snapshot
+		for book_rec in self.loc_book_bids:
+			out_doc  = copy.copy(book_rec)
+			out_doc['mts'] = msec_now
+			del out_doc['sumamt']
+			self.loc_db_adapter.docAppend(out_doc)
+		for book_rec in self.loc_book_asks:
+			out_doc  = copy.copy(book_rec)
+			out_doc['mts'] = msec_now
+			del out_doc['sumamt']
+			self.loc_db_adapter.docAppend(out_doc)
+		# add doc of sync
+		out_doc = { 'type': 'sync', 'mts': msec_now, }
+		self.loc_db_adapter.docAppend(out_doc)
+		# reset self.cnt_recs_book
+		self.cnt_recs_book  = 0
+		self.mts_recs_last  = 0
 
 	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
 		if not flag_plus:
 			return
 		msec_now = self.loc_time_this
-		if self.cnt_recs_book % self.num_recs_wrap != 0:
-			out_doc = book_rec
-			out_doc['mts'] = msec_now
-			self.loc_db_adapter.docAppend(out_doc)
-		else:
-			# add docs from snapshot
-			out_doc = { 'type': 'reset', 'mts': msec_now, }
-			self.loc_db_adapter.docAppend(out_doc)
-			for book_rec in self.loc_book_bids:
-				out_doc  = book_rec
-				out_doc['mts'] = msec_now
-				self.loc_db_adapter.docAppend(out_doc)
-			for book_rec in self.loc_book_asks:
-				out_doc  = book_rec
-				out_doc['mts'] = msec_now
-				self.loc_db_adapter.docAppend(out_doc)
-			out_doc = { 'type': 'sync', 'mts': msec_now, }
-		self.cnt_recs_book += 1
+		if (msec_now - self.mts_recs_last) >= 500:
+			self.cnt_recs_book += 1
+		flag_new_coll = True if msec_now >= self.loc_db_adapter.msec_dbc_nxt else False
+		flag_new_sync = True if self.cnt_recs_book >= self.num_recs_wrap else False
+		if flag_new_coll:
+			self.loc_db_adapter.colAppend(msec_now)
+		if flag_new_coll or flag_new_sync:
+			self.onLocDataSync_CB()
+		out_doc  = copy.copy(book_rec)
+		out_doc['mts'] = msec_now
+		del out_doc['sumamt']
+		if self.loc_db_adapter.docAppend(out_doc):
+			self.mts_recs_last  = msec_now
 
 def _extr_cname_key(wreq_key):
 	i1  =  wreq_key.find(':')
@@ -146,18 +164,27 @@ class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
 		self.logger   = logger
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'candles-' + _extr_cname_key(self.wreq_args['key']))
-		self.loc_out_count  = 0
+		self.loc_out_stamp  = 0
+
+	def onLocDataClean_CB(self):
+		self.loc_out_stamp  = 0
+
+	def onLocDataSync_CB(self):
+		for idx_rec in range(0, len(self.loc_candle_recs)-1):
+			candle_rec = self.loc_candle_recs[idx_rec]
+			if self.loc_db_adapter.docAppend(candle_rec):
+				self.loc_out_stamp  = candle_rec['mts']
 
 	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		if not flag_plus:
-			return
-		if len(self.loc_candle_recs) <= 1:
-			return
-		idx_bgn = 0 if self.loc_out_count == 0 else len(self.loc_candle_recs) - 2
-		for idx_rec in range(idx_bgn, len(self.loc_candle_recs) - 1):
-			if idx_rec <  0:
-				continue
-			candle_rec = self.loc_candle_recs[idx_rec]
-			if self.loc_db_adapter.docAppend(candle_rec):
-				self.loc_out_count += 1
+			return False
+		idx_rec = len(self.loc_candle_recs) - 2
+		if idx_rec <  0:
+			return False
+		candle_rec = self.loc_candle_recs[idx_rec]
+		if candle_rec['mts'] <= self.loc_out_stamp:
+			return False
+		if self.loc_db_adapter.docAppend(candle_rec):
+			self.loc_out_stamp  = candle_rec['mts']
+		return True
 

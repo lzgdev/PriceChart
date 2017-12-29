@@ -7,6 +7,8 @@ import hmac
 import hashlib
 import json
 
+from .dataset import DFMT_KKAIPRIV, DFMT_BITFINEX
+
 class CTNetClient_Base(websocket.WebSocketApp):
 	def __init__(self, logger, url_ws):
 		super(CTNetClient_Base, self).__init__(url_ws)
@@ -196,7 +198,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 						") no longer active, ignore data chanId=" + str(cid_msg))
 		else:
 			#self.logger.debug(self.inf_this + "(data): chan(idx=" + str(idx_handler) + ") handle data, data=" + str(obj_msg))
-			self.objs_chan_data[idx_handler].locDataAppend(2001, obj_msg)
+			self.objs_chan_data[idx_handler].locDataAppend(DFMT_BITFINEX, obj_msg)
 
 	def _run_kkai_step(self):
 		#self.logger.warning(self.inf_this + "websocket KKAI Check: ...")

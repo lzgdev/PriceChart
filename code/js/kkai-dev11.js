@@ -24,7 +24,7 @@ class ClDataSet_Base
     this.onLocDataClean_impl();
     this.onLocDataClean_CB();
   }
-  locRecSync()
+  locDataSync()
   {
     this.onLocDataSync_impl();
     this.onLocDataSync_CB();
@@ -106,7 +106,7 @@ class ClDataSet_Array extends ClDataSet_Base
       for (idx_rec=0; idx_rec <  num_rec; idx_rec++) {
         this.locRecAdd(false, fmt_data, data_msg[idx_rec]);
       }
-      this.locRecSync();
+      this.locDataSync();
     }
   }
 }

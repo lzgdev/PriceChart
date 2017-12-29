@@ -1,10 +1,14 @@
 
 import time
 
+DFMT_KKAIPRIV = 1001
+DFMT_BITFINEX = 2001
+
 def utTime_utcmts_now():
 	return int(round(time.time() * 1000))
 
 class CTDataSet_Base(object):
+
 	def __init__(self, name_chan, wreq_args):
 		self.name_chan = name_chan
 		self.wreq_args = wreq_args
@@ -20,14 +24,18 @@ class CTDataSet_Base(object):
 		self.onLocDataClean_impl()
 		self.onLocDataClean_CB()
 
-	def locDataAppend(self, data_src, obj_msg):
+	def locDataSync(self):
+		self.onLocDataSync_impl()
+		self.onLocDataSync_CB()
+
+	def locDataAppend(self, fmt_data, obj_msg):
 		if (self.flag_loc_time):
 			self.loc_time_this = utTime_utcmts_now()
-		self.onLocDataAppend_impl(data_src, obj_msg)
+		self.onLocDataAppend_impl(fmt_data, obj_msg)
 		self.onLocDataAppend_CB(None)
 
-	def locRecAdd(self, flag_plus, data_src, obj_rec):
-		self.onLocRecAdd_impl(flag_plus, data_src, obj_rec)
+	def locRecAdd(self, flag_plus, fmt_data, obj_rec):
+		self.onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
 
 	def onLocDataClean_CB(self):
 		pass
@@ -38,42 +46,45 @@ class CTDataSet_Base(object):
 	def onLocDataClean_impl(self):
 		pass
 
-	def onLocDataAppend_impl(self, data_src, obj_msg):
+	def onLocDataSync_impl(self):
 		pass
 
-	def onLocRecAdd_impl(self, flag_plus, data_src, obj_rec):
+	def onLocDataSync_CB(self):
+		pass
+
+	def onLocDataAppend_impl(self, fmt_data, obj_msg):
+		pass
+
+	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
 		pass
 
 class CTDataSet_Array(CTDataSet_Base):
 	def __init__(self, name_chan, wreq_args):
 		super(CTDataSet_Array, self).__init__(name_chan, wreq_args)
 
-	def onLocDataAppend_impl(self, data_src, obj_msg):
-		if (data_src == 1001):
+	def onLocDataAppend_impl(self, fmt_data, obj_msg):
+		data_msg  = None
+		if   (fmt_data == DFMT_KKAIPRIV):
 			data_msg  = obj_msg
-			if data_msg == None:
-				self.locDataClean()
-			else:
-				self.locRecAdd(True, data_src, data_msg)
-		else:
+		elif (fmt_data == DFMT_BITFINEX):
 			data_msg  = obj_msg[1]
-			if not isinstance(data_msg, list):
-				pass
-			elif not isinstance(data_msg[0], list):
-				self.locRecAdd(True, data_src, data_msg)
-			else:
-				self.locDataClean()
-				idx_end = len(data_msg) - 1
-				for rec_idx, rec_data in enumerate(data_msg):
-					self.locRecAdd(False if rec_idx < idx_end else True,
-								data_src, rec_data)
+
+		if not isinstance(data_msg, list):
+			pass
+		elif not isinstance(data_msg[0], list):
+			self.locRecAdd(True, fmt_data, data_msg)
+		else:
+			self.locDataClean()
+			for idx_rec, obj_rec in enumerate(data_msg):
+				self.locRecAdd(False, fmt_data, obj_rec)
+			self.locDataSync()
 
 class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, wreq_args):
 		super(CTDataSet_Ticker, self).__init__('ticker', wreq_args)
 
-	def onLocDataAppend_impl(self, data_src, obj_msg):
-		if (data_src == 1001):
+	def onLocDataAppend_impl(self, fmt_data, obj_msg):
+		if (fmt_data == DFMT_KKAIPRIV):
 			ticker_rec = obj_msg
 			self.onLocRecAdd_CB(ticker_rec, 0)
 		else:
@@ -107,8 +118,8 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		self.loc_book_bids.clear()
 		self.loc_book_asks.clear()
 
-	def onLocRecAdd_impl(self, flag_plus, data_src, obj_rec):
-		if (data_src == 1001):
+	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
+		if (fmt_data == DFMT_KKAIPRIV):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
 			book_rec   = obj_rec
 		else:
@@ -221,8 +232,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 	def onLocDataClean_impl(self):
 		self.loc_candle_recs.clear()
 
-	def onLocRecAdd_impl(self, flag_plus, data_src, obj_rec):
-		if (data_src == 1001):
+	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
+		if (fmt_data == DFMT_KKAIPRIV):
 			candle_rec = obj_rec;
 		else:
 			candle_rec = {
