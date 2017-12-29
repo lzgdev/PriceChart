@@ -28,7 +28,7 @@ class CTDbOut_Adapter:
 				time.strftime("%Y%m%d%H%M%S", time.gmtime(msec_coll / 1000)))
 		# append collection to database
 		self.loc_db_writer.dbOP_CollAdd(self.loc_name_coll, self.name_chan, self.wreq_args)
-		doc_one  = self.loc_db_writer.dbOP_DocFind_One(self.loc_name_coll, { }, [('mts', -1)])
+		doc_one  = self.loc_db_writer.dbOP_DocFind_One(self.loc_name_coll, { }, [('_id', -1)])
 		if doc_one != None:
 			self.msec_dbc_pre  = doc_one['mts']
 		if self.flag_dbg_rec:
