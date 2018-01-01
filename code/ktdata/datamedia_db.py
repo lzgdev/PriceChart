@@ -1,10 +1,3 @@
-import websocket
-import _thread
-import time
-
-import hmac
-import hashlib
-import json
 
 import pymongo
 import copy
@@ -55,21 +48,25 @@ class KTDataMedia_DbBase(object):
 			return False 
 		return self.onDbOP_DocAdd_impl(name_coll, obj_doc)
 
-	def dbOP_DocFind_One(self, name_coll, find_args, sort_args):
+	def dbOP_DocFind_One(self, name_coll, filt_args, sort_args):
 		if not self.dbChk_Coll_Ready(name_coll):
 			return None
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
-		db_doc  = db_coll.find_one(find_args, sort=sort_args)
+		if sort_args == None:
+			db_doc  = db_coll.find_one(filt_args)
+		else:
+			kwargs_find = { 'sort': sort_args, }
+			db_doc  = db_coll.find_one(filt_args, **kwargs_find)
 		return db_doc
 
-	def dbOP_CollLoad(self, name_coll, dataset, find_args, sort_args, flag_clean):
-		if dataset == None:
-			return False
+	def dbOP_CollLoad(self, id_chan, name_coll, find_args, sort_args):
+		self.onDbEV_CollLoad_Begin(id_chan)
 		if not self.dbChk_Coll_Ready(name_coll):
 			self.dbOP_CollAdd(name_coll, None, None)
 		if not self.dbChk_Coll_Ready(name_coll):
+			self.onDbEV_CollLoad_End(id_chan, -1)
 			return False
-		return self.onDbOP_CollLoad_impl(name_coll, dataset, find_args, sort_args, flag_clean)
+		return self.onDbOP_CollLoad_impl(id_chan, name_coll, find_args, sort_args)
 
 	def onDbEV_CollAdd(self, name_coll):
 		#self.logger.info("KTDataMedia_DbBase(onDbEV_CollAdd): name_coll=" + name_coll)
@@ -81,6 +78,15 @@ class KTDataMedia_DbBase(object):
 
 	def onDbEV_Closed(self):
 		#self.logger.info("KTDataMedia_DbBase(onDbEV_Closed): db closed.")
+		pass
+
+	def onDbEV_CollLoad_Begin(self, id_chan):
+		pass
+
+	def onDbEV_CollLoad_Doc(self, id_chan, obj_doc):
+		pass
+
+	def onDbEV_CollLoad_End(self, id_chan, num_docs):
 		pass
 
 	def onDbOP_Connect_impl(self, db_uri, db_name):
@@ -117,15 +123,16 @@ class KTDataMedia_DbBase(object):
 				self.onDbEV_CollAdd(name_coll)
 		return True
 
-	def onDbOP_CollLoad_impl(self, name_coll, dataset, find_args, sort_args, flag_clean):
+	def onDbOP_CollLoad_impl(self, id_chan, name_coll, find_args, sort_args):
+		num_docs = 0
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
 		ret_cur = db_coll.find(find_args, None, 0, 0, False, pymongo.CursorType.NON_TAILABLE, sort_args)
-		if flag_clean:
-			dataset.locDataAppend(1001, None)
 		for obj_msg in ret_cur:
 			db_doc  = copy.copy(obj_msg)
 			del db_doc['_id']
-			dataset.locDataAppend(1001, db_doc)
+			self.onDbEV_CollLoad_Doc(id_chan, db_doc)
+			num_docs += 1
+		self.onDbEV_CollLoad_End(id_chan, num_docs)
 
 	def onDbOP_DocAdd_impl(self, name_coll, obj_doc):
 		db_coll = self.db_coll_set if (name_coll == COLLNAME_CollSet) else self.db_collections[name_coll]
@@ -134,6 +141,7 @@ class KTDataMedia_DbBase(object):
 		ret_ins = db_coll.insert_one(db_doc)
 		if (name_coll != COLLNAME_CollSet):
 			self.onDbEV_DocAdd(name_coll, db_doc, ret_ins)
+
 
 
 class KTDataMedia_DbReader(KTDataMedia_DbBase):
