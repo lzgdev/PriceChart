@@ -13,7 +13,7 @@ import ntplib
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
 from ktdata import CTNetClient_BfxWss
-from ktdata import CTDataSet_Ticker_DbIn, CTDataSet_Ticker_DbOut, CTDataSet_ABooks_DbIn, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbIn, CTDataSet_ACandles_DbOut
+from ktdata import CTDataSet_Ticker_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
 from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
 
 from pymongo import MongoClient

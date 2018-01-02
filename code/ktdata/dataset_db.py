@@ -3,7 +3,7 @@ import time
 import math
 import copy
 
-from .dataset import CTDataSet_Ticker, CTDataSet_ABooks, CTDataSet_ACandles
+from .dataset import CTDataSet_Ticker_Adapter, CTDataSet_ABooks_Adapter, CTDataSet_ACandles_Adapter
 
 class CTDbOut_Adapter:
 	def __init__(self, logger, db_writer, num_coll_msec, name_chan, wreq_args, name_pref):
@@ -50,49 +50,24 @@ class CTDbOut_Adapter:
 		self.loc_db_writer.dbOP_DocAdd(self.loc_name_coll, doc_rec)
 		return True
 
-class CTDataSet_Ticker_DbIn(CTDataSet_Ticker):
-	def __init__(self, logger, db_reader, wreq_args):
-		super(CTDataSet_Ticker_DbIn, self).__init__(wreq_args)
-		self.logger   = logger
-		self.flag_dbg_rec   = True
-		self.loc_db_reader  = db_reader
-
-	def onLocRecAdd_CB(self, ticker_rec, rec_index):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_Ticker_DbIn(onLocRecAdd_CB): rec=" + str(ticker_rec))
-
-class CTDataSet_Ticker_DbOut(CTDataSet_Ticker):
+class CTDataSet_Ticker_DbOut(CTDataSet_Ticker_Adapter):
 	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):
-		super(CTDataSet_Ticker_DbOut, self).__init__(wreq_args)
+		super(CTDataSet_Ticker_DbOut, self).__init__(logger, wreq_args)
 		self.flag_loc_time  = True
-		self.logger   = logger
 		self.flag_dbg_rec   = True
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'ticker')
 
-	def onLocRecAdd_CB(self, ticker_rec, rec_index):
+	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
 		msec_now = self.loc_time_this
 		out_doc  = ticker_rec
 		out_doc['mts'] = msec_now
 		self.loc_db_adapter.docAppend(out_doc)
 
-class CTDataSet_ABooks_DbIn(CTDataSet_ABooks):
-	def __init__(self, logger, db_reader, wreq_args):
-		super(CTDataSet_ABooks_DbIn, self).__init__(wreq_args)
-		self.logger   = logger
-		self.flag_dbg_rec   = True
-		self.loc_db_reader  = db_reader
-
-	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
-
-
-class CTDataSet_ABooks_DbOut(CTDataSet_ABooks):
+class CTDataSet_ABooks_DbOut(CTDataSet_ABooks_Adapter):
 	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):
-		super(CTDataSet_ABooks_DbOut, self).__init__(wreq_args)
+		super(CTDataSet_ABooks_DbOut, self).__init__(logger, wreq_args)
 		self.flag_loc_time  = True
-		self.logger   = logger
 		self.flag_dbg_rec   = True
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'book-' + self.wreq_args['prec'])
@@ -147,21 +122,9 @@ def _extr_cname_key(wreq_key):
 	name_key = '' if i1 < 0 or i2 < 0 else wreq_key[i1+1 : i2]
 	return name_key
 
-class CTDataSet_ACandles_DbIn(CTDataSet_ACandles):
-	def __init__(self, logger, db_reader, recs_size, wreq_args):
-		super(CTDataSet_ACandles_DbIn, self).__init__(recs_size, wreq_args)
-		self.logger   = logger
-		self.flag_dbg_rec   = True
-		self.loc_db_reader  = db_reader
-
-	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ACandles_DbIn(onLocRecAdd_CB): rec=" + str(candle_rec))
-
-class CTDataSet_ACandles_DbOut(CTDataSet_ACandles):
+class CTDataSet_ACandles_DbOut(CTDataSet_ACandles_Adapter):
 	def __init__(self, logger, db_writer, num_coll_msec, recs_size, wreq_args):
-		super(CTDataSet_ACandles_DbOut, self).__init__(recs_size, wreq_args)
-		self.logger   = logger
+		super(CTDataSet_ACandles_DbOut, self).__init__(recs_size, logger, wreq_args)
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'candles-' + _extr_cname_key(self.wreq_args['key']))
 		self.loc_out_stamp  = 0

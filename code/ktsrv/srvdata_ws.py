@@ -1,5 +1,6 @@
 
 import json
+import copy
 import logging
 
 import tornado.websocket
@@ -22,7 +23,7 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 		id_chan_new = self.id_chan_mark
 		self.id_chan_mark += 1
 		self.logger.info("WebSockHandler: open file=" + ws_file)
-		self.obj_db_reader = KTDataMedia_DbReader_ws(self.logger, self)
+		self.obj_db_reader = KTDataMedia_DbReader_WsOut(self.logger)
 		self.obj_db_reader.dbOP_Connect('mongodb://127.0.0.1:27017', 'bfx-pub')
 		self.write_message({ 'event': 'info', 'version': 2, 'ext': 'KKAIEX02', })
 
@@ -44,44 +45,101 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 	def onMsg_sbsc(self, obj_msg):
 		self.id_chan_mark += 1
 		id_chan_sbsc = self.id_chan_mark
+		wreq_args = copy.copy(obj_msg)
 		try:
-			chan_msg = obj_msg['channel']
+			chan_msg = wreq_args['channel']
 		except:
 			chan_msg = None
-		self.logger.info("WebSockHandler(sbsc): chan=" + str(chan_msg) + ", obj_msg=" + str(obj_msg))
-		filt_wreq_args = { }
-		for req_key, req_val in obj_msg.items():
-			if req_key == 'event'  or req_key == 'channel':
-				continue
-			filt_wreq_args[req_key] = req_val
-		filt_args = { 'channel': chan_msg, 'reqargs': filt_wreq_args, }
-		#obj_doc   = self.obj_db_reader.dbOP_DocFind_One(ktdata.COLLNAME_CollSet, { 'coll': { '$regex': 'candles-1m-.*', } }, [('$nature', -1)])
+		self.logger.info("WebSockHandler(sbsc): chan=" + str(chan_msg) + ", wreq_args=" + str(wreq_args))
+		#filt_args = { 'channel': chan_msg, }
+		#filt_args = { 'coll': { '$regex': 'candles-1m-.*', } }
+		filt_args = { 'channel': chan_msg, 'reqargs': KTDataMedia_DbReader_WsOut.wreq_args2str(wreq_args), }
 		obj_doc   = self.obj_db_reader.dbOP_DocFind_One(ktdata.COLLNAME_CollSet, filt_args, [('$nature', -1)])
 		name_coll = None if obj_doc == None else obj_doc['coll']
-		wret_args = { 'event': 'subscribed', 'channel': chan_msg, 'chanId': id_chan_sbsc, }
-		wret_args.update(filt_wreq_args)
+		wret_args = copy.copy(wreq_args)
+		wret_args.update({ 'event': 'subscribed', 'channel': chan_msg, 'chanId': id_chan_sbsc, })
 		self.write_message(wret_args)
-		#self.logger.info("WebSockHandler(sbsc): chan=" + str(chan_msg) + ", name=" + str(name_coll) + ", obj_doc=" + str(obj_doc))
+		self.logger.info("WebSockHandler(sbsc): chan=" + str(chan_msg) + ", name=" + str(name_coll) + ", obj_doc=" + str(obj_doc))
+		if   chan_msg == 'book':
+			obj_dataset = CTDataSet_ABooks_WsOut(self.logger, wreq_args, self, id_chan_sbsc)
+		elif chan_msg == 'candles':
+			obj_dataset = CTDataSet_ACandles_WsOut(512, self.logger, wreq_args, self, id_chan_sbsc)
+		else:
+			obj_dataset = None
+		self.obj_db_reader.setDataset(obj_dataset)
 		self.obj_db_reader.dbOP_CollLoad(id_chan_sbsc, name_coll, {}, None)
 
 
-class KTDataMedia_DbReader_ws(ktdata.KTDataMedia_DbReader):
-	def __init__(self, logger, obj_ws):
-		super(KTDataMedia_DbReader_ws, self).__init__(logger)
-		self.obj_ws = obj_ws
-		self.list_coll_docs = []
+class KTDataMedia_DbReader_WsOut(ktdata.KTDataMedia_DbReader):
+	def __init__(self, logger):
+		super(KTDataMedia_DbReader_WsOut, self).__init__(logger)
+		self.obj_dataset = None
+
+	def setDataset(self, obj_dataset):
+		self.obj_dataset = obj_dataset
 
 	def onDbEV_CollLoad_Begin(self, id_chan):
 		#self.logger.info("DataMedia(load): begin, chan=" + str(id_chan))
-		self.list_coll_docs.clear()
+		if self.obj_dataset != None:
+			self.obj_dataset.locDataClean()
 
 	def onDbEV_CollLoad_Doc(self, id_chan, obj_doc):
 		#self.logger.info("DataMedia(load): chan=" + str(id_chan) + ", doc=" + str(obj_doc))
+		type_rec = obj_doc['type']
+		if self.obj_dataset != None:
+			if   type_rec == 'reset':
+				self.obj_dataset.locDataClean()
+			elif type_rec == 'sync':
+				self.obj_dataset.locDataSync()
+			else:
+				self.obj_dataset.locRecAdd(False, ktdata.DFMT_KKAIPRIV, obj_doc)
+		#locDataAppend(self, fmt_data, obj_msg)
 		#self.list_coll_docs.append(obj_doc)
-		self.list_coll_docs.append([ obj_doc['mts'], obj_doc['open'],
-					obj_doc['close'], obj_doc['high'], obj_doc['low'], obj_doc['volume'],])
+		#self.list_coll_docs.append([ obj_doc['mts'], obj_doc['open'], obj_doc['close'], obj_doc['high'], obj_doc['low'], obj_doc['volume'],])
 
 	def onDbEV_CollLoad_End(self, id_chan, num_docs):
 		#self.logger.info("DataMedia(load): end, chan=" + str(id_chan) + ", num=" + str(num_docs))
-		self.obj_ws.write_message(str([id_chan, self.list_coll_docs,]))
+		if self.obj_dataset != None:
+			self.obj_dataset.locDataSync()
+		#self.obj_ws.write_message(str([id_chan, self.list_coll_docs,]))
+
+
+class CTDataSet_ABooks_WsOut(ktdata.CTDataSet_ABooks_Adapter):
+	def __init__(self, logger, wreq_args, obj_ws, id_ws_chan):
+		super(CTDataSet_ABooks_WsOut, self).__init__(logger, wreq_args)
+		#self.flag_dbg_rec =  True
+		self.obj_ws  = obj_ws
+		self.id_ws_chan = id_ws_chan
+
+	def onLocDataSync_CB(self):
+		out_docs = []
+		for book_rec in self.loc_book_bids:
+			out_docs.append([ book_rec['price'], book_rec['count'],     book_rec['amount'], ])
+		for book_rec in self.loc_book_asks:
+			out_docs.append([ book_rec['price'], book_rec['count'], 0 - book_rec['amount'], ])
+		self.obj_ws.write_message(str([self.id_ws_chan, out_docs]))
+
+
+class CTDataSet_ACandles_WsOut(ktdata.CTDataSet_ACandles_Adapter):
+	def __init__(self, recs_size, logger, wreq_args, obj_ws, id_ws_chan):
+		super(CTDataSet_ACandles_WsOut, self).__init__(recs_size, logger, wreq_args)
+		#self.flag_dbg_rec   =  True
+		self.obj_ws  = obj_ws
+		self.id_ws_chan = id_ws_chan
+
+	def onLocDataClean_CB(self):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ACandles_WsOut(onLocDataClean_CB): ...")
+		pass
+
+	def onLocDataSync_CB(self):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ACandles_WsOut(onLocDataSync_CB): ...")
+		pass
+
+	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(candle_rec))
+		pass
+
 

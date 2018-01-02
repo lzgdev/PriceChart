@@ -1,5 +1,7 @@
 
 import pymongo
+
+import json
 import copy
 
 COLLNAME_CollSet = 'set-colls'
@@ -13,6 +15,17 @@ class KTDataMedia_DbBase(object):
 		self.db_database    = None
 		self.db_coll_set    = None
 		self.db_collections = { }
+
+	@staticmethod
+	def wreq_args2str(wreq_args):
+		obj_args = { }
+		for req_key, req_val in wreq_args.items():
+			if req_key == 'event'  or req_key == 'channel':
+				continue
+			obj_args[req_key] = req_val
+		str_args = json.dumps(obj_args, sort_keys=True)
+		print("KTDataMedia_DbBase::wreq_args2str: " + str_args)
+		return str_args
 
 	def dbChk_Db_Ready(self):
 		return True if (self.db_database != None) else False
@@ -118,7 +131,7 @@ class KTDataMedia_DbBase(object):
 				self.dbOP_DocAdd(COLLNAME_CollSet, {
 							'coll': name_coll,
 							'channel': wreq_chan,
-							'reqargs': wreq_args,
+							'reqargs': KTDataMedia_DbBase.wreq_args2str(wreq_args),
 						})
 				self.onDbEV_CollAdd(name_coll)
 		return True

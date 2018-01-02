@@ -8,7 +8,6 @@ def utTime_utcmts_now():
 	return int(round(time.time() * 1000))
 
 class CTDataSet_Base(object):
-
 	def __init__(self, name_chan, wreq_args):
 		self.name_chan = name_chan
 		self.wreq_args = wreq_args
@@ -84,10 +83,10 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		super(CTDataSet_Ticker, self).__init__('ticker', wreq_args)
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
-		if (fmt_data == DFMT_KKAIPRIV):
+		if   (fmt_data == DFMT_KKAIPRIV):
 			ticker_rec = obj_msg
-			self.onLocRecAdd_CB(ticker_rec, 0)
-		else:
+			self.onLocRecAdd_CB(True, ticker_rec, 0)
+		elif (fmt_data == DFMT_BITFINEX):
 			data_msg = obj_msg[1]
 			if isinstance(data_msg, list) and len(data_msg) == 10:
 				ticker_rec = {
@@ -102,9 +101,9 @@ class CTDataSet_Ticker(CTDataSet_Base):
 						'high':       data_msg[8],
 						'low':        data_msg[9],
 					}
-				self.onLocRecAdd_CB(ticker_rec, 0)
+				self.onLocRecAdd_CB(True, ticker_rec, 0)
 
-	def onLocRecAdd_CB(self, ticker_rec, rec_index):
+	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
 		pass
 
 
@@ -119,10 +118,10 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		self.loc_book_asks.clear()
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
-		if (fmt_data == DFMT_KKAIPRIV):
+		if   (fmt_data == DFMT_KKAIPRIV):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
 			book_rec   = obj_rec
-		else:
+		elif (fmt_data == DFMT_BITFINEX):
 			flag_bids  = True if obj_rec[2] >  0.0 else False
 			amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
 			book_rec   = {
@@ -204,13 +203,13 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		# check book of asks
 		idx_rec = 0
 		while idx_rec < len(self.loc_book_asks):
-			idx_other = idx_rec-1;
+			idx_other = idx_rec-1
 			if ((idx_other >= 0) and (idx_other < len(self.loc_book_asks)) and
 				(self.loc_book_asks[idx_rec].price <= self.loc_book_asks[idx_other].price)):
 				arr_errors.push(strErr_pref + "(book asks disorder): "
 					+ "len=" + len(self.loc_book_asks) + ",idx=" + idx_rec +
 					", new=" + JSON.stringify(self.loc_book_asks[idx_rec]) +
-					", last=" + JSON.stringify(self.loc_book_asks[idx_other]));
+					", last=" + JSON.stringify(self.loc_book_asks[idx_other]))
 			idx_other = idx_rec+1
 			if ((idx_other >= 0) and (idx_other < len(self.loc_book_asks)) and
 				(abs(sum_diff = (self.loc_book_asks[idx_other]['sumamt'] - self.loc_book_asks[idx_other]['amount'] -
@@ -225,7 +224,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 
 class CTDataSet_ACandles(CTDataSet_Array):
 	def __init__(self, recs_size, wreq_args):
-		super(CTDataSet_ACandles, self).__init__("candles", wreq_args);
+		super(CTDataSet_ACandles, self).__init__("candles", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_candle_recs = []
 
@@ -234,8 +233,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
 		if (fmt_data == DFMT_KKAIPRIV):
-			candle_rec = obj_rec;
-		else:
+			candle_rec = obj_rec
+		elif (fmt_data == DFMT_BITFINEX):
 			candle_rec = {
 					'mts':    int(obj_rec[0]),
 					'open':   obj_rec[1],
@@ -245,10 +244,10 @@ class CTDataSet_ACandles(CTDataSet_Array):
 					'volume': obj_rec[5],
 				}
 		flag_chg  = False
-		rec_index = len(self.loc_candle_recs) - 1;
+		rec_index = len(self.loc_candle_recs) - 1
 		while rec_index >= 0:
 			if candle_rec['mts'] >= self.loc_candle_recs[rec_index]['mts']:
-				break;
+				break
 			rec_index -= 1
 		if ((rec_index >= 0) and (self.loc_candle_recs[rec_index]['mts'] == candle_rec['mts'])):
 			if (self.loc_candle_recs[rec_index]['volume'] != candle_rec['volume']):
@@ -256,14 +255,50 @@ class CTDataSet_ACandles(CTDataSet_Array):
 				flag_chg  = True
 		else:
 			if (len(self.loc_candle_recs)+1 >  self.loc_recs_size):
-				self.loc_candle_recs.pop(0);
+				self.loc_candle_recs.pop(0)
 			if ((rec_index <  0) or (candle_rec['mts'] >  self.loc_candle_recs[rec_index]['mts'])):
 				rec_index += 1
 			self.loc_candle_recs.insert(rec_index, candle_rec)
 			flag_chg  = True
 		if (flag_chg):
-			self.onLocRecAdd_CB(flag_plus, candle_rec, rec_index);
+			self.onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
 
 	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		pass
+
+
+
+class CTDataSet_Ticker_Adapter(CTDataSet_Ticker):
+	def __init__(self, logger, wreq_args):
+		super(CTDataSet_Ticker_Adapter, self).__init__(wreq_args)
+		self.logger   = logger
+		self.flag_dbg_rec   = False
+
+	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_Ticker_DbIn(onLocRecAdd_CB): rec=" + str(ticker_rec))
+		pass
+
+class CTDataSet_ABooks_Adapter(CTDataSet_ABooks):
+	def __init__(self, logger, wreq_args):
+		super(CTDataSet_ABooks_Adapter, self).__init__(wreq_args)
+		self.logger   = logger
+		self.flag_dbg_rec   = False
+
+	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
+		pass
+
+class CTDataSet_ACandles_Adapter(CTDataSet_ACandles):
+	def __init__(self, recs_size, logger, wreq_args):
+		super(CTDataSet_ACandles_Adapter, self).__init__(recs_size, wreq_args)
+		self.logger   = logger
+		self.flag_dbg_rec   = False
+
+	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
+		pass
+
 
