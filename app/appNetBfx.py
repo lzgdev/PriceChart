@@ -20,6 +20,7 @@ from pymongo import MongoClient
 
 pid_root = os.getpid()
 flag_sig_usr1 = False
+ntp_msec_off = 0
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger()
@@ -93,15 +94,8 @@ class Process_Net2Db(multiprocessing.Process):
 		# debug code
 		self.logger.info("Process(" + self.info_app + ") begin ...")
 
-		#c = ntplib.NTPClient()
-		#r = c.request('europe.pool.ntp.org', version=3)
-		#print("NTP: offset=" + str(r.offset))
-
-		# create netclient and db writer object
-		#time.sleep(5)
-#		"""
 		url_bfx  = "wss://api.bitfinex.com/ws/2"
-		self.obj_netclient = CTNetClient_BfxWss(self.logger, self.tok_task, self.loc_token_this, url_bfx)
+		self.obj_netclient = CTNetClient_BfxWss(self.logger, self.tok_task, self.loc_token_this, url_bfx, ntp_msec_off)
 		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
@@ -125,7 +119,6 @@ class Process_Net2Db(multiprocessing.Process):
 				self.obj_netclient.addObj_DataReceiver(obj_chan, self.tok_chans[self.idx_task][map_idx])
 
 		self.obj_netclient.run_forever()
-#		"""
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 flag_dbg_main  = False
@@ -169,10 +162,30 @@ if flag_run_dbg01:
 	sys.exit(0)
 
 # Main code(main part)
-for t in range(0, len(g_procs)):
-	g_procs[t].start()
+flag_main_init = True
+ntp_syn_msec = 0
 
 while len(g_procs) > 0:
+	# sync time with netclient
+	msec_now  = _util_msec_now()
+	new_msec_off = None
+	if msec_now >  ntp_syn_msec + 180000:
+		try:
+			ntp_clt = ntplib.NTPClient()
+			ntp_ret_off  = ntp_clt.request('cn.pool.ntp.org', version=3).offset
+			#print("NTP: ret_off=" + str(ntp_ret_off))
+			new_msec_off = round(1000.0 * ntp_ret_off)
+			print("NTP: msec_off=" + str(new_msec_off))
+		except:
+			new_msec_off = None
+	if new_msec_off != None:
+		ntp_msec_off = new_msec_off
+		ntp_syn_msec = msec_now
+	# continue regular child process maintain
+	if flag_main_init:
+		flag_main_init = False
+		for p in range(0, len(g_procs)):
+			g_procs[p].start()
 	num_procs = len(g_procs)
 	if flag_dbg_main:
 		print("main(step): num=" + str(num_procs) + " ...")
@@ -199,8 +212,10 @@ while len(g_procs) > 0:
 			print("main(chld) join process=" + str(proc_pop) + ", tok(task=" + str(proc_pop.tok_task) +
 					",chans=" + str(proc_pop.tok_chans[proc_pop.idx_task]))
 		del proc_pop
+
 	# sleep
 	time.sleep(2)
+
 
 print("main(end): pid:", pid_root)
 

@@ -3,6 +3,7 @@ import time
 
 DFMT_KKAIPRIV = 1001
 DFMT_BITFINEX = 2001
+MSEC_TIMEOFFSET = 0
 
 def utTime_utcmts_now():
 	return int(round(time.time() * 1000))
@@ -29,7 +30,7 @@ class CTDataSet_Base(object):
 
 	def locDataAppend(self, fmt_data, obj_msg):
 		if (self.flag_loc_time):
-			self.loc_time_this = utTime_utcmts_now()
+			self.loc_time_this = utTime_utcmts_now() + MSEC_TIMEOFFSET
 		self.onLocDataAppend_impl(fmt_data, obj_msg)
 		self.onLocDataAppend_CB(None)
 

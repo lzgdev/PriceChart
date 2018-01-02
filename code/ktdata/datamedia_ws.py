@@ -7,7 +7,7 @@ import hmac
 import hashlib
 import json
 
-from .dataset import DFMT_KKAIPRIV, DFMT_BITFINEX
+from .dataset import DFMT_KKAIPRIV, DFMT_BITFINEX, MSEC_TIMEOFFSET
 
 class CTNetClient_Base(websocket.WebSocketApp):
 	def __init__(self, logger, url_ws):
@@ -60,8 +60,9 @@ class CTNetClient_Base(websocket.WebSocketApp):
 			self.logger.info(self.inf_this + " websocket Closed!")
 
 class CTNetClient_BfxWss(CTNetClient_Base):
-	def __init__(self, logger, tok_task, tok_this, url_ws):
+	def __init__(self, logger, tok_task, tok_this, url_ws, msec_off):
 		super(CTNetClient_BfxWss, self).__init__(logger, url_ws)
+		MSEC_TIMEOFFSET = msec_off
 		self.tok_task = tok_task
 		self.tok_this = tok_this
 		self.objs_chan_data = []
