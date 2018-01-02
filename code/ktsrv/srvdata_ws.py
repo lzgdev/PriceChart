@@ -74,35 +74,32 @@ class KTDataMedia_DbReader_WsOut(ktdata.KTDataMedia_DbReader):
 	def __init__(self, logger):
 		super(KTDataMedia_DbReader_WsOut, self).__init__(logger)
 		self.obj_dataset = None
+		self.flag_rec_plus  = True
 
 	def setDataset(self, obj_dataset):
 		self.obj_dataset = obj_dataset
 
 	def onDbEV_CollLoad_Begin(self, id_chan):
 		#self.logger.info("DataMedia(load): begin, chan=" + str(id_chan))
-		if self.obj_dataset != None:
-			self.obj_dataset.locDataClean()
+		pass
 
 	def onDbEV_CollLoad_Doc(self, id_chan, obj_doc):
 		#self.logger.info("DataMedia(load): chan=" + str(id_chan) + ", doc=" + str(obj_doc))
-		type_rec = obj_doc['type']
-		if self.obj_dataset != None:
-			if   type_rec == 'reset':
-				self.obj_dataset.locDataClean()
-			elif type_rec == 'sync':
-				self.obj_dataset.locDataSync()
-			else:
-				self.obj_dataset.locRecAdd(False, ktdata.DFMT_KKAIPRIV, obj_doc)
-		#locDataAppend(self, fmt_data, obj_msg)
-		#self.list_coll_docs.append(obj_doc)
-		#self.list_coll_docs.append([ obj_doc['mts'], obj_doc['open'], obj_doc['close'], obj_doc['high'], obj_doc['low'], obj_doc['volume'],])
+		if self.obj_dataset == None:
+			return
+		type_rec = None if not 'type' in obj_doc else obj_doc['type']
+		if   type_rec == 'reset':
+			self.flag_rec_plus  = False
+			self.obj_dataset.locDataClean()
+		elif type_rec == 'sync':
+			self.flag_rec_plus  =  True
+			self.obj_dataset.locDataSync()
+		else:
+			self.obj_dataset.locRecAdd(self.flag_rec_plus, ktdata.DFMT_KKAIPRIV, obj_doc)
 
 	def onDbEV_CollLoad_End(self, id_chan, num_docs):
 		#self.logger.info("DataMedia(load): end, chan=" + str(id_chan) + ", num=" + str(num_docs))
-		if self.obj_dataset != None:
-			self.obj_dataset.locDataSync()
-		#self.obj_ws.write_message(str([id_chan, self.list_coll_docs,]))
-
+		pass
 
 class CTDataSet_ABooks_WsOut(ktdata.CTDataSet_ABooks_Adapter):
 	def __init__(self, logger, wreq_args, obj_ws, id_ws_chan):
@@ -114,11 +111,21 @@ class CTDataSet_ABooks_WsOut(ktdata.CTDataSet_ABooks_Adapter):
 	def onLocDataSync_CB(self):
 		out_docs = []
 		for book_rec in self.loc_book_bids:
-			out_docs.append([ book_rec['price'], book_rec['count'],     book_rec['amount'], ])
+			out_docs.append([ book_rec['price'], book_rec['count'], 0.0 + book_rec['amount'], ])
 		for book_rec in self.loc_book_asks:
-			out_docs.append([ book_rec['price'], book_rec['count'], 0 - book_rec['amount'], ])
+			out_docs.append([ book_rec['price'], book_rec['count'], 0.0 - book_rec['amount'], ])
 		self.obj_ws.write_message(str([self.id_ws_chan, out_docs]))
 
+	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
+		if not flag_plus:
+			return False
+		type_rec = book_rec['type']
+		out_doc  = [ book_rec['price'], book_rec['count'],
+					book_rec['amount'] if type_rec == 'bid' else (0.0 - book_rec['amount']), ]
+		self.obj_ws.write_message(str([self.id_ws_chan, out_doc]))
+		return True
 
 class CTDataSet_ACandles_WsOut(ktdata.CTDataSet_ACandles_Adapter):
 	def __init__(self, recs_size, logger, wreq_args, obj_ws, id_ws_chan):
@@ -130,16 +137,16 @@ class CTDataSet_ACandles_WsOut(ktdata.CTDataSet_ACandles_Adapter):
 	def onLocDataClean_CB(self):
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_ACandles_WsOut(onLocDataClean_CB): ...")
-		pass
 
 	def onLocDataSync_CB(self):
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_ACandles_WsOut(onLocDataSync_CB): ...")
-		pass
 
 	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(candle_rec))
-		pass
-
+		out_doc = [ candle_rec['mts'], candle_rec['open'],
+					candle_rec['close'], candle_rec['high'],
+					candle_rec['low'], candle_rec['volume'], ]
+		self.obj_ws.write_message(str([self.id_ws_chan, out_doc]))
 
