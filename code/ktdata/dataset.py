@@ -137,13 +137,13 @@ class CTDataSet_ATrades(CTDataSet_Array):
 					'amount': obj_rec[2],
 					'price':  obj_rec[3],
 				}
+		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
+			self.loc_trades_recs.pop(0)
 		rec_index = len(self.loc_trades_recs) - 1
 		while rec_index >= 0:
 			if trade_rec['mts'] >= self.loc_trades_recs[rec_index]['mts']:
 				break
 			rec_index -= 1
-		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
-			self.loc_trades_recs.pop(0)
 		if ((rec_index <  0) or (trade_rec['mts'] >  self.loc_trades_recs[rec_index]['mts'])):
 			rec_index += 1
 		self.loc_trades_recs.insert(rec_index, trade_rec)
@@ -293,6 +293,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 					'volume': obj_rec[5],
 				}
 		flag_chg  = False
+		if (len(self.loc_candle_recs)+1 >  self.loc_recs_size):
+			self.loc_candle_recs.pop(0)
 		rec_index = len(self.loc_candle_recs) - 1
 		while rec_index >= 0:
 			if candle_rec['mts'] >= self.loc_candle_recs[rec_index]['mts']:
@@ -303,8 +305,6 @@ class CTDataSet_ACandles(CTDataSet_Array):
 				self.loc_candle_recs[rec_index] = candle_rec
 				flag_chg  = True
 		else:
-			if (len(self.loc_candle_recs)+1 >  self.loc_recs_size):
-				self.loc_candle_recs.pop(0)
 			if ((rec_index <  0) or (candle_rec['mts'] >  self.loc_candle_recs[rec_index]['mts'])):
 				rec_index += 1
 			self.loc_candle_recs.insert(rec_index, candle_rec)
