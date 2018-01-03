@@ -34,13 +34,21 @@ mapTasks = [ {
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
 	'jobs': [
 		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
+		{ 'channel': 'candles', 'switch':  True, 'wreq_args': { 'key': 'trade:1m:tBTCUSD', }, },
+		]
+	},
+    {
+	'class': 'task02',
+	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
+	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
+	'jobs': [
 		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P0', 'freq': 'F1', 'len': '100', }, },
 		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P1', 'freq': 'F1', 'len': '100', }, },
 		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P2', 'freq': 'F1', 'len': '100', }, },
 		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P3', 'freq': 'F1', 'len': '100', }, },
-		{ 'channel': 'candles', 'switch':  True, 'wreq_args': { 'key': 'trade:1m:tBTCUSD', }, },
 		]
-	}, ]
+	},
+  ]
 
 print("Process id before forking: pid=" + str(pid_root))
 

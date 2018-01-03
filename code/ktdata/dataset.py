@@ -82,6 +82,7 @@ class CTDataSet_Array(CTDataSet_Base):
 class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, wreq_args):
 		super(CTDataSet_Ticker, self).__init__('ticker', wreq_args)
+		self.flag_loc_time  = True
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		if   (fmt_data == DFMT_KKAIPRIV):
@@ -90,7 +91,9 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		elif (fmt_data == DFMT_BITFINEX):
 			data_msg = obj_msg[1]
 			if isinstance(data_msg, list) and len(data_msg) == 10:
+				msec_now = self.loc_time_this
 				ticker_rec = {
+						'mts':        msec_now,
 						'bid':        data_msg[0],
 						'bid_size':   data_msg[1],
 						'ask':        data_msg[2],
@@ -111,6 +114,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 class CTDataSet_ABooks(CTDataSet_Array):
 	def __init__(self, wreq_args):
 		super(CTDataSet_ABooks, self).__init__("book", wreq_args)
+		self.flag_loc_time  = True
 		self.loc_book_bids  = []
 		self.loc_book_asks  = []
 
@@ -123,9 +127,11 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
 			book_rec   = obj_rec
 		elif (fmt_data == DFMT_BITFINEX):
+			msec_now   = self.loc_time_this
 			flag_bids  = True if obj_rec[2] >  0.0 else False
 			amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
 			book_rec   = {
+					'mts':    msec_now,
 					'price':  obj_rec[0],
 					'type':   'bid' if flag_bids else 'ask',
 					'count':  int(obj_rec[1]),
@@ -139,7 +145,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		while (idx_bgn < idx_end):
 			idx_book  = round((idx_bgn + idx_end) / 2)
 			price_cmp = book_recs[idx_book]['price']
-			if (book_rec['price'] <  price_cmp):
+			if   (book_rec['price'] <  price_cmp):
 				idx_end = idx_book - 1
 			elif (book_rec['price'] >  price_cmp):
 				idx_bgn = idx_book + 1
@@ -268,12 +274,10 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		pass
 
 
-
 class CTDataSet_Ticker_Adapter(CTDataSet_Ticker):
 	def __init__(self, logger, wreq_args):
 		super(CTDataSet_Ticker_Adapter, self).__init__(wreq_args)
 		self.logger   = logger
-		self.flag_dbg_rec   = False
 
 	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
 		if self.flag_dbg_rec:
@@ -284,7 +288,6 @@ class CTDataSet_ABooks_Adapter(CTDataSet_ABooks):
 	def __init__(self, logger, wreq_args):
 		super(CTDataSet_ABooks_Adapter, self).__init__(wreq_args)
 		self.logger   = logger
-		self.flag_dbg_rec   = False
 
 	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
 		if self.flag_dbg_rec:
@@ -295,7 +298,6 @@ class CTDataSet_ACandles_Adapter(CTDataSet_ACandles):
 	def __init__(self, recs_size, logger, wreq_args):
 		super(CTDataSet_ACandles_Adapter, self).__init__(recs_size, wreq_args)
 		self.logger   = logger
-		self.flag_dbg_rec   = False
 
 	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		if self.flag_dbg_rec:

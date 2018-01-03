@@ -53,22 +53,15 @@ class CTDbOut_Adapter:
 class CTDataSet_Ticker_DbOut(CTDataSet_Ticker_Adapter):
 	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):
 		super(CTDataSet_Ticker_DbOut, self).__init__(logger, wreq_args)
-		self.flag_loc_time  = True
-		self.flag_dbg_rec   = True
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'ticker')
 
 	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
-		msec_now = self.loc_time_this
-		out_doc  = ticker_rec
-		out_doc['mts'] = msec_now
-		self.loc_db_adapter.docAppend(out_doc)
+		self.loc_db_adapter.docAppend(ticker_rec)
 
 class CTDataSet_ABooks_DbOut(CTDataSet_ABooks_Adapter):
 	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):
 		super(CTDataSet_ABooks_DbOut, self).__init__(logger, wreq_args)
-		self.flag_loc_time  = True
-		self.flag_dbg_rec   = True
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'book-' + self.wreq_args['prec'])
 		self.num_recs_wrap  = 240
@@ -83,12 +76,10 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks_Adapter):
 		# add docs from snapshot
 		for book_rec in self.loc_book_bids:
 			out_doc  = copy.copy(book_rec)
-			out_doc['mts'] = msec_now
 			del out_doc['sumamt']
 			self.loc_db_adapter.docAppend(out_doc)
 		for book_rec in self.loc_book_asks:
 			out_doc  = copy.copy(book_rec)
-			out_doc['mts'] = msec_now
 			del out_doc['sumamt']
 			self.loc_db_adapter.docAppend(out_doc)
 		# add doc of sync
@@ -111,7 +102,6 @@ class CTDataSet_ABooks_DbOut(CTDataSet_ABooks_Adapter):
 		if flag_new_coll or flag_new_sync:
 			self.onLocDataSync_CB()
 		out_doc  = copy.copy(book_rec)
-		out_doc['mts'] = msec_now
 		del out_doc['sumamt']
 		if self.loc_db_adapter.docAppend(out_doc):
 			self.mts_recs_last  = msec_now

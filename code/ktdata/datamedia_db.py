@@ -133,6 +133,7 @@ class KTDataMedia_DbBase(object):
 							'channel': wreq_chan,
 							'reqargs': KTDataMedia_DbBase.wreq_args2str(wreq_args),
 						})
+				db_coll.create_index([('_id', pymongo.ASCENDING), ('mts', pymongo.ASCENDING)])
 				self.onDbEV_CollAdd(name_coll)
 		return True
 
