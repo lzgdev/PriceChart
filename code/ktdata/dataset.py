@@ -9,13 +9,14 @@ def utTime_utcmts_now():
 	return int(round(time.time() * 1000))
 
 class CTDataSet_Base(object):
-	def __init__(self, name_chan, wreq_args):
+	def __init__(self, logger, name_chan, wreq_args):
+		self.logger   = logger
 		self.name_chan = name_chan
 		self.wreq_args = wreq_args
 		self.chan_id = None
 		self.flag_loc_time  = False
 		self.loc_time_this  = 0
-		self.flag_loc_term  = False
+		self.flag_dbg_rec   = False
 
 	def locSet_ChanId(self, chan_id):
 		self.chan_id = chan_id
@@ -59,17 +60,20 @@ class CTDataSet_Base(object):
 		pass
 
 class CTDataSet_Array(CTDataSet_Base):
-	def __init__(self, name_chan, wreq_args):
-		super(CTDataSet_Array, self).__init__(name_chan, wreq_args)
+	def __init__(self, logger, name_chan, wreq_args):
+		super(CTDataSet_Array, self).__init__(logger, name_chan, wreq_args)
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		data_msg  = None
 		if   (fmt_data == DFMT_KKAIPRIV):
 			data_msg  = obj_msg
 		elif (fmt_data == DFMT_BITFINEX):
-			data_msg  = obj_msg[1]
-
-		if not isinstance(data_msg, list):
+			if isinstance(obj_msg, list):
+				data_msg = obj_msg[len(obj_msg)-1]
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_Array(onLocDataAppend_impl): data=" + str(data_msg) + ", msg=" + str(obj_msg))
+		# append data to class data members
+		if   not isinstance(data_msg, list):
 			pass
 		elif not isinstance(data_msg[0], list):
 			self.locRecAdd(True, fmt_data, data_msg)
@@ -79,9 +83,11 @@ class CTDataSet_Array(CTDataSet_Base):
 				self.locRecAdd(False, fmt_data, obj_rec)
 			self.locDataSync()
 
+
+
 class CTDataSet_Ticker(CTDataSet_Base):
-	def __init__(self, wreq_args):
-		super(CTDataSet_Ticker, self).__init__('ticker', wreq_args)
+	def __init__(self, logger, wreq_args):
+		super(CTDataSet_Ticker, self).__init__(logger, 'ticker', wreq_args)
 		self.flag_loc_time  = True
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
@@ -110,10 +116,46 @@ class CTDataSet_Ticker(CTDataSet_Base):
 	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
 		pass
 
+class CTDataSet_ATrades(CTDataSet_Array):
+	def __init__(self, recs_size, logger, wreq_args):
+		super(CTDataSet_ATrades, self).__init__(logger, "trades", wreq_args)
+		self.loc_recs_size   = recs_size
+		self.loc_trades_recs = []
+
+	def onLocDataClean_impl(self):
+		self.loc_trades_recs.clear()
+
+	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ATrades(onLocRecAdd_impl): obj_rec=" + str(obj_rec))
+		if   (fmt_data == DFMT_KKAIPRIV):
+			trade_rec = obj_rec
+		elif (fmt_data == DFMT_BITFINEX):
+			trade_rec = {
+					'mts':    int(obj_rec[1]),
+					'tid':    obj_rec[0],
+					'amount': obj_rec[2],
+					'price':  obj_rec[3],
+				}
+		rec_index = len(self.loc_trades_recs) - 1
+		while rec_index >= 0:
+			if trade_rec['mts'] >= self.loc_trades_recs[rec_index]['mts']:
+				break
+			rec_index -= 1
+		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
+			self.loc_trades_recs.pop(0)
+		if ((rec_index <  0) or (trade_rec['mts'] >  self.loc_trades_recs[rec_index]['mts'])):
+			rec_index += 1
+		self.loc_trades_recs.insert(rec_index, trade_rec)
+		self.onLocRecAdd_CB(flag_plus, trade_rec, rec_index)
+
+	def onLocRecAdd_CB(self, flag_plus, trade_rec, rec_index):
+		pass
+
 
 class CTDataSet_ABooks(CTDataSet_Array):
-	def __init__(self, wreq_args):
-		super(CTDataSet_ABooks, self).__init__("book", wreq_args)
+	def __init__(self, logger, wreq_args):
+		super(CTDataSet_ABooks, self).__init__(logger, "book", wreq_args)
 		self.flag_loc_time  = True
 		self.loc_book_bids  = []
 		self.loc_book_asks  = []
@@ -230,8 +272,8 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		return arr_errors
 
 class CTDataSet_ACandles(CTDataSet_Array):
-	def __init__(self, recs_size, wreq_args):
-		super(CTDataSet_ACandles, self).__init__("candles", wreq_args)
+	def __init__(self, recs_size, logger, wreq_args):
+		super(CTDataSet_ACandles, self).__init__(logger, "candles", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_candle_recs = []
 
@@ -239,7 +281,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		self.loc_candle_recs.clear()
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
-		if (fmt_data == DFMT_KKAIPRIV):
+		if   (fmt_data == DFMT_KKAIPRIV):
 			candle_rec = obj_rec
 		elif (fmt_data == DFMT_BITFINEX):
 			candle_rec = {
@@ -276,32 +318,38 @@ class CTDataSet_ACandles(CTDataSet_Array):
 
 class CTDataSet_Ticker_Adapter(CTDataSet_Ticker):
 	def __init__(self, logger, wreq_args):
-		super(CTDataSet_Ticker_Adapter, self).__init__(wreq_args)
-		self.logger   = logger
+		super(CTDataSet_Ticker_Adapter, self).__init__(logger, wreq_args)
 
 	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
 		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_Ticker_DbIn(onLocRecAdd_CB): rec=" + str(ticker_rec))
+			self.logger.info("CTDataSet_Ticker_Adapter(onLocRecAdd_CB): rec=" + str(ticker_rec))
+		pass
+
+class CTDataSet_ATrades_Adapter(CTDataSet_ATrades):
+	def __init__(self, recs_size, logger, wreq_args):
+		super(CTDataSet_ATrades_Adapter, self).__init__(recs_size, logger, wreq_args)
+
+	def onLocRecAdd_CB(self, flag_plus, trade_rec, rec_index):
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ATrades_Adapter(onLocRecAdd_CB): rec=" + str(trade_rec))
 		pass
 
 class CTDataSet_ABooks_Adapter(CTDataSet_ABooks):
 	def __init__(self, logger, wreq_args):
-		super(CTDataSet_ABooks_Adapter, self).__init__(wreq_args)
-		self.logger   = logger
+		super(CTDataSet_ABooks_Adapter, self).__init__(logger, wreq_args)
 
 	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
 		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
+			self.logger.info("CTDataSet_ABooks_Adapter(onLocRecAdd_CB): rec=" + str(book_rec))
 		pass
 
 class CTDataSet_ACandles_Adapter(CTDataSet_ACandles):
 	def __init__(self, recs_size, logger, wreq_args):
-		super(CTDataSet_ACandles_Adapter, self).__init__(recs_size, wreq_args)
-		self.logger   = logger
+		super(CTDataSet_ACandles_Adapter, self).__init__(recs_size, logger, wreq_args)
 
 	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
 		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ABooks_DbIn(onLocRecAdd_CB): rec=" + str(book_rec))
+			self.logger.info("CTDataSet_ACandles_Adapter(onLocRecAdd_CB): rec=" + str(book_rec))
 		pass
 
 

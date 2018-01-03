@@ -3,7 +3,7 @@ import time
 import math
 import copy
 
-from .dataset import CTDataSet_Ticker_Adapter, CTDataSet_ABooks_Adapter, CTDataSet_ACandles_Adapter
+from .dataset import CTDataSet_Ticker_Adapter, CTDataSet_ATrades_Adapter, CTDataSet_ABooks_Adapter, CTDataSet_ACandles_Adapter
 
 class CTDbOut_Adapter:
 	def __init__(self, logger, db_writer, num_coll_msec, name_chan, wreq_args, name_pref):
@@ -58,6 +58,25 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker_Adapter):
 
 	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
 		self.loc_db_adapter.docAppend(ticker_rec)
+
+class CTDataSet_ATrades_DbOut(CTDataSet_ATrades_Adapter):
+	def __init__(self, logger, db_writer, num_coll_msec, recs_size, wreq_args):
+		super(CTDataSet_ATrades_DbOut, self).__init__(recs_size, logger, wreq_args)
+		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
+						self.name_chan, self.wreq_args, 'trades')
+
+	def onLocDataSync_CB(self):
+		for trade_rec in self.loc_trades_recs:
+			if self.flag_dbg_rec:
+				self.logger.info("CTDataSet_ATrades_DbOut(onLocDataSync_CB): rec=" + str(trade_rec))
+			self.loc_db_adapter.docAppend(trade_rec)
+
+	def onLocRecAdd_CB(self, flag_plus, trade_rec, rec_index):
+		if not flag_plus:
+			return 0
+		if self.flag_dbg_rec:
+			self.logger.info("CTDataSet_ATrades_DbOut(onLocRecAdd_CB): rec=" + str(trade_rec))
+		self.loc_db_adapter.docAppend(trade_rec)
 
 class CTDataSet_ABooks_DbOut(CTDataSet_ABooks_Adapter):
 	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):

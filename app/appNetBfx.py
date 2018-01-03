@@ -13,7 +13,7 @@ import ntplib
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
 from ktdata import CTNetClient_BfxWss
-from ktdata import CTDataSet_Ticker_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
+from ktdata import CTDataSet_Ticker_DbOut, CTDataSet_ATrades_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
 from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
 
 from pymongo import MongoClient
@@ -32,15 +32,26 @@ mapTasks = [ {
 	'class': 'task01',
 	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
+	'switch':  True,
 	'jobs': [
-		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
-		{ 'channel': 'candles', 'switch':  True, 'wreq_args': { 'key': 'trade:1m:tBTCUSD', }, },
+		{ 'channel':  'trades', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
 		]
 	},
     {
 	'class': 'task02',
 	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
+	'switch':  True,
+	'jobs': [
+		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
+		{ 'channel': 'candles', 'switch':  True, 'wreq_args': { 'key': 'trade:1m:tBTCUSD', }, },
+		]
+	},
+    {
+	'class': 'task03',
+	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
+	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
+	'switch':  True,
 	'jobs': [
 		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P0', 'freq': 'F1', 'len': '100', }, },
 		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P1', 'freq': 'F1', 'len': '100', }, },
@@ -118,10 +129,12 @@ class Process_Net2Db(multiprocessing.Process):
 
 			if   map_unit['channel'] == 'ticker':
 				obj_chan = CTDataSet_Ticker_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, map_unit['wreq_args'])
+			elif map_unit['channel'] == 'trades':
+				obj_chan = CTDataSet_ATrades_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, 512, map_unit['wreq_args'])
 			elif map_unit['channel'] == 'book':
 				obj_chan = CTDataSet_ABooks_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, map_unit['wreq_args'])
 			elif map_unit['channel'] == 'candles':
-				obj_chan = CTDataSet_ACandles_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, 1000, map_unit['wreq_args'])
+				obj_chan = CTDataSet_ACandles_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, 512, map_unit['wreq_args'])
 
 			if obj_chan != None:
 				self.obj_netclient.addObj_DataReceiver(obj_chan, self.tok_chans[self.idx_task][map_idx])
@@ -153,19 +166,20 @@ def _sighand_usr2(signum, frame):
 signal.signal(12, _sighand_usr2)
 
 flag_dbg_main  =  True
-flag_run_dbg01 =  False
+#flag_run_dbg01 =  True
 
 #
 # Main entrance
 #
 print("main(bgn): pid:", pid_root)
 for t in range(0, len(mapTasks)):
-	g_procs.append(Process_Net2Db(logger, t, 0))
+	if mapTasks[t]['switch']:
+		g_procs.append(Process_Net2Db(logger, t, 0))
 
 # Main code(debug mode)
 if flag_run_dbg01:
-	for t in range(0, len(g_procs)):
-		g_procs[t].run()
+	for p in range(0, len(g_procs)):
+		g_procs[p].run()
 	print("main(dbg01): finish.")
 	sys.exit(0)
 
