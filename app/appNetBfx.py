@@ -12,7 +12,7 @@ import ntplib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
-from ktdata import CTNetClient_BfxWss
+from ktdata import CTNetClient_WssBfx
 from ktdata import CTDataSet_Ticker_DbOut, CTDataSet_ATrades_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
 from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
 
@@ -114,7 +114,7 @@ class Process_Net2Db(multiprocessing.Process):
 		self.logger.info("Process(" + self.info_app + ") begin ...")
 
 		url_bfx  = "wss://api.bitfinex.com/ws/2"
-		self.obj_netclient = CTNetClient_BfxWss(self.logger, self.tok_task, self.loc_token_this, url_bfx, ntp_msec_off)
+		self.obj_netclient = CTNetClient_WssBfx(self.logger, self.tok_task, self.loc_token_this, url_bfx, ntp_msec_off)
 		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 

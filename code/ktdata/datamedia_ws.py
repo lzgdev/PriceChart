@@ -59,9 +59,9 @@ class CTNetClient_Base(websocket.WebSocketApp):
 		if self.flag_log_intv:
 			self.logger.info(self.inf_this + " websocket Closed!")
 
-class CTNetClient_BfxWss(CTNetClient_Base):
+class CTNetClient_WssBfx(CTNetClient_Base):
 	def __init__(self, logger, tok_task, tok_this, url_ws, msec_off):
-		super(CTNetClient_BfxWss, self).__init__(logger, url_ws)
+		super(CTNetClient_WssBfx, self).__init__(logger, url_ws)
 		MSEC_TIMEOFFSET = msec_off
 		self.tok_task = tok_task
 		self.tok_this = tok_this
@@ -103,7 +103,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 			self.flag_chan_actv.append(False)
 
 	def onNcEV_Message_impl(self, message):
-		#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_impl): msg=" + message)
+		#self.logger.info("CTNetClient_WssBfx(onNcEV_Message_impl): msg=" + message)
 		if not isinstance(message, str):
 			obj_msg  = None
 		else:
@@ -179,7 +179,7 @@ class CTNetClient_BfxWss(CTNetClient_Base):
 					with self.tok_task.get_lock():
 						self.tok_task.value = self.tok_this
 						self.flag_task_active = True
-					#self.logger.info("CTNetClient_BfxWss(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
+					#self.logger.info("CTNetClient_WssBfx(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
 		elif flag_unsubscribed and (
 			self.num_chan_unsubscribed == len(self.objs_chan_data)):
 			self.flag_data_finish = True
