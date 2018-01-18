@@ -1,9 +1,71 @@
 
+import os
+
+import websocket
+
+import hmac
+import hashlib
+import json
+
+#from .datacontainer_db import CTDataSet_Ticker_DbOut, CTDataSet_ATrades_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
+#from ktdata import CTDataSet_Ticker_DbOut, CTDataSet_ATrades_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
+
+from .datainput import CTDataInput_Ws
+
+from .dataset   import CTDataSet_Ticker_Adapter, CTDataSet_ATrades_Adapter, CTDataSet_ABooks_Adapter, CTDataSet_ACandles_Adapter
+from .dataset   import DFMT_KKAIPRIV, DFMT_BITFINEX, MSEC_TIMEOFFSET
+
+class CTDataContainer(object):
+	def __init__(self, logger):
+		object.__init__(self)
+		self.logger   = logger
+		self.pid_this = os.getpid()
+		self.list_objs_datasrc = []
+
+	def execLoop(self):
+		self.onExec_Loop_impl()
+
+	def addArg_DataChannel(self, name_chan, dict_args_wreq, tmp_tokchan):
+		obj_netclient = self.list_objs_datasrc[0]
+		#{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
+
+		num_coll_msec  =  3 * 60 * 60 * 1000
+		#num_coll_msec  =  1 * 60 * 60 * 1000
+
+		obj_chan  = None
+		#self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
+		if   name_chan == 'ticker':
+			obj_chan = CTDataSet_Ticker_DbOut(self.logger, self, self.obj_dbwriter, num_coll_msec, dict_args_wreq)
+		elif name_chan == 'trades':
+			obj_chan = CTDataSet_ATrades_DbOut(self.logger, self, self.obj_dbwriter, num_coll_msec, 512, dict_args_wreq)
+		elif name_chan == 'book':
+			obj_chan = CTDataSet_ABooks_DbOut(self.logger, self, self.obj_dbwriter, num_coll_msec, dict_args_wreq)
+		elif name_chan == 'candles':
+			obj_chan = CTDataSet_ACandles_DbOut(self.logger, self, self.obj_dbwriter, num_coll_msec, 512, dict_args_wreq)
+
+		if obj_chan != None:
+			obj_netclient.addObj_DataReceiver(obj_chan, tmp_tokchan)
+
+	def addObj_DataSource(self, obj_source):
+		self.list_objs_datasrc.append(obj_source)
+
+	def datCB_DataClean(self, obj_dataset):
+		pass
+
+	def datCB_DataSync(self, obj_dataset):
+		pass
+
+	def datCB_RecAdd(self, obj_dataset, flag_plus, doc_rec, idx_rec):
+		pass
+
+	def onExec_Loop_impl(self):
+		for obj_source in self.list_objs_datasrc:
+			if isinstance(obj_source, CTDataInput_Ws):
+				obj_source.run_forever()
+
 import time
 import math
 import copy
-
-from .dataset import CTDataSet_Ticker_Adapter, CTDataSet_ATrades_Adapter, CTDataSet_ABooks_Adapter, CTDataSet_ACandles_Adapter
 
 class CTDbOut_Adapter:
 	def __init__(self, logger, db_writer, num_coll_msec, name_chan, wreq_args, name_pref):
@@ -50,9 +112,10 @@ class CTDbOut_Adapter:
 		self.loc_db_writer.dbOP_DocAdd(self.loc_name_coll, doc_rec)
 		return True
 
+
 class CTDataSet_Ticker_DbOut(CTDataSet_Ticker_Adapter):
-	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):
-		super(CTDataSet_Ticker_DbOut, self).__init__(logger, wreq_args)
+	def __init__(self, logger, obj_container, db_writer, num_coll_msec, wreq_args):
+		super(CTDataSet_Ticker_DbOut, self).__init__(logger, obj_container, wreq_args)
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'ticker')
 
@@ -60,8 +123,8 @@ class CTDataSet_Ticker_DbOut(CTDataSet_Ticker_Adapter):
 		self.loc_db_adapter.docAppend(ticker_rec)
 
 class CTDataSet_ATrades_DbOut(CTDataSet_ATrades_Adapter):
-	def __init__(self, logger, db_writer, num_coll_msec, recs_size, wreq_args):
-		super(CTDataSet_ATrades_DbOut, self).__init__(recs_size, logger, wreq_args)
+	def __init__(self, logger, obj_container, db_writer, num_coll_msec, recs_size, wreq_args):
+		super(CTDataSet_ATrades_DbOut, self).__init__(recs_size, logger, obj_container, wreq_args)
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'trades')
 
@@ -79,8 +142,8 @@ class CTDataSet_ATrades_DbOut(CTDataSet_ATrades_Adapter):
 		self.loc_db_adapter.docAppend(trade_rec)
 
 class CTDataSet_ABooks_DbOut(CTDataSet_ABooks_Adapter):
-	def __init__(self, logger, db_writer, num_coll_msec, wreq_args):
-		super(CTDataSet_ABooks_DbOut, self).__init__(logger, wreq_args)
+	def __init__(self, logger, obj_container, db_writer, num_coll_msec, wreq_args):
+		super(CTDataSet_ABooks_DbOut, self).__init__(logger, obj_container, wreq_args)
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'book-' + self.wreq_args['prec'])
 		self.num_recs_wrap  = 240
@@ -132,8 +195,8 @@ def _extr_cname_key(wreq_key):
 	return name_key
 
 class CTDataSet_ACandles_DbOut(CTDataSet_ACandles_Adapter):
-	def __init__(self, logger, db_writer, num_coll_msec, recs_size, wreq_args):
-		super(CTDataSet_ACandles_DbOut, self).__init__(recs_size, logger, wreq_args)
+	def __init__(self, logger, obj_container, db_writer, num_coll_msec, recs_size, wreq_args):
+		super(CTDataSet_ACandles_DbOut, self).__init__(recs_size, logger, obj_container, wreq_args)
 		self.loc_db_adapter = CTDbOut_Adapter(logger, db_writer, num_coll_msec,
 						self.name_chan, self.wreq_args, 'candles-' + _extr_cname_key(self.wreq_args['key']))
 		self.loc_out_stamp  = 0

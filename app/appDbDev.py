@@ -13,7 +13,7 @@ import multiprocessing
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
-from ktdata import CTNetClient_WssBfx
+from ktdata import CTDataInput_WssBfx
 from ktdata import CTDataSet_Ticker_DbIn, CTDataSet_Ticker_DbOut, CTDataSet_ABooks_DbIn, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbIn, CTDataSet_ACandles_DbOut
 from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
 
@@ -110,7 +110,7 @@ mapWREQs = [
 
 if flag_netclient:
 	url_bfx  = "wss://api.bitfinex.com/ws/2"
-	obj_netclient = CTNetClient_WssBfx(logger, url_bfx)
+	obj_netclient = CTDataInput_WssBfx(logger, url_bfx)
 	obj_dbwriter  = KTDataMedia_DbWriter(logger)
 	obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 else:

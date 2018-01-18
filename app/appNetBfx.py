@@ -12,9 +12,10 @@ import ntplib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
-from ktdata import CTNetClient_WssBfx
-from ktdata import CTDataSet_Ticker_DbOut, CTDataSet_ATrades_DbOut, CTDataSet_ABooks_DbOut, CTDataSet_ACandles_DbOut
+from ktdata import CTDataInput_WssBfx
 from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
+
+from ktdata import CTDataContainer_DbOut
 
 from pymongo import MongoClient
 
@@ -66,13 +67,14 @@ print("Process id before forking: pid=" + str(pid_root))
 def _util_msec_now():
 	return int(round(time.time() * 1000))
 
-class Process_Net2Db(multiprocessing.Process):
+class Process_Net2Db(multiprocessing.Process, CTDataContainer_DbOut):
 	tok_tasks = []
 	tok_chans = []
 	cnt_procs = []
 
 	def __init__(self, logger, idx_task, token_new):
-		super(Process_Net2Db, self).__init__()
+		multiprocessing.Process.__init__(self)
+		CTDataContainer_DbOut.__init__(self, logger)
 		num_jobs = len(mapTasks[idx_task]['jobs'])
 		# expand static members
 		while len(self.tok_tasks) <= idx_task:
@@ -110,36 +112,20 @@ class Process_Net2Db(multiprocessing.Process):
 	def run(self):
 		self.pid_this = os.getpid()
 		self.info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
-		# debug code
 		self.logger.info("Process(" + self.info_app + ") begin ...")
 
 		url_bfx  = "wss://api.bitfinex.com/ws/2"
-		self.obj_netclient = CTNetClient_WssBfx(self.logger, self.tok_task, self.loc_token_this, url_bfx, ntp_msec_off)
+		self.addObj_DataSource(CTDataInput_WssBfx(self.logger, self,
+								self.tok_task, self.loc_token_this, url_bfx, ntp_msec_off))
 		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
-
-		num_coll_msec  =  3 * 60 * 60 * 1000
-		#num_coll_msec  =  1 * 60 * 60 * 1000
 
 		for map_idx, map_unit in enumerate(mapTasks[self.idx_task]['jobs']):
 			if not map_unit['switch']:
 				continue
-			obj_chan  = None
-			#self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
+			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])
 
-			if   map_unit['channel'] == 'ticker':
-				obj_chan = CTDataSet_Ticker_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, map_unit['wreq_args'])
-			elif map_unit['channel'] == 'trades':
-				obj_chan = CTDataSet_ATrades_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, 512, map_unit['wreq_args'])
-			elif map_unit['channel'] == 'book':
-				obj_chan = CTDataSet_ABooks_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, map_unit['wreq_args'])
-			elif map_unit['channel'] == 'candles':
-				obj_chan = CTDataSet_ACandles_DbOut(self.logger, self.obj_dbwriter, num_coll_msec, 512, map_unit['wreq_args'])
-
-			if obj_chan != None:
-				self.obj_netclient.addObj_DataReceiver(obj_chan, self.tok_chans[self.idx_task][map_idx])
-
-		self.obj_netclient.run_forever()
+		self.execLoop()
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 flag_dbg_main  = False
@@ -165,6 +151,7 @@ def _sighand_usr2(signum, frame):
 #signal.signal( 2, _sighand_intr)
 signal.signal(12, _sighand_usr2)
 
+# debug settings
 flag_dbg_main  =  True
 #flag_run_dbg01 =  True
 
@@ -173,6 +160,8 @@ flag_dbg_main  =  True
 #
 print("main(bgn): pid:", pid_root)
 for t in range(0, len(mapTasks)):
+	if flag_run_dbg01 and t >  0 and mapTasks[t]['switch']:
+		mapTasks[t]['switch'] = False
 	if mapTasks[t]['switch']:
 		g_procs.append(Process_Net2Db(logger, t, 0))
 

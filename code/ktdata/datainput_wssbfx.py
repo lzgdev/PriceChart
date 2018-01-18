@@ -1,67 +1,16 @@
 
-import os
-
-import websocket
-
 import hmac
 import hashlib
 import json
 
-from .dataset import DFMT_KKAIPRIV, DFMT_BITFINEX, MSEC_TIMEOFFSET
+from .datainput import CTDataInput_Ws
 
-class CTNetClient_Base(websocket.WebSocketApp):
-	def __init__(self, logger, url_ws):
-		super(CTNetClient_Base, self).__init__(url_ws)
-		self.logger   = logger
-		self.pid_this = os.getpid()
-		self.inf_this = 'WebSocket(pid=' + str(self.pid_this) + ')'
-		self.on_open  = CTNetClient_Base.ncEV_Open
-		self.on_message = CTNetClient_Base.ncEV_Message
-		self.on_error = CTNetClient_Base.ncEV_Error
-		self.on_close = CTNetClient_Base.ncEV_Close
-		self.flag_log_intv = False
+from .dataset   import DFMT_KKAIPRIV, DFMT_BITFINEX, MSEC_TIMEOFFSET
 
-	def addObj_DataReceiver(self, obj_receiver, tok_channel):
-		self.onNcOP_AddReceiver(obj_receiver, tok_channel)
 
-	def ncOP_Exec():
-		self.onNcOP_Exec_impl()
-
-	def ncEV_Open(self):
-		self.onNcEV_Open_impl()
-
-	def ncEV_Message(self, message):
-		self.onNcEV_Message_impl(message)
-
-	def ncEV_Error(self, error):
-		self.onNcEV_Error_impl(error)
-
-	def ncEV_Close(self):
-		self.onNcEV_Close_impl()
-
-	def onNcOP_AddReceiver(self, obj_receiver, tok_channel):
-		pass
-
-	def onNcOP_Exec_impl():
-		pass
-
-	def onNcEV_Open_impl(self):
-		if self.flag_log_intv:
-			self.logger.info(self.inf_this + " websocket Opened!")
-
-	def onNcEV_Message_impl(self, message):
-		pass
-
-	def onNcEV_Error_impl(self, error):
-		self.logger.error(self.inf_this + " websocket Error: " + str(error))
-
-	def onNcEV_Close_impl(self):
-		if self.flag_log_intv:
-			self.logger.info(self.inf_this + " websocket Closed!")
-
-class CTNetClient_WssBfx(CTNetClient_Base):
-	def __init__(self, logger, tok_task, tok_this, url_ws, msec_off):
-		super(CTNetClient_WssBfx, self).__init__(logger, url_ws)
+class CTDataInput_WssBfx(CTDataInput_Ws):
+	def __init__(self, logger, obj_container, tok_task, tok_this, url_ws, msec_off):
+		CTDataInput_Ws.__init__(self, logger, obj_container, url_ws)
 		MSEC_TIMEOFFSET = msec_off
 		self.tok_task = tok_task
 		self.tok_this = tok_this
@@ -103,7 +52,7 @@ class CTNetClient_WssBfx(CTNetClient_Base):
 			self.flag_chan_actv.append(False)
 
 	def onNcEV_Message_impl(self, message):
-		#self.logger.info("CTNetClient_WssBfx(onNcEV_Message_impl): msg=" + message)
+		#self.logger.info("CTDataInput_WssBfx(onNcEV_Message_impl): msg=" + message)
 		if not isinstance(message, str):
 			obj_msg  = None
 		else:
@@ -179,7 +128,7 @@ class CTNetClient_WssBfx(CTNetClient_Base):
 					with self.tok_task.get_lock():
 						self.tok_task.value = self.tok_this
 						self.flag_task_active = True
-					#self.logger.info("CTNetClient_WssBfx(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
+					#self.logger.info("CTDataInput_WssBfx(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
 		elif flag_unsubscribed and (
 			self.num_chan_unsubscribed == len(self.objs_chan_data)):
 			self.flag_data_finish = True
