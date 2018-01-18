@@ -24,11 +24,11 @@ class CTDataSet_Base(object):
 
 	def locDataClean(self):
 		self.onLocDataClean_impl()
-		self.onLocDataClean_CB()
+		self.obj_container.datCB_DataClean(self)
 
 	def locDataSync(self):
 		self.onLocDataSync_impl()
-		self.onLocDataSync_CB()
+		self.obj_container.datCB_DataSync(self)
 
 	def locDataAppend(self, fmt_data, obj_msg):
 		if (self.flag_loc_time):
@@ -38,16 +38,10 @@ class CTDataSet_Base(object):
 	def locRecAdd(self, flag_plus, fmt_data, obj_rec):
 		self.onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
 
-	def onLocDataClean_CB(self):
-		pass
-
 	def onLocDataClean_impl(self):
 		pass
 
 	def onLocDataSync_impl(self):
-		pass
-
-	def onLocDataSync_CB(self):
 		pass
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
@@ -55,6 +49,7 @@ class CTDataSet_Base(object):
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
 		pass
+
 
 class CTDataSet_Array(CTDataSet_Base):
 	def __init__(self, logger, obj_container, name_chan, wreq_args):
@@ -81,7 +76,6 @@ class CTDataSet_Array(CTDataSet_Base):
 			self.locDataSync()
 
 
-
 class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, logger, obj_container, wreq_args):
 		super(CTDataSet_Ticker, self).__init__(logger, obj_container, 'ticker', wreq_args)
@@ -90,7 +84,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			ticker_rec = obj_msg
-			self.onLocRecAdd_CB(True, ticker_rec, 0)
+			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
 		elif (fmt_data == DFMT_BITFINEX):
 			data_msg = obj_msg[1]
 			if isinstance(data_msg, list) and len(data_msg) == 10:
@@ -108,10 +102,8 @@ class CTDataSet_Ticker(CTDataSet_Base):
 						'high':       data_msg[8],
 						'low':        data_msg[9],
 					}
-				self.onLocRecAdd_CB(True, ticker_rec, 0)
+				self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
 
-	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
-		pass
 
 class CTDataSet_ATrades(CTDataSet_Array):
 	def __init__(self, recs_size, logger, obj_container, wreq_args):
@@ -144,10 +136,8 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		if ((rec_index <  0) or (trade_rec['mts'] >  self.loc_trades_recs[rec_index]['mts'])):
 			rec_index += 1
 		self.loc_trades_recs.insert(rec_index, trade_rec)
-		self.onLocRecAdd_CB(flag_plus, trade_rec, rec_index)
-
-	def onLocRecAdd_CB(self, flag_plus, trade_rec, rec_index):
-		pass
+		if flag_plus:
+			self.obj_container.datCB_RecPlus(self, trade_rec, rec_index)
 
 
 class CTDataSet_ABooks(CTDataSet_Array):
@@ -215,11 +205,10 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			idx_last = idx_sum
 			idx_sum += -1 if flag_bids else 1
 		# invoke callback
-		self.onLocRecAdd_CB(flag_plus, book_rec if flag_del else book_recs[idx_book],
-                flag_bids, idx_book, flag_del)
-
-	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
-		pass
+		if flag_plus:
+			if not flag_del:
+				book_rec = book_recs[idx_book]
+			self.obj_container.datCB_RecPlus(self, book_rec, idx_book)
 
 	# develop/debug support
 	def devCheck_Books(self, err_ses):
@@ -268,6 +257,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			idx_rec += 1
 		return arr_errors
 
+
 class CTDataSet_ACandles(CTDataSet_Array):
 	def __init__(self, recs_size, logger, obj_container, wreq_args):
 		super(CTDataSet_ACandles, self).__init__(logger, obj_container, "candles", wreq_args)
@@ -306,47 +296,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 				rec_index += 1
 			self.loc_candle_recs.insert(rec_index, candle_rec)
 			flag_chg  = True
-		if (flag_chg):
-			self.onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
-
-	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
-		pass
-
-
-class CTDataSet_Ticker_Adapter(CTDataSet_Ticker):
-	def __init__(self, logger, obj_container, wreq_args):
-		super(CTDataSet_Ticker_Adapter, self).__init__(logger, obj_container, wreq_args)
-
-	def onLocRecAdd_CB(self, flag_plus, ticker_rec, rec_index):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_Ticker_Adapter(onLocRecAdd_CB): rec=" + str(ticker_rec))
-		pass
-
-class CTDataSet_ATrades_Adapter(CTDataSet_ATrades):
-	def __init__(self, recs_size, logger, obj_container, wreq_args):
-		super(CTDataSet_ATrades_Adapter, self).__init__(recs_size, logger, obj_container, wreq_args)
-
-	def onLocRecAdd_CB(self, flag_plus, trade_rec, rec_index):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ATrades_Adapter(onLocRecAdd_CB): rec=" + str(trade_rec))
-		pass
-
-class CTDataSet_ABooks_Adapter(CTDataSet_ABooks):
-	def __init__(self, logger, obj_container, wreq_args):
-		super(CTDataSet_ABooks_Adapter, self).__init__(logger, obj_container, wreq_args)
-
-	def onLocRecAdd_CB(self, flag_plus, book_rec, flag_bids, idx_book, flag_del):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ABooks_Adapter(onLocRecAdd_CB): rec=" + str(book_rec))
-		pass
-
-class CTDataSet_ACandles_Adapter(CTDataSet_ACandles):
-	def __init__(self, recs_size, logger, obj_container, wreq_args):
-		super(CTDataSet_ACandles_Adapter, self).__init__(recs_size, logger, obj_container, wreq_args)
-
-	def onLocRecAdd_CB(self, flag_plus, candle_rec, rec_index):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ACandles_Adapter(onLocRecAdd_CB): rec=" + str(book_rec))
-		pass
+		if flag_chg and flag_plus:
+			self.obj_container.datCB_RecPlus(self, candle_rec, rec_index)
 
 

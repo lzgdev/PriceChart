@@ -128,8 +128,8 @@ class Process_Net2Db(multiprocessing.Process, CTDataContainer_DbOut):
 		self.execLoop()
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
-flag_dbg_main  = False
-flag_run_dbg01 = False
+dbg_dbg_main  = False
+dbg_run_task  = -1
 
 g_procs = []
 
@@ -152,21 +152,21 @@ def _sighand_usr2(signum, frame):
 signal.signal(12, _sighand_usr2)
 
 # debug settings
-flag_dbg_main  =  True
-#flag_run_dbg01 =  True
+dbg_dbg_main  =  True
+#dbg_run_task  = 0
 
 #
 # Main entrance
 #
 print("main(bgn): pid:", pid_root)
 for t in range(0, len(mapTasks)):
-	if flag_run_dbg01 and t >  0 and mapTasks[t]['switch']:
+	if dbg_run_task >= 0 and t != dbg_run_task and mapTasks[t]['switch']:
 		mapTasks[t]['switch'] = False
 	if mapTasks[t]['switch']:
 		g_procs.append(Process_Net2Db(logger, t, 0))
 
 # Main code(debug mode)
-if flag_run_dbg01:
+if dbg_run_task >= 0:
 	for p in range(0, len(g_procs)):
 		g_procs[p].run()
 	print("main(dbg01): finish.")
@@ -198,7 +198,7 @@ while len(g_procs) > 0:
 		for p in range(0, len(g_procs)):
 			g_procs[p].start()
 	num_procs = len(g_procs)
-	if flag_dbg_main:
+	if dbg_dbg_main:
 		print("main(step): num=" + str(num_procs) + " ...")
 	# invoke next child process
 	msec_now  = _util_msec_now()
@@ -206,7 +206,7 @@ while len(g_procs) > 0:
 		proc_old = g_procs[p]
 		if proc_old.loc_token_invk <= 0  or msec_now <  proc_old.loc_token_invk:
 			continue
-		if flag_dbg_main:
+		if dbg_dbg_main:
 			print("main(p=" + str(p) + "): invk=" + str(proc_old.loc_token_invk) +
 					", now=" + str(msec_now) + ", next=" + str(proc_old.loc_token_next))
 		proc_old.loc_token_invk = 0
@@ -219,7 +219,7 @@ while len(g_procs) > 0:
 			continue
 		proc_pop = g_procs.pop(p)
 		proc_pop.join()
-		if flag_dbg_main:
+		if dbg_dbg_main:
 			print("main(chld) join process=" + str(proc_pop) + ", tok(task=" + str(proc_pop.tok_task) +
 					",chans=" + str(proc_pop.tok_chans[proc_pop.idx_task]))
 		del proc_pop

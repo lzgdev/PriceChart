@@ -1,4 +1,5 @@
 
-use bfx-pub
-db.dropDatabase()
+use bfx-pub;
+
+db.dropDatabase();
 
