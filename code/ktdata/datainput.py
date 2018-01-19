@@ -20,9 +20,6 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 		self.on_error = CTDataInput_Ws.ncEV_Error
 		self.on_close = CTDataInput_Ws.ncEV_Close
 
-	def addObj_DataReceiver(self, obj_receiver, tok_channel):
-		self.onNcOP_AddReceiver(obj_receiver, tok_channel)
-
 	def ncOP_Exec():
 		self.onNcOP_Exec_impl()
 
@@ -37,9 +34,6 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 
 	def ncEV_Close(self):
 		self.onNcEV_Close_impl()
-
-	def onNcOP_AddReceiver(self, obj_receiver, tok_channel):
-		pass
 
 	def onNcOP_Exec_impl():
 		pass

@@ -13,8 +13,8 @@ class TradeBook_Base(object):
 		self.loc_book_bids = []
 		self.loc_book_asks = []
 
-	def upBookChan(self, chan_id):
-		self.wrsp_chan = chan_id
+	def upBookChan(self, id_chan):
+		self.wrsp_chan = id_chan
 
 	def upBookRec(self, rec_update):
 		price_rec = rec_update[0]

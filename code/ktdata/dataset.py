@@ -14,13 +14,13 @@ class CTDataSet_Base(object):
 		self.obj_container = obj_container
 		self.name_chan = name_chan
 		self.wreq_args = wreq_args
-		self.chan_id = None
+		self.id_chan = None
 		self.flag_loc_time  = False
 		self.loc_time_this  = 0
 		self.flag_dbg_rec   = False
 
-	def locSet_ChanId(self, chan_id):
-		self.chan_id = chan_id
+	def locSet_ChanId(self, id_chan):
+		self.id_chan = id_chan
 
 	def locDataClean(self):
 		self.onLocDataClean_impl()

@@ -17,3 +17,9 @@ class CTDataContainer_DbOut(CTDataContainer):
 		if obj_dataset != None:
 			obj_dataset.onLocRecAdd_CB(True, doc_rec, idx_rec)
 
+	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan, name_chan, dict_msg):
+		pass
+
+	def onDatIN_ChanDel_ext(self, idx_chan, id_chan, name_chan, dict_msg):
+		pass
+

@@ -113,7 +113,7 @@ class ClNetClient_BfxWss extends ClNetClient_Base
       cid_msg = Number(obj_msg[0]);
       for (var i=0; i <  this.objs_chan_data.length; i++) {
         obj_chan = this.objs_chan_data[i];
-        if (cid_msg === obj_chan.chan_id) {
+        if (cid_msg === obj_chan.id_chan) {
           handler_msg = obj_chan;
           break;
         }

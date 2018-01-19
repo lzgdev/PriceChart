@@ -8,15 +8,15 @@ class ClDataSet_Base
   constructor(name_chan, wreq_args)
   {
     this.name_chan = name_chan;
-    this.chan_id = null;
+    this.id_chan = null;
     this.wreq_args = wreq_args;
     this.flag_loc_time  = false;
     this.loc_time_this  = 0;
   }
 
-  locSet_ChanId(chan_id)
+  locSet_ChanId(id_chan)
   {
-    this.chan_id = chan_id;
+    this.id_chan = id_chan;
   }
 
   locDataClean()
