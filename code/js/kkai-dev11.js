@@ -10,7 +10,7 @@ class ClDataSet_Base
     this.name_chan = name_chan;
     this.id_chan = null;
     this.wreq_args = wreq_args;
-    this.flag_loc_time  = false;
+    this.flag_sys_time  = false;
     this.loc_time_this  = 0;
   }
 
@@ -32,7 +32,7 @@ class ClDataSet_Base
 
   locDataAppend(fmt_data, obj_msg)
   {
-    if (this.flag_loc_time) {
+    if (this.flag_sys_time) {
       this.loc_time_this = Date.now();
     }
     this.onLocDataAppend_impl(fmt_data, obj_msg);

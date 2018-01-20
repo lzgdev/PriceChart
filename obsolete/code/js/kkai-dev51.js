@@ -17,7 +17,7 @@ class ClDataSet_Ticker_DbIn extends dev11.ClDataSet_Ticker
   constructor(db_reader, wreq_args)
   {
     super(wreq_args);
-    this.flag_loc_time  = true;
+    this.flag_sys_time  = true;
     this.loc_db_reader  = db_reader;
   }
 
@@ -31,7 +31,7 @@ class ClDataSet_Ticker_DbOut extends dev11.ClDataSet_Ticker
   constructor(db_writer, wreq_args)
   {
     super(wreq_args);
-    this.flag_loc_time  = true;
+    this.flag_sys_time  = true;
     this.loc_db_writer = db_writer;
 
     this.loc_date_dur   = 30 * 60 * 1000;
@@ -73,7 +73,7 @@ class ClDataSet_ABooks_DbIn extends dev11.ClDataSet_ABooks
   constructor(db_reader, wreq_args)
   {
     super(wreq_args);
-    this.flag_loc_time  = true;
+    this.flag_sys_time  = true;
     this.loc_db_reader  = db_reader;
   }
 
@@ -88,7 +88,7 @@ class ClDataSet_ABooks_DbOut extends dev11.ClDataSet_ABooks
   constructor(db_writer, wreq_args)
   {
     super(wreq_args);
-    this.flag_loc_time  = true;
+    this.flag_sys_time  = true;
     this.loc_db_writer = db_writer;
 
     this.loc_date_dur   = 30 * 60 * 1000;

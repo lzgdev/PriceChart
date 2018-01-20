@@ -15,7 +15,7 @@ class CTDataSet_Base(object):
 		self.name_chan = name_chan
 		self.wreq_args = wreq_args
 		self.id_chan = None
-		self.flag_loc_time  = False
+		self.flag_sys_time  = False
 		self.loc_time_this  = 0
 		self.flag_dbg_rec   = False
 
@@ -28,10 +28,10 @@ class CTDataSet_Base(object):
 
 	def locDataSync(self):
 		self.onLocDataSync_impl()
-		self.obj_container.datCB_DataSync(self)
+		self.obj_container.datCB_DataSync(self, self.loc_time_this)
 
 	def locDataAppend(self, fmt_data, obj_msg):
-		if (self.flag_loc_time):
+		if (self.flag_sys_time):
 			self.loc_time_this = utTime_utcmts_now() + MSEC_TIMEOFFSET
 		self.onLocDataAppend_impl(fmt_data, obj_msg)
 
@@ -79,7 +79,7 @@ class CTDataSet_Array(CTDataSet_Base):
 class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, logger, obj_container, wreq_args):
 		super(CTDataSet_Ticker, self).__init__(logger, obj_container, 'ticker', wreq_args)
-		self.flag_loc_time  = True
+		self.flag_sys_time  = True
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		if   (fmt_data == DFMT_KKAIPRIV):
@@ -143,7 +143,7 @@ class CTDataSet_ATrades(CTDataSet_Array):
 class CTDataSet_ABooks(CTDataSet_Array):
 	def __init__(self, logger, obj_container, wreq_args):
 		super(CTDataSet_ABooks, self).__init__(logger, obj_container, "book", wreq_args)
-		self.flag_loc_time  = True
+		self.flag_sys_time  = True
 		self.loc_book_bids  = []
 		self.loc_book_asks  = []
 
