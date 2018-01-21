@@ -5,11 +5,11 @@ import json
 
 from .datainput import CTDataInput_Ws
 
-from .dataset   import DFMT_KKAIPRIV, DFMT_BITFINEX, MSEC_TIMEOFFSET
+from .dataset   import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 
 
 class CTDataInput_WssBfx(CTDataInput_Ws):
-	def __init__(self, logger, obj_container, tok_task, tok_this, url_ws, msec_off):
+	def __init__(self, logger, obj_container, url_ws, tok_task, tok_this, msec_off):
 		CTDataInput_Ws.__init__(self, logger, obj_container, url_ws)
 		MSEC_TIMEOFFSET = msec_off
 		self.tok_task = tok_task
@@ -28,7 +28,8 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 					'event': 'subscribe',
 					'channel': tup_chan[1],
 				}
-			obj_subscribe.update(tup_chan[2])
+			if tup_chan[3] != None:
+				obj_subscribe.update(tup_chan[3])
 			txt_wreq = json.dumps(obj_subscribe)
 			self.send(txt_wreq)
 
@@ -72,7 +73,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 			self.ncOP_Send_Subscribe()
 
 	def onNcEV_Message_data(self, obj_msg):
-		self.obj_container.datIN_DataFwd(obj_msg[0], DFMT_BITFINEX, obj_msg)
+		self.obj_container.datIN_DataFwd(obj_msg[0], DFMT_BFXV2, obj_msg)
 
 	def _run_kkai_step(self):
 		#self.logger.warning(self.inf_this + "websocket KKAI Check: ...")

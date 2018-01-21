@@ -1,0 +1,71 @@
+
+import time
+import json
+
+from .datainput import CTDataInput_Http
+
+from .dataset   import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
+
+tm_end = None
+
+# v1 time 1516509475
+# v2 time 1516509148427
+
+class CTDataInput_HttpBfx(CTDataInput_Http):
+	id_chan_off = round(time.time() * 1000)
+	num_chans   = 0
+
+	def __init__(self, logger, obj_container, url_http_pref):
+		CTDataInput_Http.__init__(self, logger, obj_container, url_http_pref)
+		self.loc_id_chan    = None
+		self.loc_run_arg1   = 5
+		self.loc_idx_chan   = 0
+
+		self.flag_log_intv  = 1
+
+	def onInit_HttpUrl_impl(self, url_parse):
+		global tm_end
+		tup_url = None
+		if self.loc_idx_chan >= len(self.obj_container.list_tups_datachn):
+			return tup_url
+		tup_chan = self.obj_container.list_tups_datachn[self.loc_idx_chan]
+		self.loc_run_arg1 -= 1
+		if self.loc_run_arg1 <  0:
+			return tup_url
+		if 'trades' == tup_chan[1]:
+			url_suff   = '/trades/' + tup_chan[3]['symbol'] + '/hist'
+			url_params = None
+			if tm_end != None:
+				url_params = 'end=' + str(tm_end)
+			tup_url = (url_suff, url_params)
+		if tup_url != None and self.loc_id_chan == None:
+			self.num_chans += 1
+			self.loc_id_chan  = self.id_chan_off + self.num_chans
+			self.obj_container.datIN_ChanAdd(self.loc_id_chan, tup_chan[1], tup_chan[2])
+		if self.flag_log_intv >  0:
+			print("URL(impl2) , try:", self.loc_run_arg1, ", tup:", tup_url, ", parse:", url_parse)
+		return tup_url
+
+	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
+		global tm_end
+		if self.flag_log_intv >  0:
+			print("Resp, status:", status_code, ", Content-Type:", content_type)
+			print("Time, end:", tm_end)
+		#print("data:", http_data)
+		try:
+			obj_data  = json.loads(http_data.decode('utf-8'))
+		except:
+			obj_data  = None
+		if obj_data != None:
+			#print("data:", obj_data)
+			self.obj_container.datIN_DataFwd(self.loc_id_chan, DFMT_BFXV2, [self.loc_id_chan, obj_data])
+			if tm_end == None:
+				tm_end = obj_data[0][1]
+			for item in obj_data:
+				if self.flag_log_intv >  0:
+					#print("item:", item)
+					print("diff:", tm_end - item[1], "item:", item)
+			if self.flag_log_intv >  0:
+				print("data len:", len(obj_data))
+			tm_end = obj_data[len(obj_data)-1][1]
+

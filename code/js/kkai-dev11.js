@@ -1,7 +1,7 @@
 // module kkai-dev11
 
 const DFMT_KKAIPRIV = 1001;
-const DFMT_BITFINEX = 2001;
+const DFMT_BFXV2 = 2001;
 
 class ClDataSet_Base
 {
@@ -85,7 +85,7 @@ class ClDataSet_Array extends ClDataSet_Base
       data_msg  = obj_msg['data'];
     }
     else
-	if (fmt_data == DFMT_BITFINEX)
+	if (fmt_data == DFMT_BFXV2)
     {
       data_msg  = obj_msg[1];
     }
@@ -172,7 +172,7 @@ class ClDataSet_ABooks extends ClDataSet_Array
       book_rec   = obj_rec;
     }
     else
-	if (fmt_data == DFMT_BITFINEX)
+	if (fmt_data == DFMT_BFXV2)
     {
       var  amount_rec;
       flag_bids  = (obj_rec[2] >  0.0) ? true : false;
@@ -336,7 +336,7 @@ class ClDataSet_ACandles extends ClDataSet_Array
       candle_rec = obj_rec;
     }
     else
-	if (fmt_data == DFMT_BITFINEX)
+	if (fmt_data == DFMT_BFXV2)
     {
       candle_rec = {
         mts:    Number(obj_rec[0]),

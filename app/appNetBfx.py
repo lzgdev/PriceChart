@@ -7,12 +7,15 @@ import math
 
 import logging
 
+import urllib.parse
+
 import multiprocessing
+
 import ntplib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
-from ktdata import CTDataInput_WssBfx
+from ktdata import CTDataInput_WssBfx, CTDataInput_HttpBfx
 from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
 
 from ktdata import CTDataContainer_DbOut
@@ -34,8 +37,10 @@ mapTasks = [ {
 	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
 	'switch':  True,
+	'url': 'wss://api.bitfinex.com/ws/2',
+	#'url': 'https://api.bitfinex.com/v2',
 	'jobs': [
-		{ 'channel':  'trades', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
+		{ 'channel':  'trades', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD" }', },
 		]
 	},
     {
@@ -43,9 +48,10 @@ mapTasks = [ {
 	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
 	'switch':  True,
+	'url': 'wss://api.bitfinex.com/ws/2',
 	'jobs': [
-		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
-		{ 'channel': 'candles', 'switch':  True, 'wreq_args': { 'key': 'trade:1m:tBTCUSD', }, },
+		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD" }', },
+		{ 'channel': 'candles', 'switch':  True, 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 		]
 	},
     {
@@ -53,11 +59,12 @@ mapTasks = [ {
 	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
 	'switch':  True,
+	'url': 'wss://api.bitfinex.com/ws/2',
 	'jobs': [
-		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P0', 'freq': 'F1', 'len': '100', }, },
-		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P1', 'freq': 'F1', 'len': '100', }, },
-		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P2', 'freq': 'F1', 'len': '100', }, },
-		{ 'channel':    'book', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', 'prec': 'P3', 'freq': 'F1', 'len': '100', }, },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" }', },
 		]
 	},
   ]
@@ -114,13 +121,18 @@ class Process_Net2Db(multiprocessing.Process, CTDataContainer_DbOut):
 		self.info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
 		self.logger.info("Process(" + self.info_app + ") begin ...")
 
-		url_bfx  = "wss://api.bitfinex.com/ws/2"
-		self.addObj_DataSource(CTDataInput_WssBfx(self.logger, self,
-								self.tok_task, self.loc_token_this, url_bfx, ntp_msec_off))
+		task_unit = mapTasks[self.idx_task]
+		url_parse = urllib.parse.urlparse(task_unit['url'])
+		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
+			self.addObj_DataSource(CTDataInput_HttpBfx(self.logger, self, task_unit['url']))
+		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
+			self.addObj_DataSource(CTDataInput_WssBfx(self.logger, self, task_unit['url'],
+								self.tok_task, self.loc_token_this, ntp_msec_off))
+
 		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
-		for map_idx, map_unit in enumerate(mapTasks[self.idx_task]['jobs']):
+		for map_idx, map_unit in enumerate(task_unit['jobs']):
 			if not map_unit['switch']:
 				continue
 			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])

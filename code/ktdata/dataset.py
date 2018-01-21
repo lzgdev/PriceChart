@@ -2,7 +2,7 @@
 import time
 
 DFMT_KKAIPRIV = 1001
-DFMT_BITFINEX = 2001
+DFMT_BFXV2    = 2001
 MSEC_TIMEOFFSET = 0
 
 def utTime_utcmts_now():
@@ -59,7 +59,7 @@ class CTDataSet_Array(CTDataSet_Base):
 		data_msg  = None
 		if   (fmt_data == DFMT_KKAIPRIV):
 			data_msg  = obj_msg
-		elif (fmt_data == DFMT_BITFINEX):
+		elif (fmt_data == DFMT_BFXV2):
 			if isinstance(obj_msg, list):
 				data_msg = obj_msg[len(obj_msg)-1]
 		if self.flag_dbg_rec:
@@ -85,7 +85,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			ticker_rec = obj_msg
 			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
-		elif (fmt_data == DFMT_BITFINEX):
+		elif (fmt_data == DFMT_BFXV2):
 			data_msg = obj_msg[1]
 			if isinstance(data_msg, list) and len(data_msg) == 10:
 				msec_now = self.loc_time_this
@@ -119,7 +119,7 @@ class CTDataSet_ATrades(CTDataSet_Array):
 			self.logger.info("CTDataSet_ATrades(onLocRecAdd_impl): obj_rec=" + str(obj_rec))
 		if   (fmt_data == DFMT_KKAIPRIV):
 			trade_rec = obj_rec
-		elif (fmt_data == DFMT_BITFINEX):
+		elif (fmt_data == DFMT_BFXV2):
 			trade_rec = {
 					'mts':    int(obj_rec[1]),
 					'tid':    obj_rec[0],
@@ -155,7 +155,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
 			book_rec   = obj_rec
-		elif (fmt_data == DFMT_BITFINEX):
+		elif (fmt_data == DFMT_BFXV2):
 			msec_now   = self.loc_time_this
 			flag_bids  = True if obj_rec[2] >  0.0 else False
 			amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
@@ -270,7 +270,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			candle_rec = obj_rec
-		elif (fmt_data == DFMT_BITFINEX):
+		elif (fmt_data == DFMT_BFXV2):
 			candle_rec = {
 					'mts':    int(obj_rec[0]),
 					'open':   obj_rec[1],

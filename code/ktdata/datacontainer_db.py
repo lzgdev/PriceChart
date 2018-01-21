@@ -11,40 +11,40 @@ class CTDataContainer_DbOut(CTDataContainer):
 		pass
 
 	def onDatCB_DataSync_impl(self, idx_chan, obj_dataset, msec_now):
-		#obj_dataset.onLocDataSync_CB()
 		#print("CTDataContainer_DbOut::onDatCB_DataSync_impl", idx_chan)
 		obj_dbad = self.list_dbad_dataout[idx_chan]
 		if obj_dbad != None:
 			obj_dbad.synAppend(msec_now)
 
 	def onDatCB_RecPlus_impl(self, idx_chan, obj_dataset, doc_rec, idx_rec):
-		#obj_dataset.onLocRecAdd_CB(True, doc_rec, idx_rec)
 		#print("CTDataContainer_DbOut::onDatCB_RecPlus_impl", idx_chan, doc_rec, idx_rec)
 		obj_dbad = self.list_dbad_dataout[idx_chan]
 		if obj_dbad != None:
 			obj_dbad.docAppend(doc_rec)
 
 
-	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan, name_chan, dict_msg):
+	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
 		tup_chan  = self.list_tups_datachn[idx_chan]
 		obj_dataset = tup_chan[0]
-		dict_args   = tup_chan[2]
+		name_chan   = tup_chan[1]
+		wreq_args   = tup_chan[2]
+		#print("CTDataContainer_DbOut::onDatIN_ChanAdd_ext", idx_chan, id_chan, name_chan, wreq_args)
 		num_coll_msec  =  3 * 60 * 60 * 1000
 		#num_coll_msec  =  1 * 60 * 60 * 1000
 
 		obj_dbad = None
 		if   name_chan == 'ticker':
 			obj_dbad = CTDbOut_Adapter_ticker(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, dict_args)
+								name_chan, wreq_args)
 		elif name_chan == 'trades':
 			obj_dbad = CTDbOut_Adapter_trades(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, dict_args)
+								name_chan, wreq_args)
 		elif name_chan == 'book':
 			obj_dbad = CTDbOut_Adapter_book(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, dict_args)
+								name_chan, wreq_args)
 		elif name_chan == 'candles':
 			obj_dbad = CTDbOut_Adapter_candles(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, dict_args)
+								name_chan, wreq_args)
 		# add database adapter to self.list_dbad_dataout
 		while len(self.list_dbad_dataout) <= idx_chan:
 			self.list_dbad_dataout.append(None)
@@ -52,7 +52,7 @@ class CTDataContainer_DbOut(CTDataContainer):
 			self.list_dbad_dataout[idx_chan] = obj_dbad
 
 
-	def onDatIN_ChanDel_ext(self, idx_chan, id_chan, name_chan, dict_msg):
+	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
 		pass
 
 

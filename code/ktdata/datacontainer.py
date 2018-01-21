@@ -5,9 +5,9 @@ import hmac
 import hashlib
 import json
 
-from .datainput     import CTDataInput_Ws
+from .datainput     import CTDataInput_Ws, CTDataInput_Http
 
-from .dataset       import DFMT_KKAIPRIV, DFMT_BITFINEX, MSEC_TIMEOFFSET
+from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 from .dataset       import CTDataSet_Ticker, CTDataSet_ATrades, CTDataSet_ABooks, CTDataSet_ACandles
 
 class CTDataContainer(object):
@@ -21,7 +21,7 @@ class CTDataContainer(object):
 	def execLoop(self):
 		self.onExec_Loop_impl()
 
-	def addArg_DataChannel(self, name_chan, dict_args, tmp_tokchan):
+	def addArg_DataChannel(self, name_chan, wreq_args, tmp_tokchan):
 		obj_netclient = self.list_objs_datasrc[0]
 		#{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
 
@@ -31,16 +31,20 @@ class CTDataContainer(object):
 		obj_chan  = None
 		#self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
 		if   name_chan == 'ticker':
-			obj_chan = CTDataSet_Ticker(self.logger, self, dict_args)
+			obj_chan = CTDataSet_Ticker(self.logger, self, wreq_args)
 		elif name_chan == 'trades':
-			obj_chan = CTDataSet_ATrades(512, self.logger, self, dict_args)
+			obj_chan = CTDataSet_ATrades(512, self.logger, self, wreq_args)
 		elif name_chan == 'book':
-			obj_chan = CTDataSet_ABooks(self.logger, self, dict_args)
+			obj_chan = CTDataSet_ABooks(self.logger, self, wreq_args)
 		elif name_chan == 'candles':
-			obj_chan = CTDataSet_ACandles(512, self.logger, self, dict_args)
+			obj_chan = CTDataSet_ACandles(512, self.logger, self, wreq_args)
 
 		if obj_chan != None:
-			self.list_tups_datachn.append((obj_chan, name_chan, dict_args))
+			try:
+				dict_args = json.loads(wreq_args)
+			except:
+				dict_args = None
+			self.list_tups_datachn.append((obj_chan, name_chan, wreq_args, dict_args))
 
 	def addObj_DataSource(self, obj_source):
 		self.list_objs_datasrc.append(obj_source)
@@ -48,16 +52,16 @@ class CTDataContainer(object):
 	def datCHK_IsFinish(self):
 		return self.onDatCHK_IsFinish_impl()
 
-	def datIN_ChanAdd(self, id_chan, name_chan, dict_msg):
-		idx_chan = self.onDatIN_ChanAdd_impl(id_chan, name_chan, dict_msg)
+	def datIN_ChanAdd(self, id_chan, name_chan, wreq_args):
+		idx_chan = self.onDatIN_ChanAdd_impl(id_chan, name_chan, wreq_args)
 		if idx_chan >= 0:
-			self.onDatIN_ChanAdd_ext(idx_chan, id_chan, name_chan, dict_msg)
+			self.onDatIN_ChanAdd_ext(idx_chan, id_chan)
 		return idx_chan
 
-	def datIN_ChanDel(self, id_chan, name_chan, dict_msg):
-		idx_chan = self.onDatIN_ChanDel_impl(id_chan, name_chan, dict_msg)
+	def datIN_ChanDel(self, id_chan, name_chan, wreq_args):
+		idx_chan = self.onDatIN_ChanDel_impl(id_chan, name_chan, wreq_args)
 		if idx_chan >= 0:
-			self.onDatIN_ChanDel_ext(idx_chan, id_chan, name_chan, dict_msg)
+			self.onDatIN_ChanDel_ext(idx_chan, id_chan)
 		return idx_chan
 
 	def datIN_DataFwd(self, id_chan, fmt_data, obj_msg):
@@ -80,8 +84,10 @@ class CTDataContainer(object):
 
 	def onExec_Loop_impl(self):
 		for obj_source in self.list_objs_datasrc:
-			if isinstance(obj_source, CTDataInput_Ws):
+			if   isinstance(obj_source, CTDataInput_Ws):
 				obj_source.run_forever()
+			elif isinstance(obj_source, CTDataInput_Http):
+				obj_source.exec_HttpExec()
 
 	def onDatCHK_IsFinish_impl(self):
 		"""
@@ -122,8 +128,9 @@ class CTDataContainer(object):
 		"""
 		return False
 
-	def onDatIN_ChanAdd_impl(self, id_chan, name_chan, dict_msg):
-		#print("CTDataContainer::onDatIN_ChanAdd_impl() ", id_chan, name_chan, dict_msg)
+	def onDatIN_ChanAdd_impl(self, id_chan, name_chan, wreq_args):
+		#print("CTDataContainer::onDatIN_ChanAdd_impl() ", id_chan, name_chan, wreq_args)
+		dict_args = wreq_args if isinstance(wreq_args, dict) else None
 		idx_chan_add = -1
 		for idx_chan in range(len(self.list_tups_datachn)):
 			tup_chan = self.list_tups_datachn[idx_chan]
@@ -132,15 +139,19 @@ class CTDataContainer(object):
 			if tup_chan[1] != name_chan:
 				continue
 			idx_chan_add = idx_chan
-			for key, val in tup_chan[2].items():
-				if str(val) != str(dict_msg[key]):
+			if dict_args == None:
+				if wreq_args != tup_chan[2]:
 					idx_chan_add = -1
-					break
+			else:
+				for key, val in tup_chan[3].items():
+					if str(val) != str(dict_args[key]):
+						idx_chan_add = -1
+						break
 			if idx_chan_add >= 0:
 				break
 		if idx_chan_add <  0:
 			self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
-								str(cid_msg) + ", obj=" + str(obj_msg))
+								str(cid_msg) + ", args=" + str(wreq_args))
 		else:
 			self.list_tups_datachn[idx_chan_add][0].locSet_ChanId(id_chan)
 			"""
@@ -157,10 +168,10 @@ class CTDataContainer(object):
 			"""
 		return idx_chan_add
 
-	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan, name_chan, dict_msg):
+	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
 		pass
 
-	def onDatIN_ChanDel_impl(self, id_chan, name_chan, dict_msg):
+	def onDatIN_ChanDel_impl(self, id_chan, name_chan, wreq_args):
 		"""
 		flag_subscribed   = False
 		flag_unsubscribed = False
@@ -194,7 +205,7 @@ class CTDataContainer(object):
 		"""
 		pass
 
-	def onDatIN_ChanDel_ext(self, idx_chan, id_chan, name_chan, dict_msg):
+	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
 		pass
 
 	def onDatIN_DataFwd_impl(self, id_chan, fmt_data, obj_msg):
@@ -224,7 +235,7 @@ class CTDataContainer(object):
 						") no longer active, ignore data chanId=" + str(cid_msg))
 		else:
 			#self.logger.debug(self.inf_this + "(data): chan(idx=" + str(idx_handler) + ") handle data, data=" + str(obj_msg))
-			self.objs_chan_data[idx_handler].locDataAppend(DFMT_BITFINEX, obj_msg)
+			self.objs_chan_data[idx_handler].locDataAppend(DFMT_BFXV2, obj_msg)
 		"""
 		pass
 
