@@ -1,4 +1,5 @@
 
+import json
 
 from .datacontainer import CTDataContainer
 
@@ -136,11 +137,15 @@ class CTDbOut_Adapter_trades(CTDbOut_Adapter):
 				self.logger.info("CTDbOut_Adapter_trades(onSynAppend_impl): rec=" + str(trade_rec))
 			self.docAppend(trade_rec)
 
+def _extr_name_book(wreq_args):
+	dict_args = json.loads(wreq_args)
+	wreq_prec = dict_args['prec']
+	return wreq_prec
 
 class CTDbOut_Adapter_book(CTDbOut_Adapter):
 	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args):
 		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer, num_coll_msec,
-								name_chan, wreq_args, name_chan + '-' + wreq_args['prec'])
+								name_chan, wreq_args, name_chan + '-' + _extr_name_book(wreq_args))
 		self.num_recs_wrap  = 240
 		self.cnt_recs_book  = 0
 		self.mts_recs_last  = 0
@@ -180,7 +185,9 @@ class CTDbOut_Adapter_book(CTDbOut_Adapter):
 			self.mts_recs_last  = msec_now
 
 
-def _extr_cname_key(wreq_key):
+def _extr_name_candles(wreq_args):
+	dict_args = json.loads(wreq_args)
+	wreq_key  = dict_args['key']
 	i1  =  wreq_key.find(':')
 	i2  =  -1 if i1 <  0 else wreq_key.find(':', i1+1)
 	name_key = '' if i1 < 0 or i2 < 0 else wreq_key[i1+1 : i2]
@@ -189,7 +196,7 @@ def _extr_cname_key(wreq_key):
 class CTDbOut_Adapter_candles(CTDbOut_Adapter):
 	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args):
 		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer, num_coll_msec,
-								name_chan, wreq_args, name_chan + '-' + _extr_cname_key(wreq_args['key']))
+								name_chan, wreq_args, name_chan + '-' + _extr_name_candles(wreq_args))
 		self.doc_rec_output = None
 
 	def onSynAppend_impl(self, msec_now):
