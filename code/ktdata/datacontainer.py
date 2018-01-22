@@ -44,6 +44,7 @@ class CTDataContainer(object):
 				dict_args = json.loads(wreq_args)
 			except:
 				dict_args = None
+			obj_chan.locSet_DbTbl(dbname_tbl4args(name_chan, dict_args))
 			self.list_tups_datachn.append((obj_chan, name_chan, wreq_args, dict_args))
 
 	def addObj_DataSource(self, obj_source):
@@ -257,4 +258,23 @@ class CTDataContainer(object):
 				break
 		return idx_chan_this
 
+
+def dbname_tbl4args(name_chan, wreq_args):
+	name_dbtbl = None
+	if isinstance(wreq_args, dict):
+		dict_args = wreq_args
+	else:
+		dict_args = json.loads(wreq_args)
+	if    'ticker' == name_chan:
+		name_dbtbl = name_chan + '-' + dict_args['symbol']
+	elif  'trades' == name_chan:
+		name_dbtbl = name_chan + '-' + dict_args['symbol']
+	elif    'book' == name_chan:
+		name_dbtbl = name_chan + '-' + dict_args['symbol'] + '-' + dict_args['prec']
+	elif 'candles' == name_chan:
+		wreq_keys = dict_args['key'].split(':')
+		key_tf  = wreq_keys[1]
+		key_sym = wreq_keys[2]
+		name_dbtbl = name_chan + '-' + key_sym + '-' + key_tf
+	return name_dbtbl
 

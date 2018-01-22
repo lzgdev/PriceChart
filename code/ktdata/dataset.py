@@ -13,11 +13,15 @@ class CTDataSet_Base(object):
 		self.logger   = logger
 		self.obj_container = obj_container
 		self.name_chan = name_chan
+		self.name_dbtbl = None
 		self.wreq_args = wreq_args
-		self.id_chan = None
+		self.id_chan   = None
 		self.flag_sys_time  = False
 		self.loc_time_this  = 0
 		self.flag_dbg_rec   = False
+
+	def locSet_DbTbl(self, name_dbtbl):
+		self.name_dbtbl = name_dbtbl
 
 	def locSet_ChanId(self, id_chan):
 		self.id_chan = id_chan
