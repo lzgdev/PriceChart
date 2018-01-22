@@ -125,19 +125,22 @@ class CTDataSet_ATrades(CTDataSet_Array):
 			trade_rec = obj_rec
 		elif (fmt_data == DFMT_BFXV2):
 			trade_rec = {
-					'mts':    int(obj_rec[1]),
+					'mts':    obj_rec[1],
 					'tid':    obj_rec[0],
 					'amount': obj_rec[2],
 					'price':  obj_rec[3],
 				}
 		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
 			self.loc_trades_recs.pop(0)
+		new_mts = trade_rec['mts']
+		new_tid = trade_rec['tid']
 		rec_index = len(self.loc_trades_recs) - 1
 		while rec_index >= 0:
-			if trade_rec['mts'] >= self.loc_trades_recs[rec_index]['mts']:
+			if new_mts >= self.loc_trades_recs[rec_index]['mts'] or new_tid >= self.loc_trades_recs[rec_index]['tid']:
 				break
 			rec_index -= 1
-		if ((rec_index <  0) or (trade_rec['mts'] >  self.loc_trades_recs[rec_index]['mts'])):
+		if ((rec_index <  0) or
+			(new_mts >  self.loc_trades_recs[rec_index]['mts']) or (new_tid >  self.loc_trades_recs[rec_index]['tid'])):
 			rec_index += 1
 		self.loc_trades_recs.insert(rec_index, trade_rec)
 		if flag_plus:

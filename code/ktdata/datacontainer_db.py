@@ -30,22 +30,17 @@ class CTDataContainer_DbOut(CTDataContainer):
 		name_chan   = tup_chan[1]
 		wreq_args   = tup_chan[2]
 		#print("CTDataContainer_DbOut::onDatIN_ChanAdd_ext", idx_chan, id_chan, name_chan, wreq_args)
-		num_coll_msec  =  3 * 60 * 60 * 1000
-		#num_coll_msec  =  1 * 60 * 60 * 1000
-
 		obj_dbad = None
 		if   name_chan == 'ticker':
-			obj_dbad = CTDbOut_Adapter_ticker(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, wreq_args)
+			obj_dbad = CTDbOut_Adapter_ticker(self.logger, obj_dataset, self.obj_dbwriter)
 		elif name_chan == 'trades':
-			obj_dbad = CTDbOut_Adapter_trades(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, wreq_args)
+			obj_dbad = CTDbOut_Adapter_trades(self.logger, obj_dataset, self.obj_dbwriter)
 		elif name_chan == 'book':
-			obj_dbad = CTDbOut_Adapter_book(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, wreq_args)
+			obj_dbad = CTDbOut_Adapter_book(self.logger, obj_dataset, self.obj_dbwriter)
 		elif name_chan == 'candles':
-			obj_dbad = CTDbOut_Adapter_candles(self.logger, obj_dataset, self.obj_dbwriter, num_coll_msec,
-								name_chan, wreq_args)
+			obj_dbad = CTDbOut_Adapter_candles(self.logger, obj_dataset, self.obj_dbwriter)
+		if obj_dbad != None:
+			obj_dbad.dbColLoad(obj_dataset.name_dbtbl, obj_dataset.name_chan, obj_dataset.wreq_args)
 		# add database adapter to self.list_dbad_dataout
 		while len(self.list_dbad_dataout) <= idx_chan:
 			self.list_dbad_dataout.append(None)
@@ -62,74 +57,55 @@ import math
 import copy
 
 class CTDbOut_Adapter(object):
-	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args, name_pref):
+	def __init__(self, logger, obj_dataset, db_writer):
 		self.logger   = logger
 		self.obj_dataset    = obj_dataset
 		self.loc_db_writer  = db_writer
-		self.num_coll_msec  = num_coll_msec
-		self.name_chan  = name_chan
-		self.wreq_args  = wreq_args
 		self.flag_dbg_rec   = False
-		self.msec_dbc_pre   = 0
-		self.msec_dbc_nxt   = 0
-		self.loc_name_pref  = name_pref
-		self.loc_name_coll  = None
+		self.name_dbtbl = None
+		self.name_chan  = None
+		self.wreq_args  = None
+		self.db_doc_last    = None
+
+	def dbColLoad(self, name_dbtbl, name_chan, wreq_args):
+		return self.onDb_ColLoad_impl(name_dbtbl, name_chan, wreq_args)
 
 	def synAppend(self, msec_now):
 		self.onSynAppend_impl(msec_now)
 
-	def colAppend(self, msec_now):
-		self.onColAppend_impl(msec_now)
-
 	def docAppend(self, doc_rec):
-		self.onDocAppend_impl(doc_rec)
+		doc_new = self.onDocAppend_impl(doc_rec)
+		return doc_new
+
+	def onDb_ColLoad_impl(self, name_dbtbl, name_chan, wreq_args):
+		# append collection to database
+		if not self.loc_db_writer.dbOP_CollAdd(name_dbtbl, name_chan, wreq_args):
+			return False
+		self.name_dbtbl = name_dbtbl
+		self.name_chan  = name_chan
+		self.wreq_args  = wreq_args
+		self.db_doc_last    = self.loc_db_writer.dbOP_DocFind_One(self.name_dbtbl, { }, [('_id', -1)])
+		return True
 
 	def onSynAppend_impl(self, msec_now):
 		pass
 
-	def onColAppend_impl(self, msec_now):
-		# re-asign self.msec_dbc_pre and self.msec_dbc_nxt
-		msec_coll = math.floor(msec_now / self.num_coll_msec) * self.num_coll_msec
-		self.msec_dbc_pre  = msec_coll - 1
-		self.msec_dbc_nxt  = msec_coll + self.num_coll_msec
-		# compose self.loc_name_coll
-		self.loc_name_coll  = self.loc_name_pref + ('-' +
-				time.strftime("%Y%m%d%H%M%S", time.gmtime(msec_coll / 1000)))
-		# append collection to database
-		self.loc_db_writer.dbOP_CollAdd(self.loc_name_coll, self.name_chan, self.wreq_args)
-		doc_one  = self.loc_db_writer.dbOP_DocFind_One(self.loc_name_coll, { }, [('_id', -1)])
-		if doc_one != None:
-			self.msec_dbc_pre  = doc_one['mts']
-		if self.flag_dbg_rec:
-			self.logger.info("CTDbOut_Adapter(colAppend): coll=" + self.loc_name_coll +
-								", msec: pre=" + str(self.msec_dbc_pre) + " nxt=" + str(self.msec_dbc_nxt))
-
 	def onDocAppend_impl(self, doc_rec):
-		msec_doc = doc_rec['mts']
-		# append collection to database
-		if msec_doc >= self.msec_dbc_nxt:
-			self.colAppend(msec_doc)
 		# append doc to database
-		if msec_doc <= self.msec_dbc_pre  or msec_doc >= self.msec_dbc_nxt:
-			if self.flag_dbg_rec:
-				self.logger.warning("CTDbOut_Adapter(docAppend): ignore doc=" + str(doc_rec))
-			return False
-		if self.flag_dbg_rec:
-			self.logger.info("CTDbOut_Adapter(docAppend): new doc=" + str(doc_rec))
-		self.loc_db_writer.dbOP_DocAdd(self.loc_name_coll, doc_rec)
-		return True
+		doc_new  = self.loc_db_writer.dbOP_DocAdd(self.name_dbtbl, doc_rec)
+		if doc_new != None:
+			self.db_doc_last = doc_new
+		return doc_new
 
 
 class CTDbOut_Adapter_ticker(CTDbOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args):
-		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer, num_coll_msec,
-								name_chan, wreq_args, name_chan)
+	def __init__(self, logger, obj_dataset, db_writer):
+		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
 
 
 class CTDbOut_Adapter_trades(CTDbOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args):
-		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer, num_coll_msec,
-								name_chan, wreq_args, name_chan)
+	def __init__(self, logger, obj_dataset, db_writer):
+		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
 
 	def onSynAppend_impl(self, msec_now):
 		for trade_rec in self.obj_dataset.loc_trades_recs:
@@ -143,9 +119,8 @@ def _extr_name_book(wreq_args):
 	return wreq_prec
 
 class CTDbOut_Adapter_book(CTDbOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args):
-		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer, num_coll_msec,
-								name_chan, wreq_args, name_chan + '-' + _extr_name_book(wreq_args))
+	def __init__(self, logger, obj_dataset, db_writer):
+		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
 		self.num_recs_wrap  = 240
 		self.cnt_recs_book  = 0
 		self.mts_recs_last  = 0
@@ -174,8 +149,6 @@ class CTDbOut_Adapter_book(CTDbOut_Adapter):
 			self.cnt_recs_book += 1
 		flag_new_coll = True if msec_now >= self.msec_dbc_nxt else False
 		flag_new_sync = True if self.cnt_recs_book >= self.num_recs_wrap else False
-		if flag_new_coll:
-			self.colAppend(msec_now)
 		if flag_new_coll or flag_new_sync:
 			self.synAppend(msec_now)
 		out_doc  = copy.copy(doc_rec)
@@ -194,9 +167,8 @@ def _extr_name_candles(wreq_args):
 	return name_key
 
 class CTDbOut_Adapter_candles(CTDbOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer, num_coll_msec, name_chan, wreq_args):
-		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer, num_coll_msec,
-								name_chan, wreq_args, name_chan + '-' + _extr_name_candles(wreq_args))
+	def __init__(self, logger, obj_dataset, db_writer):
+		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
 		self.doc_rec_output = None
 
 	def onSynAppend_impl(self, msec_now):

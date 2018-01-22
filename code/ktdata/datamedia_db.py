@@ -45,9 +45,9 @@ class KTDataMedia_DbBase(object):
 
 	def dbOP_DocAdd(self, name_coll, obj_doc):
 		if obj_doc == None:
-			return False
+			return None
 		if not self.dbChk_Coll_Ready(name_coll):
-			return False 
+			return None
 		return self.onDbOP_DocAdd_impl(name_coll, obj_doc)
 
 	def dbOP_DocFind_One(self, name_coll, filt_args, sort_args):
@@ -124,7 +124,7 @@ class KTDataMedia_DbBase(object):
 						})
 				db_coll.create_index([('_id', pymongo.ASCENDING), ('mts', pymongo.ASCENDING)])
 				self.onDbEV_CollAdd(name_coll)
-		return True
+		return self.dbChk_Coll_Ready(name_coll)
 
 	def onDbOP_CollLoad_impl(self, id_chan, name_coll, find_args, sort_args):
 		num_docs = 0
@@ -144,7 +144,7 @@ class KTDataMedia_DbBase(object):
 		ret_ins = db_coll.insert_one(db_doc)
 		if (name_coll != COLLNAME_CollSet):
 			self.onDbEV_DocAdd(name_coll, db_doc, ret_ins)
-
+		return db_doc if ret_ins.acknowledged else None
 
 
 class KTDataMedia_DbReader(KTDataMedia_DbBase):
