@@ -94,6 +94,8 @@ class CTDbOut_Adapter(object):
 		# append doc to database
 		doc_new  = self.loc_db_writer.dbOP_DocAdd(self.name_dbtbl, doc_rec)
 		if doc_new != None:
+			if self.flag_dbg_rec:
+				self.logger.info("CTDbOut_Adapter(onSynAppend_impl): doc_new=" + str(doc_new))
 			self.db_doc_last = doc_new
 		return doc_new
 
@@ -110,13 +112,16 @@ class CTDbOut_Adapter_trades(CTDbOut_Adapter):
 	def onSynAppend_impl(self, msec_now):
 		for trade_rec in self.obj_dataset.loc_trades_recs:
 			if self.flag_dbg_rec:
-				self.logger.info("CTDbOut_Adapter_trades(onSynAppend_impl): rec=" + str(trade_rec))
+				self.logger.info("CTDbOut_Adapter_trades(onSynAppend_impl): syn_rec=" + str(trade_rec))
 			self.docAppend(trade_rec)
 
-def _extr_name_book(wreq_args):
-	dict_args = json.loads(wreq_args)
-	wreq_prec = dict_args['prec']
-	return wreq_prec
+	def docAppend(self, doc_rec):
+		if self.db_doc_last != None and doc_rec['tid'] <= self.db_doc_last['tid']:
+			doc_new = None
+		else:
+			doc_new = self.onDocAppend_impl(doc_rec)
+		return doc_new
+
 
 class CTDbOut_Adapter_book(CTDbOut_Adapter):
 	def __init__(self, logger, obj_dataset, db_writer):
@@ -158,29 +163,25 @@ class CTDbOut_Adapter_book(CTDbOut_Adapter):
 			self.mts_recs_last  = msec_now
 
 
-def _extr_name_candles(wreq_args):
-	dict_args = json.loads(wreq_args)
-	wreq_key  = dict_args['key']
-	i1  =  wreq_key.find(':')
-	i2  =  -1 if i1 <  0 else wreq_key.find(':', i1+1)
-	name_key = '' if i1 < 0 or i2 < 0 else wreq_key[i1+1 : i2]
-	return name_key
-
 class CTDbOut_Adapter_candles(CTDbOut_Adapter):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDbOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
 		self.doc_rec_output = None
+		#self.flag_dbg_rec   = True
 
 	def onSynAppend_impl(self, msec_now):
 		for candle_rec in self.obj_dataset.loc_candle_recs:
 			if self.flag_dbg_rec:
-				self.logger.info("CTDbOut_Adapter_candles(onSynAppend_impl): rec=" + str(candle_rec))
+				self.logger.info("CTDbOut_Adapter_candles(onSynAppend_impl): syn_rec=" + str(candle_rec))
 			self.docAppend(candle_rec)
 
 	def docAppend(self, doc_rec):
 		msec_new = doc_rec['mts']
 		if self.doc_rec_output != None and msec_new >  self.doc_rec_output['mts']:
 			self.onDocAppend_impl(self.doc_rec_output)
+			if self.db_doc_last != None and self.doc_rec_output['mts'] <= self.db_doc_last['mts']:
+				doc_new = None
+			else:
+				doc_new = self.onDocAppend_impl(self.doc_rec_output)
 		self.doc_rec_output = doc_rec
-
 

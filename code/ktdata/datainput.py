@@ -1,5 +1,6 @@
 
 import os
+import time
 
 import websocket
 
@@ -71,6 +72,7 @@ class CTDataInput_Http(CTDataInput):
 			if url_params != None and url_params != '':
 				url_path += '?' + url_params
 			self.onExec_HttpGet_impl(url_parse.netloc, url_path)
+			time.sleep(5)
 
 	def onExec_HttpGet_impl(self, url_netloc, url_path):
 		# compose real http request url

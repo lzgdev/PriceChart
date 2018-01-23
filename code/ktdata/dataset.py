@@ -124,12 +124,16 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			trade_rec = obj_rec
 		elif (fmt_data == DFMT_BFXV2):
-			trade_rec = {
+			try:
+				trade_rec = {
 					'mts':    obj_rec[1],
 					'tid':    obj_rec[0],
 					'amount': obj_rec[2],
 					'price':  obj_rec[3],
-				}
+					}
+			except:
+				trade_rec = None
+				self.logger.error("CTDataSet_ATrades(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
 		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
 			self.loc_trades_recs.pop(0)
 		new_mts = trade_rec['mts']
@@ -279,7 +283,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 			candle_rec = obj_rec
 		elif (fmt_data == DFMT_BFXV2):
 			candle_rec = {
-					'mts':    int(obj_rec[0]),
+					'mts':    obj_rec[0],
 					'open':   obj_rec[1],
 					'close':  obj_rec[2],
 					'high':   obj_rec[3],
