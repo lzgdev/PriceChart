@@ -5,47 +5,78 @@ import hmac
 import hashlib
 import json
 
-from .datainput     import CTDataInput_Ws, CTDataInput_Http
-
 from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 from .dataset       import CTDataSet_Ticker, CTDataSet_ATrades, CTDataSet_ABooks, CTDataSet_ACandles
 
+gMap_TaskChans_init = False
+
+gMap_TaskChans = [
+		# channel:       0 for ticker
+		{ 'channel':  'ticker', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD" }', },
+		# channel:       1 for trades
+		{ 'channel':  'trades', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD" }', },
+		# channel:  2 ~  5 for book
+		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" }', },
+		# channel:  6 ~ 17 for book
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:5m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:15m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:30m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:3h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:6h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:12h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1D:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:7D:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:14D:tBTCUSD" }', },
+		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1M:tBTCUSD" }', },
+	]
+
+
 class CTDataContainer(object):
+	global __gmap_TaskChans_init, __gmap_TaskChans_find
+
 	def __init__(self, logger):
+		global gMap_TaskChans_init
 		object.__init__(self)
 		self.logger   = logger
+		self.inf_this = "DataContainer"
 		self.pid_this = os.getpid()
 		self.list_objs_datasrc = []
-		self.list_tups_datachn = []
+		self.list_tups_datachan = []
+		# init global chans map table
+		if not gMap_TaskChans_init:
+			gMap_TaskChans_init = __gmap_TaskChans_init(None)
 
 	def execLoop(self):
 		self.onExec_Loop_impl()
 
 	def addArg_DataChannel(self, name_chan, wreq_args, tmp_tokchan):
+		global gMap_TaskChans
+		idx_map_find = __gmap_TaskChans_find(name_chan, wreq_args)
+		if idx_map_find <  0:
+			return -1
+		wreq_args = gMap_TaskChans[idx_map_find]['wreq_args']
 		obj_netclient = self.list_objs_datasrc[0]
-		#{ 'channel':  'ticker', 'switch':  True, 'wreq_args': { 'symbol': 'tBTCUSD', }, },
-
-		num_coll_msec  =  3 * 60 * 60 * 1000
-		#num_coll_msec  =  1 * 60 * 60 * 1000
-
-		obj_chan  = None
-		#self.logger.info("map idx=" + str(map_idx) + ", unit=" + str(map_unit))
+		obj_dataset = None
+		obj_dataout = None
+		#
 		if   name_chan == 'ticker':
-			obj_chan = CTDataSet_Ticker(self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args)
 		elif name_chan == 'trades':
-			obj_chan = CTDataSet_ATrades(512, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ATrades(512, self.logger, self, wreq_args)
 		elif name_chan == 'book':
-			obj_chan = CTDataSet_ABooks(self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args)
 		elif name_chan == 'candles':
-			obj_chan = CTDataSet_ACandles(512, self.logger, self, wreq_args)
-
-		if obj_chan != None:
-			try:
-				dict_args = json.loads(wreq_args)
-			except:
-				dict_args = None
-			obj_chan.locSet_DbTbl(dbname_tbl4args(name_chan, dict_args))
-			self.list_tups_datachn.append((obj_chan, name_chan, wreq_args, dict_args))
+			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args)
+		if obj_dataset == None:
+			return -1
+		obj_dataset.locSet_DbTbl(dbname_tbl4args(name_chan, gMap_TaskChans[idx_map_find]['dict_args']))
+		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args)
+		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args, gMap_TaskChans[idx_map_find]['dict_args']))
 
 	def addObj_DataSource(self, obj_source):
 		self.list_objs_datasrc.append(obj_source)
@@ -85,10 +116,7 @@ class CTDataContainer(object):
 
 	def onExec_Loop_impl(self):
 		for obj_source in self.list_objs_datasrc:
-			if   isinstance(obj_source, CTDataInput_Ws):
-				obj_source.run_forever()
-			elif isinstance(obj_source, CTDataInput_Http):
-				obj_source.exec_HttpExec()
+			obj_source.execReadLoop()
 
 	def onDatCHK_IsFinish_impl(self):
 		"""
@@ -129,34 +157,34 @@ class CTDataContainer(object):
 		"""
 		return False
 
+	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args):
+		return None
+
 	def onDatIN_ChanAdd_impl(self, id_chan, name_chan, wreq_args):
+		global gMap_TaskChans
 		#print("CTDataContainer::onDatIN_ChanAdd_impl() ", id_chan, name_chan, wreq_args)
-		dict_args = wreq_args if isinstance(wreq_args, dict) else None
+		idx_map_find = __gmap_TaskChans_find(name_chan, wreq_args)
+		if idx_map_find <  0:
+			return -1
+		wreq_args = gMap_TaskChans[idx_map_find]['wreq_args']
 		idx_chan_add = -1
-		for idx_chan in range(len(self.list_tups_datachn)):
-			tup_chan = self.list_tups_datachn[idx_chan]
+		for idx_chan in range(len(self.list_tups_datachan)):
+			tup_chan = self.list_tups_datachan[idx_chan]
 			if tup_chan[0].id_chan != None:
 				continue
-			if tup_chan[1] != name_chan:
+			if tup_chan[2] != name_chan:
+				continue
+			if tup_chan[3] != wreq_args:
 				continue
 			idx_chan_add = idx_chan
-			if dict_args == None:
-				if wreq_args != tup_chan[2]:
-					idx_chan_add = -1
-			else:
-				for key, val in tup_chan[3].items():
-					if str(val) != str(dict_args[key]):
-						idx_chan_add = -1
-						break
-			if idx_chan_add >= 0:
-				break
+			break
 		if idx_chan_add <  0:
 			self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
-								str(cid_msg) + ", args=" + str(wreq_args))
+								str(id_chan) + ", args=" + str(wreq_args))
 		else:
-			self.list_tups_datachn[idx_chan_add][0].locSet_ChanId(id_chan)
+			self.list_tups_datachan[idx_chan_add][0].locSet_ChanId(id_chan)
 			"""
-			self.objs_chan_data[idx_handler].locSet_ChanId(cid_msg)
+			self.objs_chan_data[idx_handler].locSet_ChanId(id_chan)
 			if self.toks_chan_data[idx_handler].value <  self.tok_this:
 				with self.toks_chan_data[idx_handler].get_lock():
 					self.toks_chan_data[idx_handler].value = self.tok_this
@@ -165,7 +193,7 @@ class CTDataContainer(object):
 			flag_subscribed   = True
 			if self.flag_log_intv:
 				self.logger.info(self.inf_this + " (sbsc): chan(idx=" +
-							str(idx_handler) + ") subscribed, chanId=" + str(cid_msg))
+							str(idx_handler) + ") subscribed, chanId=" + str(id_chan))
 			"""
 		return idx_chan_add
 
@@ -178,11 +206,11 @@ class CTDataContainer(object):
 		flag_unsubscribed = False
 
 		for idx_chan, obj_chan in enumerate(self.objs_chan_data):
-			if obj_chan.id_chan != cid_msg:
+			if obj_chan.id_chan != id_chan:
 				continue
 			idx_handler = idx_chan
 		if idx_handler <  0:
-			self.logger.error(self.inf_this + " (sbsc): can't handle unsubscribe, chanId=" + str(cid_msg) +
+			self.logger.error(self.inf_this + " (sbsc): can't handle unsubscribe, chanId=" + str(id_chan) +
 							", obj=" + str(obj_msg))
 		else:
 			self.objs_chan_data[idx_handler].locSet_ChanId(-1)
@@ -191,7 +219,7 @@ class CTDataContainer(object):
 			flag_unsubscribed = True
 			if self.flag_log_intv:
 				self.logger.info(self.inf_this + " (sbsc): chan(idx=" + str(idx_handler) +
-						") unsubscribed, chanId=" + str(cid_msg))
+						") unsubscribed, chanId=" + str(id_chan))
 
 		if   flag_subscribed and (
 			self.num_chan_subscribed   == len(self.objs_chan_data)):
@@ -212,28 +240,28 @@ class CTDataContainer(object):
 	def onDatIN_DataFwd_impl(self, id_chan, fmt_data, obj_msg):
 		#print("CTDataContainer::onDatIN_DataFwd_impl() ", id_chan, fmt_data, obj_msg)
 		obj_chan = None
-		for idx_chan in range(len(self.list_tups_datachn)):
-			tup_chan = self.list_tups_datachn[idx_chan]
+		for idx_chan in range(len(self.list_tups_datachan)):
+			tup_chan = self.list_tups_datachan[idx_chan]
 			if tup_chan[0].id_chan == id_chan:
 				obj_chan = tup_chan[0]
 				break
 		if obj_chan == None:
-			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(cid_msg) + ", data:" + str(obj_msg))
+			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(id_chan) + ", data:" + str(obj_msg))
 		else:
 			obj_chan.locDataAppend(fmt_data, obj_msg)
 		"""
 		idx_handler = -1
-		cid_msg = obj_msg[0]
+		id_chan = obj_msg[0]
 		for idx_chan in range(0, len(self.objs_chan_data)):
-			if cid_msg == self.objs_chan_data[idx_chan].id_chan:
+			if id_chan == self.objs_chan_data[idx_chan].id_chan:
 				idx_handler = idx_chan
 				break
 		if   idx_handler <  0:
-			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(cid_msg) + ", data:" + str(obj_msg))
+			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(id_chan) + ", data:" + str(obj_msg))
 		elif not self.flag_chan_actv[idx_handler]:
 			if self.flag_log_intv:
 				self.logger.warning(self.inf_this + " (data): chan(idx=" + str(idx_handler) +
-						") no longer active, ignore data chanId=" + str(cid_msg))
+						") no longer active, ignore data chanId=" + str(id_chan))
 		else:
 			#self.logger.debug(self.inf_this + "(data): chan(idx=" + str(idx_handler) + ") handle data, data=" + str(obj_msg))
 			self.objs_chan_data[idx_handler].locDataAppend(DFMT_BFXV2, obj_msg)
@@ -252,11 +280,46 @@ class CTDataContainer(object):
 
 	def __priv_Dset2Idx(self, obj_dataset):
 		idx_chan_this = -1
-		for idx_chan in range(0, len(self.list_tups_datachn)):
-			if obj_dataset == self.list_tups_datachn[idx_chan][0]:
+		for idx_chan in range(len(self.list_tups_datachan)):
+			if obj_dataset == self.list_tups_datachan[idx_chan][0]:
 				idx_chan_this = idx_chan
 				break
 		return idx_chan_this
+
+	def __gmap_TaskChans_init(arg0):
+		global gMap_TaskChans
+		for idx_map in range(len(gMap_TaskChans)):
+			try:
+				dict_args = json.loads(gMap_TaskChans[idx_map]['wreq_args'])
+			except:
+				dict_args = None
+			gMap_TaskChans[idx_map]['dict_args'] = dict_args
+		return True
+
+	def __gmap_TaskChans_find(name_chan, wreq_args):
+		global gMap_TaskChans
+		idx_map_find = -1
+		# 
+		if isinstance(wreq_args, dict):
+			dict_args = wreq_args
+		else:
+			try:
+				dict_args = json.loads(wreq_args)
+			except:
+				dict_args = None
+		if dict_args == None:
+			return idx_map_find
+		for idx_map in range(len(gMap_TaskChans)):
+			if gMap_TaskChans[idx_map]['channel'] != name_chan:
+				continue
+			idx_map_find = idx_map
+			for key, val in gMap_TaskChans[idx_map]['dict_args'].items():
+				if str(val) != str(dict_args[key]):
+					idx_map_find = -1
+					break
+			if idx_map_find >= 0:
+				break
+		return idx_map_find
 
 
 def dbname_tbl4args(name_chan, wreq_args):

@@ -16,6 +16,12 @@ class CTDataInput(object):
 		self.inf_this = 'DataInput(pid=' + str(self.pid_this) + ')'
 		self.flag_log_intv = 0
 
+	def execReadLoop(self):
+		self.onExec_ReadLoop_impl()
+
+	def onExec_ReadLoop_impl(self):
+		pass
+
 
 class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 	def __init__(self, logger, obj_container, url_ws):
@@ -25,6 +31,9 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 		self.on_message = CTDataInput_Ws.ncEV_Message
 		self.on_error = CTDataInput_Ws.ncEV_Error
 		self.on_close = CTDataInput_Ws.ncEV_Close
+
+	def onExec_ReadLoop_impl(self):
+		self.run_forever()
 
 	def ncEV_Open(self):
 		self.onNcEV_Open_impl()
@@ -58,7 +67,7 @@ class CTDataInput_Http(CTDataInput):
 		CTDataInput.__init__(self, logger, obj_container)
 		self.url_http_pref = url_http_pref
 
-	def exec_HttpExec(self):
+	def onExec_ReadLoop_impl(self):
 		while True:
 			url_parse  = urllib.parse.urlparse(self.url_http_pref)
 			tup_http_req = self.onInit_HttpUrl_impl(url_parse)
@@ -97,4 +106,23 @@ class CTDataInput_Http(CTDataInput):
 
 	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
 		pass
+
+
+class CTDataInput_Db(CTDataInput):
+	def __init__(self, logger, obj_container):
+		CTDataInput.__init__(self, logger, obj_container)
+
+	def onExec_ReadLoop_impl(self):
+		while True:
+			ret_prep = self.onInit_DbPrep_impl()
+			if not ret_prep:
+				break
+			self.onExec_DbRead_impl()
+
+	def onInit_DbPrep_impl(self):
+		return False
+
+	def onExec_DbRead_impl(self):
+		pass
+
 

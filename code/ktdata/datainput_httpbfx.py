@@ -33,9 +33,9 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 	def onInit_HttpUrl_impl(self, url_parse):
 		global dbg_tm_start
 		tup_url = None
-		if self.loc_run_chan >= len(self.obj_container.list_tups_datachn):
+		if self.loc_run_chan >= len(self.obj_container.list_tups_datachan):
 			return tup_url
-		tup_chan = self.obj_container.list_tups_datachn[self.loc_run_chan]
+		tup_chan = self.obj_container.list_tups_datachan[self.loc_run_chan]
 		if self.loc_run_tmax >= 0:
 			if self.loc_run_tmax == 0:
 				return tup_url
@@ -44,27 +44,27 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		if self.loc_idx_chan != self.loc_run_chan:
 			self.num_chans += 1
 			new_id_chan  = self.id_chan_off + self.num_chans
-			new_idx_chan = self.obj_container.datIN_ChanAdd(new_id_chan, tup_chan[1], tup_chan[2])
+			new_idx_chan = self.obj_container.datIN_ChanAdd(new_id_chan, tup_chan[2], tup_chan[3])
 			if new_idx_chan == self.loc_run_chan:
 				self.loc_id_chan  = new_id_chan
 				self.loc_idx_chan = new_idx_chan
 		# try to load last doc from db
 		if isinstance(self.obj_container, CTDataContainer_DbOut) and self.loc_idx_chan == self.loc_run_chan:
-			self.db_doc_last = self.obj_container.list_dbad_dataout[self.loc_idx_chan].db_doc_last
+			self.db_doc_last = self.obj_container.list_tups_datachan[self.loc_idx_chan][1].db_doc_last
 		else:
 			self.db_doc_last = None
 		# compose tup_url
-		if   'trades' == tup_chan[1]:
-			self.loc_name_chan  = tup_chan[1]
-			url_suff   = '/trades/' + tup_chan[3]['symbol'] + '/hist'
+		if   'trades' == tup_chan[2]:
+			self.loc_name_chan  = tup_chan[2]
+			url_suff   = '/trades/' + tup_chan[4]['symbol'] + '/hist'
 			url_params = 'sort=1&start=' + (
 					'0' if self.db_doc_last == None else str(self.db_doc_last['mts']))
 			if self.db_doc_last == None and dbg_tm_start != None:
 				url_params = 'sort=1&start=' + str(dbg_tm_start)
 			tup_url = (url_suff, url_params)
-		elif 'candles' == tup_chan[1]:
-			self.loc_name_chan  = tup_chan[1]
-			url_suff   = '/candles/' + tup_chan[3]['key'] + '/hist'
+		elif 'candles' == tup_chan[2]:
+			self.loc_name_chan  = tup_chan[2]
+			url_suff   = '/candles/' + tup_chan[4]['key'] + '/hist'
 			url_params = 'sort=1&start=' + (
 					'0' if self.db_doc_last == None else str(self.db_doc_last['mts']))
 			if self.db_doc_last == None and dbg_tm_start != None:
@@ -73,7 +73,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		else:
 			tup_url = None
 		if self.flag_log_intv >  0:
-			print("URL(impl2) , try:", self.loc_run_tmax, ", ret:", tup_url, ", tup:", tup_chan[1], tup_chan[2], ", parse:", url_parse)
+			print("URL(impl2) , try:", self.loc_run_tmax, ", ret:", tup_url, ", tup:", tup_chan[2], tup_chan[3], ", parse:", url_parse)
 		return tup_url
 
 	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
