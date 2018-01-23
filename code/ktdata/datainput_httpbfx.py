@@ -12,6 +12,9 @@ from .dataset   import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 dbg_tm_start = None
 #dbg_tm_start = 1516640100000
 
+num_bfx_trades_recs  = 120
+num_bfx_candles_recs = 120
+
 class CTDataInput_HttpBfx(CTDataInput_Http):
 	id_chan_off = round(time.time() * 1000)
 	num_chans   = 0
@@ -74,6 +77,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		return tup_url
 
 	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
+		global num_bfx_trades_recs, num_bfx_candles_recs
 		#print("Resp, status:", status_code, ", Content-Type:", content_type)
 		#print("data:", http_data)
 		try:
@@ -93,7 +97,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 				print("data len:", len(obj_data))
 			self.obj_container.datIN_DataFwd(self.loc_id_chan, DFMT_BFXV2, [self.loc_id_chan, obj_data])
 			if    'trades' == self.loc_name_chan:
-				self.loc_run_chan += 1 if len(obj_data) <  120 else 0
+				self.loc_run_chan += 1 if len(obj_data) <  num_bfx_trades_recs  else 0
 			elif 'candles' == self.loc_name_chan:
-				self.loc_run_chan += 1 if len(obj_data) <  120 else 0
+				self.loc_run_chan += 1 if len(obj_data) <  num_bfx_candles_recs else 0
 

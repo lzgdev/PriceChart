@@ -13,6 +13,7 @@ coll_name = "trades-tBTCUSD";
 
 if (coll_name != "") {
   coll_set = db.getCollection(coll_name);
-  coll_set.find();
+  //coll_set.find();
+  coll_set.find().sort({_id:-1});
 }
 
