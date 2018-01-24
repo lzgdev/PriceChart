@@ -45,7 +45,7 @@ class CTDataContainer(object):
 		self.logger   = logger
 		self.inf_this = "DataContainer"
 		self.pid_this = os.getpid()
-		self.list_objs_datasrc = []
+		self.list_tups_datasrc  = []
 		self.list_tups_datachan = []
 		# init global chans map table
 		if not gMap_TaskChans_init:
@@ -59,27 +59,31 @@ class CTDataContainer(object):
 		idx_map_find = __gmap_TaskChans_find(name_chan, wreq_args)
 		if idx_map_find <  0:
 			return -1
-		wreq_args = gMap_TaskChans[idx_map_find]['wreq_args']
-		obj_netclient = self.list_objs_datasrc[0]
+		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
+		idx_chan_new  = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
+		if idx_chan_new >= 0:
+			return idx_chan_new
+		# try to add new data channel
+		idx_chan_new  = len(self.list_tups_datachan)
 		obj_dataset = None
 		obj_dataout = None
-		#
 		if   name_chan == 'ticker':
-			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args_map)
 		elif name_chan == 'trades':
-			obj_dataset = CTDataSet_ATrades(512, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ATrades(512, self.logger, self, wreq_args_map)
 		elif name_chan == 'book':
-			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args_map)
 		elif name_chan == 'candles':
-			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args_map)
 		if obj_dataset == None:
 			return -1
 		obj_dataset.locSet_DbTbl(dbname_tbl4args(name_chan, gMap_TaskChans[idx_map_find]['dict_args']))
-		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args)
-		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args, gMap_TaskChans[idx_map_find]['dict_args']))
+		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args_map)
+		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args_map, gMap_TaskChans[idx_map_find]['dict_args']))
+		return idx_chan_new
 
-	def addObj_DataSource(self, obj_source):
-		self.list_objs_datasrc.append(obj_source)
+	def addObj_DataSource(self, obj_datasrc, **kwargs):
+		self.list_tups_datasrc.append((obj_datasrc, dict(kwargs)))
 
 	def datCHK_IsFinish(self):
 		return self.onDatCHK_IsFinish_impl()
@@ -115,8 +119,9 @@ class CTDataContainer(object):
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
 	def onExec_Loop_impl(self):
-		for obj_source in self.list_objs_datasrc:
-			obj_source.execReadLoop()
+		for tup_datasrc in self.list_tups_datasrc:
+			tup_datasrc[0].prepRead(**tup_datasrc[1])
+			tup_datasrc[0].execReadLoop()
 
 	def onDatCHK_IsFinish_impl(self):
 		"""
@@ -166,41 +171,37 @@ class CTDataContainer(object):
 		idx_map_find = __gmap_TaskChans_find(name_chan, wreq_args)
 		if idx_map_find <  0:
 			return -1
-		wreq_args = gMap_TaskChans[idx_map_find]['wreq_args']
-		idx_chan_add = -1
-		for idx_chan in range(len(self.list_tups_datachan)):
-			tup_chan = self.list_tups_datachan[idx_chan]
-			if tup_chan[0].id_chan != None:
-				continue
-			if tup_chan[2] != name_chan:
-				continue
-			if tup_chan[3] != wreq_args:
-				continue
-			idx_chan_add = idx_chan
-			break
+		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
+		idx_chan_add = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_add <  0:
 			self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
 								str(id_chan) + ", args=" + str(wreq_args))
-		else:
-			self.list_tups_datachan[idx_chan_add][0].locSet_ChanId(id_chan)
-			"""
-			self.objs_chan_data[idx_handler].locSet_ChanId(id_chan)
-			if self.toks_chan_data[idx_handler].value <  self.tok_this:
-				with self.toks_chan_data[idx_handler].get_lock():
-					self.toks_chan_data[idx_handler].value = self.tok_this
-			self.flag_chan_actv[idx_handler] =  True
-			self.num_chan_subscribed += 1
-			flag_subscribed   = True
-			if self.flag_log_intv:
-				self.logger.info(self.inf_this + " (sbsc): chan(idx=" +
-							str(idx_handler) + ") subscribed, chanId=" + str(id_chan))
-			"""
+			return -1
+		if self.list_tups_datachan[idx_chan_add][0].id_chan != None:
+			self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
+								str(id_chan) + " already subscribed!")
+			return -1
+		self.list_tups_datachan[idx_chan_add][0].locSet_ChanId(id_chan)
+		"""
+		self.objs_chan_data[idx_handler].locSet_ChanId(id_chan)
+		if self.toks_chan_data[idx_handler].value <  self.tok_this:
+			with self.toks_chan_data[idx_handler].get_lock():
+				self.toks_chan_data[idx_handler].value = self.tok_this
+		self.flag_chan_actv[idx_handler] =  True
+		self.num_chan_subscribed += 1
+		flag_subscribed   = True
+		if self.flag_log_intv:
+			self.logger.info(self.inf_this + " (sbsc): chan(idx=" +
+						str(idx_handler) + ") subscribed, chanId=" + str(id_chan))
+		"""
 		return idx_chan_add
 
 	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
 		pass
 
 	def onDatIN_ChanDel_impl(self, id_chan, name_chan, wreq_args):
+		global gMap_TaskChans
+		#print("CTDataContainer::onDatIN_ChanDel_impl() ", id_chan, name_chan, wreq_args)
 		"""
 		flag_subscribed   = False
 		flag_unsubscribed = False
@@ -277,14 +278,25 @@ class CTDataContainer(object):
 	def onDatCB_RecPlus_impl(self, idx_chan, obj_dataset, doc_rec, idx_rec):
 		pass
 
+	def __priv_Dwreq2Idx(self, name_chan, wreq_args_map):
+		idx_chan_find = -1
+		for idx_chan in range(len(self.list_tups_datachan)):
+			tup_chan = self.list_tups_datachan[idx_chan]
+			if tup_chan[2] != name_chan:
+				continue
+			if tup_chan[3] != wreq_args_map:
+				continue
+			idx_chan_find = idx_chan
+			break
+		return idx_chan_find
 
 	def __priv_Dset2Idx(self, obj_dataset):
-		idx_chan_this = -1
+		idx_chan_find = -1
 		for idx_chan in range(len(self.list_tups_datachan)):
 			if obj_dataset == self.list_tups_datachan[idx_chan][0]:
-				idx_chan_this = idx_chan
+				idx_chan_find = idx_chan
 				break
-		return idx_chan_this
+		return idx_chan_find
 
 	def __gmap_TaskChans_init(arg0):
 		global gMap_TaskChans
@@ -299,7 +311,7 @@ class CTDataContainer(object):
 	def __gmap_TaskChans_find(name_chan, wreq_args):
 		global gMap_TaskChans
 		idx_map_find = -1
-		# 
+		# compose dict_args from wreq_args
 		if isinstance(wreq_args, dict):
 			dict_args = wreq_args
 		else:
@@ -309,6 +321,7 @@ class CTDataContainer(object):
 				dict_args = None
 		if dict_args == None:
 			return idx_map_find
+		# evaluate idx_map_find
 		for idx_map in range(len(gMap_TaskChans)):
 			if gMap_TaskChans[idx_map]['channel'] != name_chan:
 				continue

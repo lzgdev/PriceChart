@@ -16,10 +16,16 @@ class CTDataInput(object):
 		self.inf_this = 'DataInput(pid=' + str(self.pid_this) + ')'
 		self.flag_log_intv = 0
 
+	def prepRead(self, **kwargs):
+		self.onPrep_Read_impl(**kwargs)
+
 	def execReadLoop(self):
 		self.onExec_ReadLoop_impl()
 
 	def onExec_ReadLoop_impl(self):
+		pass
+
+	def onPrep_Read_impl(self, **kwargs):
 		pass
 
 
