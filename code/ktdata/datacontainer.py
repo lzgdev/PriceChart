@@ -119,9 +119,12 @@ class CTDataContainer(object):
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
 	def onExec_Loop_impl(self):
-		for tup_datasrc in self.list_tups_datasrc:
+		while len(self.list_tups_datasrc) >  0:
+			tup_datasrc = self.list_tups_datasrc.pop(0)
 			tup_datasrc[0].prepRead(**tup_datasrc[1])
 			tup_datasrc[0].execReadLoop()
+			tup_datasrc[0].closeRead()
+			del tup_datasrc
 
 	def onDatCHK_IsFinish_impl(self):
 		"""
@@ -240,34 +243,16 @@ class CTDataContainer(object):
 
 	def onDatIN_DataFwd_impl(self, id_chan, fmt_data, obj_msg):
 		#print("CTDataContainer::onDatIN_DataFwd_impl() ", id_chan, fmt_data, obj_msg)
-		obj_chan = None
+		obj_dataset = None
 		for idx_chan in range(len(self.list_tups_datachan)):
 			tup_chan = self.list_tups_datachan[idx_chan]
 			if tup_chan[0].id_chan == id_chan:
-				obj_chan = tup_chan[0]
+				obj_dataset = tup_chan[0]
 				break
-		if obj_chan == None:
+		if obj_dataset == None:
 			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(id_chan) + ", data:" + str(obj_msg))
 		else:
-			obj_chan.locDataAppend(fmt_data, obj_msg)
-		"""
-		idx_handler = -1
-		id_chan = obj_msg[0]
-		for idx_chan in range(0, len(self.objs_chan_data)):
-			if id_chan == self.objs_chan_data[idx_chan].id_chan:
-				idx_handler = idx_chan
-				break
-		if   idx_handler <  0:
-			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(id_chan) + ", data:" + str(obj_msg))
-		elif not self.flag_chan_actv[idx_handler]:
-			if self.flag_log_intv:
-				self.logger.warning(self.inf_this + " (data): chan(idx=" + str(idx_handler) +
-						") no longer active, ignore data chanId=" + str(id_chan))
-		else:
-			#self.logger.debug(self.inf_this + "(data): chan(idx=" + str(idx_handler) + ") handle data, data=" + str(obj_msg))
-			self.objs_chan_data[idx_handler].locDataAppend(DFMT_BFXV2, obj_msg)
-		"""
-		pass
+			obj_dataset.locDataAppend(fmt_data, obj_msg)
 
 	def onDatCB_DataClean_impl(self, idx_chan, obj_dataset):
 		pass

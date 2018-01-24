@@ -2,32 +2,9 @@
 import ktdata
 
 class CTDataContainer_NetOut(ktdata.CTDataContainer):
-	def __init__(self, logger):
+	def __init__(self, logger, obj_netconn):
 		ktdata.CTDataContainer.__init__(self, logger)
-
-	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args):
-		obj_dataout = None
-		if   name_chan == 'ticker':
-			obj_dataout = CTNetOut_Adapter_ticker(self.logger, obj_dataset, self.obj_dbwriter)
-		elif name_chan == 'trades':
-			obj_dataout = CTNetOut_Adapter_trades(self.logger, obj_dataset, self.obj_dbwriter)
-		elif name_chan == 'book':
-			obj_dataout = CTNetOut_Adapter_book(self.logger, obj_dataset, self.obj_dbwriter)
-		elif name_chan == 'candles':
-			obj_dataout = CTNetOut_Adapter_candles(self.logger, obj_dataset, self.obj_dbwriter)
-		return obj_dataout
-
-	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
-		tup_chan  = self.list_tups_datachan[idx_chan]
-		obj_dataset = tup_chan[0]
-		obj_dataout = tup_chan[1]
-		#print("CTDataContainer_NetOut::onDatIN_ChanAdd_ext", idx_chan, id_chan)
-		if obj_dataout != None:
-			obj_dataout.prepOutChan(name_dbtbl=obj_dataset.name_dbtbl,
-								name_chan=obj_dataset.name_chan, wreq_args=obj_dataset.wreq_args)
-
-	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
-		pass
+		self.obj_netconn = obj_netconn
 
 	def onDatCB_DataClean_impl(self, idx_chan, obj_dataset):
 		pass
@@ -50,11 +27,28 @@ import math
 import copy
 
 class CTDataInput_DbReader(ktdata.CTDataInput_Db):
+	gid_chan_now = 11
+
 	def __init__(self, logger, obj_container):
-		CTDataInput_Db.__init__(self, logger, obj_container)
+		ktdata.CTDataInput_Db.__init__(self, logger, obj_container)
 		self.obj_dbadapter  = None
 		self.flag_rec_plus  = True
 		self.list_tmp_docs  = []
+
+		self.id_data_chan   = None
+		self.loc_name_chan  = None
+		self.loc_wreq_args  = None
+
+		self.flag_run_num   = 1
+
+	def onPrep_Read_impl(self, **kwargs):
+		#print("CTDataInput_DbReader::onPrep_Read_impl, args:", dict(kwargs))
+		if self.obj_dbadapter == None:
+			self.obj_dbadapter = KTDataMedia_DbReader_Adp(self.logger, self)
+			self.obj_dbadapter.dbOP_Connect('mongodb://127.0.0.1:27017', 'bfx-pub')
+		self.loc_name_chan  = kwargs['name_chan']
+		self.loc_wreq_args  = kwargs['wreq_args']
+		return True
 
 	def datFwd_Begin(self, id_chan):
 		self.onDat_Begin_impl(id_chan)
@@ -66,11 +60,22 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 		self.onDat_End_impl(id_chan, num_docs)
 
 	def onInit_DbPrep_impl(self):
-		return False
+		#print("CTDataInput_DbReader::onPrep_Read_impl ...", self.flag_run_num)
+		if self.id_data_chan == None:
+			self.gid_chan_now += 1
+			self.id_data_chan  = self.gid_chan_now
+			self.obj_container.datIN_ChanAdd(self.id_data_chan, self.loc_name_chan, self.loc_wreq_args)
+		self.flag_run_num -= 1
+		if self.flag_run_num <  0:
+			return False
+		return True
 
 	def onExec_DbRead_impl(self):
-		if self.obj_dbadapter != None:
-			self.obj_dbadapter.dbOP_CollLoad(id_chan, name_coll, find_args, sort_args)
+		#print("CTDataInput_DbReader::onExec_DbRead_impl ...")
+		self.name_dbtbl = 'candles-tBTCUSD-1m'
+		find_args = {}
+		sort_args = None
+		self.obj_dbadapter.dbOP_CollLoad(self.id_data_chan, self.name_dbtbl, find_args, sort_args)
 		"""
 		self.obj_db_reader = None
 		self.obj_db_reader = KTDataMedia_DbReader_WsOut(self.logger)
@@ -81,32 +86,37 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 		"""
 
 	def onDat_Begin_impl(self, id_chan):
-		self.flag_rec_plus  = False
+		#print("CTDataInput_DbReader::onDat_Begin_impl", id_chan)
+		self.flag_rec_plus  =  True
 		self.list_tmp_docs.clear()
 
 	def onDat_End_impl(self, id_chan, num_docs):
-		self.flag_rec_plus  = False
+		#print("CTDataInput_DbReader::onDat_End_impl", id_chan)
+		self.flag_rec_plus  =  True
 		self.list_tmp_docs.clear()
 
 	def onDat_FwdDoc_impl(self, id_chan, obj_doc):
 		type_rec = None if not 'type' in obj_doc else obj_doc['type']
-		if   type_rec == 'reset':
+		#print("CTDataInput_DbReader::onDat_FwdDoc_impl", id_chan, obj_doc)
+		if   'reset' == type_rec:
 			self.flag_rec_plus  = False
 			self.list_tmp_docs.clear()
-		elif type_rec == 'sync':
-			self.obj_container.datIN_DataFwd(id_chan, fmt_data, [id_chan, self.list_tmp_docs])
-			self.list_tmp_docs.clear()
+		elif  'sync' == type_rec:
+			self.obj_container.datIN_DataFwd(id_chan, ktdata.DFMT_KKAIPRIV, self.list_tmp_docs)
 			self.flag_rec_plus  =  True
+			self.list_tmp_docs.clear()
 		else:
 			if not self.flag_rec_plus:
+				#print("CTDataInput_DbReader::onDat_FwdDoc_impl b=31", id_chan, obj_doc)
 				self.list_tmp_docs.append(obj_doc)
 			else:
-				self.obj_container.datIN_DataFwd(id_chan, fmt_data, obj_doc)
+				#print("CTDataInput_DbReader::onDat_FwdDoc_impl b=32", id_chan, obj_doc)
+				self.obj_container.datIN_DataFwd(id_chan, ktdata.DFMT_KKAIPRIV, obj_doc)
 
 
 class KTDataMedia_DbReader_Adp(ktdata.KTDataMedia_DbReader):
 	def __init__(self, logger, obj_dbreader):
-		super(KTDataMedia_DbReader_WsOut, self).__init__(logger)
+		ktdata.KTDataMedia_DbReader.__init__(self, logger)
 		self.obj_dbreader = obj_dbreader
 
 	def onDbEV_CollLoad_Begin(self, id_chan):
@@ -122,122 +132,107 @@ class KTDataMedia_DbReader_Adp(ktdata.KTDataMedia_DbReader):
 		self.obj_dbreader.datFwd_End(id_chan, num_docs)
 
 
-class CTNetOut_Adapter(ktdata.CTDataOutput):
-	def __init__(self, logger, obj_dataset, db_writer):
-		CTDataOutput.__init__(self, logger)
-		self.obj_dataset    = obj_dataset
-		self.loc_db_writer  = db_writer
-		self.flag_dbg_rec   = False
-		self.name_dbtbl = None
-		self.name_chan  = None
-		self.wreq_args  = None
-		self.db_doc_last    = None
+import ktdata
 
-	def onPrep_OutChan_impl(self, **kwargs):
-		#def onPrep_OutChan_impl(self, name_dbtbl, name_chan, wreq_args):
-		name_dbtbl = kwargs['name_dbtbl']
-		name_chan  = kwargs['name_chan']
-		wreq_args  = kwargs['wreq_args']
-		# append collection to database
-		if not self.loc_db_writer.dbOP_CollAdd(name_dbtbl, name_chan, wreq_args):
-			return False
-		self.name_dbtbl = name_dbtbl
-		self.name_chan  = name_chan
-		self.wreq_args  = wreq_args
-		self.db_doc_last    = self.loc_db_writer.dbOP_DocFind_One(self.name_dbtbl, { }, [('_id', -1)])
-		return True
+class CTNetOut_Adapter(ktdata.CTDataOutput):
+	def __init__(self, logger, obj_dataset, obj_netconn):
+		ktdata.CTDataOutput.__init__(self, logger)
+		self.obj_dataset    = obj_dataset
+		self.obj_netconn    = obj_netconn
+		self.flag_dbg_rec   = False
+
+	def sendDatPlus(self, dat_unit):
+		return self.onSend_DatPlus_impl(dat_unit)
+
+	def sendDatArray(self, dat_array):
+		return self.onSend_DatArray_impl(dat_array)
+
+	def tranDoc2Dat(self, doc_rec):
+		return self.onTranDoc2Dat_impl(doc_rec)
 
 	def onDocAppend_impl(self, doc_rec):
-		# append doc to database
-		doc_new  = self.loc_db_writer.dbOP_DocAdd(self.name_dbtbl, doc_rec)
-		if doc_new != None:
-			if self.flag_dbg_rec:
-				self.logger.info("CTNetOut_Adapter(onSynAppend_impl): doc_new=" + str(doc_new))
-			self.db_doc_last = doc_new
-		return doc_new
+		#print("CTNetOut_Adapter::onDocAppend_impl", doc_rec)
+		dat_unit = self.tranDoc2Dat(doc_rec)
+		dat_sent = None
+		self.sendDatPlus(dat_unit)
+		if self.flag_dbg_rec:
+			self.logger.info("CTNetOut_Adapter(onSynAppend_impl): dat_unit=" + str(dat_unit) + ", doc_rec=" + str(dat_sent))
+		return dat_unit
 
-class CTNetOut_Adapter_ticker(CTNetOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer):
-		CTNetOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
+	def onSend_DatPlus_impl(self, dat_unit):
+		pass
 
+	def onSend_DatArray_impl(self, dat_array):
+		pass
 
-class CTNetOut_Adapter_trades(CTNetOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer):
-		CTNetOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
+	def onTranDoc2Dat_impl(self, doc_rec):
+		return None
 
 	def onSynAppend_impl(self, msec_now):
+		return None
+
+class CTNetOut_Adapter_ticker(CTNetOut_Adapter):
+	def __init__(self, logger, obj_dataset, obj_netconn):
+		CTNetOut_Adapter.__init__(self, logger, obj_dataset, obj_netconn)
+
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['bid'], doc_rec['bid_size'], doc_rec['ask'], doc_rec['ask_size'],
+					doc_rec['daily_change'], doc_rec['daily_change_perc'], doc_rec['last_price'],
+					doc_rec['volume'], doc_rec['high'], doc_rec['low'], doc_rec[''],
+				]
+		return dat_unit
+
+class CTNetOut_Adapter_trades(CTNetOut_Adapter):
+	def __init__(self, logger, obj_dataset, obj_netconn):
+		CTNetOut_Adapter.__init__(self, logger, obj_dataset, obj_netconn)
+
+	def onSynAppend_impl(self, msec_now):
+		dat_array = []
 		for trade_rec in self.obj_dataset.loc_trades_recs:
 			if self.flag_dbg_rec:
 				self.logger.info("CTNetOut_Adapter_trades(onSynAppend_impl): syn_rec=" + str(trade_rec))
-			self.docAppend(trade_rec)
+			dat_array.append(self.tranDoc2Dat(trade_rec))
+		self.sendDatArray(dat_array)
 
-	def docAppend(self, doc_rec):
-		if self.db_doc_last != None and doc_rec['tid'] <= self.db_doc_last['tid']:
-			doc_new = None
-		else:
-			doc_new = self.onDocAppend_impl(doc_rec)
-		return doc_new
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['tid'], doc_rec['mts'], doc_rec['amount'], doc_rec['price'], ]
+		return dat_unit
 
 
 class CTNetOut_Adapter_book(CTNetOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer):
-		CTNetOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
-		self.num_recs_wrap  = 240
-		self.cnt_recs_book  = 0
-		self.mts_recs_last  = 0
+	def __init__(self, logger, obj_dataset, obj_netconn):
+		CTNetOut_Adapter.__init__(self, logger, obj_dataset, obj_netconn)
 
 	def onSynAppend_impl(self, msec_now):
-		if msec_now == None:
-			msec_now = self.obj_dataset.loc_time_this
-		# add doc of reset
-		out_doc = { 'type': 'reset', 'mts': msec_now, }
-		self.docAppend(out_doc)
 		# add docs from snapshot
+		dat_array = []
 		for book_rec in self.obj_dataset.loc_book_bids:
-			self.docAppend(book_rec)
+			dat_array.append(self.tranDoc2Dat(book_rec))
 		for book_rec in self.obj_dataset.loc_book_asks:
-			self.docAppend(book_rec)
-		# add doc of sync
-		out_doc = { 'type': 'sync', 'mts': msec_now, }
-		self.docAppend(out_doc)
-		# reset self.cnt_recs_book
-		self.cnt_recs_book  = 0
-		self.mts_recs_last  = 0
+			dat_array.append(self.tranDoc2Dat(book_rec))
+		self.sendDatArray(dat_array)
 
-	def docAppend(self, doc_rec):
-		msec_now = doc_rec['mts']
-		if (msec_now - self.mts_recs_last) >= 500:
-			self.cnt_recs_book += 1
-		flag_new_coll = True if msec_now >= self.msec_dbc_nxt else False
-		flag_new_sync = True if self.cnt_recs_book >= self.num_recs_wrap else False
-		if flag_new_coll or flag_new_sync:
-			self.synAppend(msec_now)
-		out_doc  = copy.copy(doc_rec)
-		if 'sumamt' in out_doc:
-			del out_doc['sumamt']
-		if self.onDocAppend_impl(out_doc):
-			self.mts_recs_last  = msec_now
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['price'], doc_rec['count'],
+					doc_rec['amount'] if doc_rec['type'] == 'bid' else (0.0 - doc_rec['amount']), ]
+		return dat_unit
 
 
 class CTNetOut_Adapter_candles(CTNetOut_Adapter):
-	def __init__(self, logger, obj_dataset, db_writer):
-		CTNetOut_Adapter.__init__(self, logger, obj_dataset, db_writer)
-		self.doc_rec_output = None
+	def __init__(self, logger, obj_dataset, obj_netconn):
+		CTNetOut_Adapter.__init__(self, logger, obj_dataset, obj_netconn)
 		#self.flag_dbg_rec   = True
 
 	def onSynAppend_impl(self, msec_now):
+		dat_array = []
 		for candle_rec in self.obj_dataset.loc_candle_recs:
 			if self.flag_dbg_rec:
 				self.logger.info("CTNetOut_Adapter_candles(onSynAppend_impl): syn_rec=" + str(candle_rec))
-			self.docAppend(candle_rec)
+			dat_array.append(self.tranDoc2Dat(candle_rec))
+		self.sendDatArray(dat_array)
 
-	def docAppend(self, doc_rec):
-		msec_new = doc_rec['mts']
-		if self.doc_rec_output != None and msec_new >  self.doc_rec_output['mts']:
-			self.onDocAppend_impl(self.doc_rec_output)
-			if self.db_doc_last != None and self.doc_rec_output['mts'] <= self.db_doc_last['mts']:
-				doc_new = None
-			else:
-				doc_new = self.onDocAppend_impl(self.doc_rec_output)
-		self.doc_rec_output = doc_rec
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['mts'], doc_rec['open'], doc_rec['close'], doc_rec['high'], doc_rec['low'], doc_rec['volume'], ]
+		return dat_unit
+
 

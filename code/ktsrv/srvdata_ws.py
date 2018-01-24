@@ -7,6 +7,7 @@ import logging
 
 import tornado.websocket
 
+from .datacontainer_net         import CTDataInput_DbReader
 from .datacontainer_wsbfx       import CTDataContainer_WsBfxOut
 
 class WebSockHandler(tornado.websocket.WebSocketHandler):
@@ -28,7 +29,7 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 		self.id_chan_mark += 1
 		self.logger.info("WebSockHandler: open file=" + ws_file + ", pid=" + str(self.pid_this))
 		if self.obj_container == None:
-			self.obj_container = CTDataContainer_WsBfxOut(self.logger)
+			self.obj_container = CTDataContainer_WsBfxOut(self.logger, self)
 		self.write_message({ 'event': 'info', 'version': 2, 'ext': 'KKAIEX02', })
 
 	def on_close(self):
@@ -44,19 +45,27 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 			return
 		self.logger.info("WebSockHandler(msg): evt=" + evt_msg + ", obj_msg=" + str(obj_msg))
 		if evt_msg == 'subscribe':
-			self.onMsg_sbsc(obj_msg)
+			self.onMsg_sbsc(evt_msg, obj_msg)
 
-	def onMsg_sbsc(self, obj_msg):
+	def onMsg_sbsc(self, evt_msg, obj_msg):
 		self.id_chan_mark += 1
 		id_chan_sbsc = self.id_chan_mark
 		wreq_args = copy.copy(obj_msg)
 		try:
-			chan_msg = wreq_args['channel']
+			name_channel = wreq_args['channel']
 		except:
-			chan_msg = None
-		self.logger.info("WebSockHandler(sbsc): chan=" + str(chan_msg) + ", wreq_args=" + str(wreq_args))
-		#filt_args = { 'channel': chan_msg, }
+			name_channel = None
+		self.logger.info("WebSockHandler(sbsc): chan=" + str(name_channel) + ", wreq_args=" + str(wreq_args))
+		#filt_args = { 'channel': name_channel, }
 		#filt_args = { 'coll': { '$regex': 'candles-1m-.*', } }
+		idx_data_chan = -1
+		if 'subscribe' == evt_msg:
+			idx_data_chan = self.obj_container.addArg_DataChannel(name_channel, obj_msg, None)
+		if idx_data_chan >= 0:
+			self.obj_container.addObj_DataSource(CTDataInput_DbReader(self.logger, self.obj_container),
+						name_chan=name_channel, wreq_args=obj_msg)
+		self.obj_container.execLoop()
+		"""
 		filt_args = { 'channel': chan_msg, 'reqargs': KTDataMedia_DbReader_WsOut.wreq_args2str(wreq_args), }
 		name_coll = None if obj_doc == None else obj_doc['coll']
 		wret_args = copy.copy(wreq_args)
@@ -69,8 +78,8 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 			obj_dataset = CTDataSet_ACandles_WsOut(512, self.logger, wreq_args, self, id_chan_sbsc)
 		else:
 			obj_dataset = None
-
 		if self.obj_container == None:
+		"""
 
 
 """

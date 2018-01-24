@@ -22,10 +22,16 @@ class CTDataInput(object):
 	def execReadLoop(self):
 		self.onExec_ReadLoop_impl()
 
+	def closeRead(self):
+		self.onClose_Read_impl()
+
+	def onPrep_Read_impl(self, **kwargs):
+		pass
+
 	def onExec_ReadLoop_impl(self):
 		pass
 
-	def onPrep_Read_impl(self, **kwargs):
+	def onClose_Read_impl(self):
 		pass
 
 

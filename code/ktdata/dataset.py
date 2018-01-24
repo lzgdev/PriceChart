@@ -60,20 +60,27 @@ class CTDataSet_Array(CTDataSet_Base):
 		super(CTDataSet_Array, self).__init__(logger, obj_container, name_chan, wreq_args)
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
-		data_msg  = None
-		if   (fmt_data == DFMT_KKAIPRIV):
+		data_msg   = None
+		flag_plus  = False
+		flag_array = False
+		if   fmt_data == DFMT_KKAIPRIV:
 			data_msg  = obj_msg
-		elif (fmt_data == DFMT_BFXV2):
-			if isinstance(obj_msg, list):
-				data_msg = obj_msg[len(obj_msg)-1]
+			if isinstance(data_msg, list):
+				flag_array =  True
+			else:
+				flag_plus  =  True
+		elif fmt_data == DFMT_BFXV2 and isinstance(obj_msg, list):
+			data_msg = obj_msg[len(obj_msg)-1]
+			if isinstance(data_msg[0], list):
+				flag_array =  True
+			else:
+				flag_plus  =  True
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_Array(onLocDataAppend_impl): data=" + str(data_msg) + ", msg=" + str(obj_msg))
 		# append data to class data members
-		if   not isinstance(data_msg, list):
-			pass
-		elif not isinstance(data_msg[0], list):
+		if flag_plus:
 			self.locRecAdd(True, fmt_data, data_msg)
-		else:
+		if flag_array:
 			self.locDataClean()
 			for idx_rec, obj_rec in enumerate(data_msg):
 				self.locRecAdd(False, fmt_data, obj_rec)
@@ -283,6 +290,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		super(CTDataSet_ACandles, self).__init__(logger, obj_container, "candles", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_candle_recs = []
+
+		#self.flag_dbg_rec    =  True
 
 	def onLocDataClean_impl(self):
 		self.loc_candle_recs.clear()
