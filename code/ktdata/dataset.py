@@ -88,12 +88,12 @@ class CTDataSet_Ticker(CTDataSet_Base):
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			ticker_rec = obj_msg
-			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
 		elif (fmt_data == DFMT_BFXV2):
 			data_msg = obj_msg[1]
 			if isinstance(data_msg, list) and len(data_msg) == 10:
 				msec_now = self.loc_time_this
-				ticker_rec = {
+				try:
+					ticker_rec = {
 						'mts':        msec_now,
 						'bid':        data_msg[0],
 						'bid_size':   data_msg[1],
@@ -105,8 +105,11 @@ class CTDataSet_Ticker(CTDataSet_Base):
 						'volume':     data_msg[7],
 						'high':       data_msg[8],
 						'low':        data_msg[9],
-					}
-				self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
+						}
+				except:
+					ticker_rec = None
+					self.logger.error("CTDataSet_Ticker(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
+		self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
 
 
 class CTDataSet_ATrades(CTDataSet_Array):
@@ -114,6 +117,8 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		super(CTDataSet_ATrades, self).__init__(logger, obj_container, "trades", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_trades_recs = []
+
+		#self.flag_dbg_rec =  True
 
 	def onLocDataClean_impl(self):
 		self.loc_trades_recs.clear()
@@ -170,14 +175,18 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			msec_now   = self.loc_time_this
 			flag_bids  = True if obj_rec[2] >  0.0 else False
 			amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
-			book_rec   = {
-					'mts':    msec_now,
-					'price':  obj_rec[0],
-					'type':   'bid' if flag_bids else 'ask',
-					'count':  int(obj_rec[1]),
-					'amount': amount_rec,
-					'sumamt': 0.0,
-				}
+			try:
+				book_rec   = {
+						'mts':    msec_now,
+						'price':  obj_rec[0],
+						'type':   'bid' if flag_bids else 'ask',
+						'count':  obj_rec[1],
+						'amount': amount_rec,
+						'sumamt': 0.0,
+					}
+			except:
+				book_rec   = None
+				self.logger.error("CTDataSet_ABooks(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
 		book_recs = self.loc_book_bids if flag_bids else self.loc_book_asks
 		# locate the book record from self.loc_book_bids or self.loc_book_asks
 		idx_bgn = 0
@@ -282,14 +291,18 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			candle_rec = obj_rec
 		elif (fmt_data == DFMT_BFXV2):
-			candle_rec = {
-					'mts':    obj_rec[0],
-					'open':   obj_rec[1],
-					'close':  obj_rec[2],
-					'high':   obj_rec[3],
-					'low':    obj_rec[4],
-					'volume': obj_rec[5],
-				}
+			try:
+				candle_rec = {
+						'mts':    obj_rec[0],
+						'open':   obj_rec[1],
+						'close':  obj_rec[2],
+						'high':   obj_rec[3],
+						'low':    obj_rec[4],
+						'volume': obj_rec[5],
+					}
+			except:
+				candle_rec = None
+				self.logger.error("CTDataSet_ACandles(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
 		flag_chg  = False
 		if (len(self.loc_candle_recs)+1 >  self.loc_recs_size):
 			self.loc_candle_recs.pop(0)
@@ -307,7 +320,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 				rec_index += 1
 			self.loc_candle_recs.insert(rec_index, candle_rec)
 			flag_chg  = True
-		if flag_chg and flag_plus:
+		if flag_plus and flag_chg:
 			self.obj_container.datCB_RecPlus(self, candle_rec, rec_index)
 
 
