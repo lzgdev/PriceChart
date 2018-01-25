@@ -60,7 +60,7 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 		self.onDat_End_impl(id_chan, num_docs)
 
 	def onInit_DbPrep_impl(self):
-		#print("CTDataInput_DbReader::onPrep_Read_impl ...", self.flag_run_num)
+		#print("CTDataInput_DbReader::onPrep_Read_impl ...", self.flag_run_num, self.loc_name_chan, self.loc_wreq_args)
 		if self.id_data_chan == None:
 			self.gid_chan_now += 1
 			self.id_data_chan  = self.gid_chan_now
@@ -72,7 +72,8 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 
 	def onExec_DbRead_impl(self):
 		#print("CTDataInput_DbReader::onExec_DbRead_impl ...")
-		self.name_dbtbl = 'candles-tBTCUSD-1m'
+		#self.name_dbtbl = 'candles-tBTCUSD-1m'
+		self.name_dbtbl = ktdata.CTDataContainer._gmap_TaskChans_dbtbl(self.loc_name_chan, self.loc_wreq_args)
 		find_args = {}
 		sort_args = None
 		self.obj_dbadapter.dbOP_CollLoad(self.id_data_chan, self.name_dbtbl, find_args, sort_args)

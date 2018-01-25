@@ -12,33 +12,31 @@ gMap_TaskChans_init = False
 
 gMap_TaskChans = [
 		# channel:       0 for ticker
-		{ 'channel':  'ticker', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD" }', },
+		{ 'channel':  'ticker', 'name_dbtbl':        'ticker-tBTCUSD', 'wreq_args':  '{ "symbol": "tBTCUSD" }', },
 		# channel:       1 for trades
-		{ 'channel':  'trades', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD" }', },
+		{ 'channel':  'trades', 'name_dbtbl':        'trades-tBTCUSD', 'wreq_args':  '{ "symbol": "tBTCUSD" }', },
 		# channel:  2 ~  5 for book
-		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
-		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" }', },
-		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" }', },
-		{ 'channel':    'book', 'dict_args':  None, 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'name_dbtbl':       'book-tBTCUSD-P0', 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'name_dbtbl':       'book-tBTCUSD-P1', 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'name_dbtbl':       'book-tBTCUSD-P2', 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" }', },
+		{ 'channel':    'book', 'name_dbtbl':       'book-tBTCUSD-P3', 'wreq_args':  '{ "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" }', },
 		# channel:  6 ~ 17 for book
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1m:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:5m:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:15m:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:30m:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1h:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:3h:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:6h:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:12h:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1D:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:7D:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args': '{ "key": "trade:14D:tBTCUSD" }', },
-		{ 'channel': 'candles', 'dict_args':  None, 'wreq_args':  '{ "key": "trade:1M:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "key": "trade:1m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-5m', 'wreq_args':  '{ "key": "trade:5m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':   'candles-tBTCUSD-15m', 'wreq_args': '{ "key": "trade:15m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':   'candles-tBTCUSD-30m', 'wreq_args': '{ "key": "trade:30m:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-1h', 'wreq_args':  '{ "key": "trade:1h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-3h', 'wreq_args':  '{ "key": "trade:3h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-6h', 'wreq_args':  '{ "key": "trade:6h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':   'candles-tBTCUSD-12h', 'wreq_args': '{ "key": "trade:12h:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-1D', 'wreq_args':  '{ "key": "trade:1D:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-7D', 'wreq_args':  '{ "key": "trade:7D:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':   'candles-tBTCUSD-14D', 'wreq_args': '{ "key": "trade:14D:tBTCUSD" }', },
+		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-1M', 'wreq_args':  '{ "key": "trade:1M:tBTCUSD" }', },
 	]
 
 
 class CTDataContainer(object):
-	global __gmap_TaskChans_init, __gmap_TaskChans_find
-
 	def __init__(self, logger):
 		global gMap_TaskChans_init
 		object.__init__(self)
@@ -49,14 +47,14 @@ class CTDataContainer(object):
 		self.list_tups_datachan = []
 		# init global chans map table
 		if not gMap_TaskChans_init:
-			gMap_TaskChans_init = __gmap_TaskChans_init(None)
+			gMap_TaskChans_init = self._gmap_TaskChans_init()
 
 	def execLoop(self):
 		self.onExec_Loop_impl()
 
 	def addArg_DataChannel(self, name_chan, wreq_args, tmp_tokchan):
 		global gMap_TaskChans
-		idx_map_find = __gmap_TaskChans_find(name_chan, wreq_args)
+		idx_map_find = self._gmap_TaskChans_index(name_chan, wreq_args)
 		if idx_map_find <  0:
 			return -1
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
@@ -77,7 +75,7 @@ class CTDataContainer(object):
 			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args_map)
 		if obj_dataset == None:
 			return -1
-		obj_dataset.locSet_DbTbl(dbname_tbl4args(name_chan, gMap_TaskChans[idx_map_find]['dict_args']))
+		obj_dataset.locSet_DbTbl(self._gmap_TaskChans_dbtbl(name_chan, gMap_TaskChans[idx_map_find]['dict_args']))
 		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args_map)
 		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args_map, gMap_TaskChans[idx_map_find]['dict_args']))
 		return idx_chan_new
@@ -171,7 +169,7 @@ class CTDataContainer(object):
 	def onDatIN_ChanAdd_impl(self, id_chan, name_chan, wreq_args):
 		global gMap_TaskChans
 		#print("CTDataContainer::onDatIN_ChanAdd_impl() ", id_chan, name_chan, wreq_args)
-		idx_map_find = __gmap_TaskChans_find(name_chan, wreq_args)
+		idx_map_find = self._gmap_TaskChans_index(name_chan, wreq_args)
 		if idx_map_find <  0:
 			return -1
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
@@ -283,7 +281,8 @@ class CTDataContainer(object):
 				break
 		return idx_chan_find
 
-	def __gmap_TaskChans_init(arg0):
+	@staticmethod
+	def _gmap_TaskChans_init():
 		global gMap_TaskChans
 		for idx_map in range(len(gMap_TaskChans)):
 			try:
@@ -293,7 +292,8 @@ class CTDataContainer(object):
 			gMap_TaskChans[idx_map]['dict_args'] = dict_args
 		return True
 
-	def __gmap_TaskChans_find(name_chan, wreq_args):
+	@staticmethod
+	def _gmap_TaskChans_index(name_chan, wreq_args):
 		global gMap_TaskChans
 		idx_map_find = -1
 		# compose dict_args from wreq_args
@@ -319,23 +319,11 @@ class CTDataContainer(object):
 				break
 		return idx_map_find
 
+	@staticmethod
+	def _gmap_TaskChans_dbtbl(name_chan, wreq_args):
+		global gMap_TaskChans
+		idx_map_find = CTDataContainer._gmap_TaskChans_index(name_chan, wreq_args)
+		name_dbtbl   = None if idx_map_find <  0 else gMap_TaskChans[idx_map_find]['name_dbtbl']
+		return name_dbtbl
 
-def dbname_tbl4args(name_chan, wreq_args):
-	name_dbtbl = None
-	if isinstance(wreq_args, dict):
-		dict_args = wreq_args
-	else:
-		dict_args = json.loads(wreq_args)
-	if    'ticker' == name_chan:
-		name_dbtbl = name_chan + '-' + dict_args['symbol']
-	elif  'trades' == name_chan:
-		name_dbtbl = name_chan + '-' + dict_args['symbol']
-	elif    'book' == name_chan:
-		name_dbtbl = name_chan + '-' + dict_args['symbol'] + '-' + dict_args['prec']
-	elif 'candles' == name_chan:
-		wreq_keys = dict_args['key'].split(':')
-		key_tf  = wreq_keys[1]
-		key_sym = wreq_keys[2]
-		name_dbtbl = name_chan + '-' + key_sym + '-' + key_tf
-	return name_dbtbl
 
