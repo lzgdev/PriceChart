@@ -35,6 +35,110 @@ function cbEV_OnDocReady_highcharts()
       continue;
     }
     chan_obj = null;
+    if (map_unit.channel == 'ticker') {
+      chart_gui = Highcharts.chart(map_unit.uid, {
+        chart: {
+            type: 'area',
+            backgroundColor: '#1F1F1F',
+        },
+        title: {
+            text: 'Books Depth: ' + map_unit.prec,
+        },
+        yAxis: {
+            min: 0.0,
+            title: {
+                text: 'Amount Sum',
+            },
+            stackLabels: {
+                enabled: true,
+                style: {
+                    fontWeight: 'bold',
+                    color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
+                }
+            }
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: true,
+                    color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
+                }
+            }
+        },
+        series: [
+          {
+            name: 'Bids',
+            step: 'right',
+            color: '#009F00',
+            data: [ ],
+          },
+          {
+            name: 'Tick',
+            step: 'center',
+            color: '#FFD700',
+            data: [ ],
+          },
+          {
+            name: 'Asks',
+            step: 'left',
+            color: '#9F0000',
+            data: [ ],
+          },
+        ],
+      });
+      chan_obj = new ClDataSet_Ticker_HighCharts(chart_gui, map_unit.wreq_args);
+    }
+    else
+    if (map_unit.channel == 'trades') {
+      chart_gui = Highcharts.stockChart(map_unit.uid, {
+        chart: {
+            backgroundColor: '#1F1F1F',
+          },
+        plotOptions: {
+            candlestick: {
+              color:   '#9F0000',
+              upColor: '#009F00',
+	        },
+          },
+        title: {
+            text: 'History: ' + map_unit.key,
+          },
+        subtitle: {
+            text: 'Subtitle ...',
+          },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+          },
+        series: [
+            {
+              type: 'candlestick',
+              name: 'OHLC',
+              data: [ ],
+              dataGrouping: {
+                enabled: false
+              }
+            },
+/*
+            {
+              type: 'column',
+              name: 'VOL',
+              data: [ ],
+              dataGrouping: {
+                enabled: false
+              }
+            },
+// */
+          ],
+        });
+      chan_obj = new ClDataSet_ATrades_HighCharts(1000, chart_gui, map_unit.wreq_args);
+    }
+    else
     if (map_unit.channel == 'book') {
       chart_gui = Highcharts.chart(map_unit.uid, {
         chart: {
@@ -101,7 +205,7 @@ function cbEV_OnDocReady_highcharts()
           },
         plotOptions: {
             candlestick: {
-              color:   '#9F0000',	    		
+              color:   '#9F0000',
               upColor: '#009F00',
 	        },
           },

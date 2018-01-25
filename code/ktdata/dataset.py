@@ -95,12 +95,17 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		self.flag_sys_time  = True
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
+		flag_plus  = False
 		if   (fmt_data == DFMT_KKAIPRIV):
+			flag_plus  =  True
 			ticker_rec = obj_msg
 		elif (fmt_data == DFMT_BFXV2):
 			data_msg = obj_msg[1]
-			if isinstance(data_msg, list) and len(data_msg) == 10:
-				msec_now = self.loc_time_this
+			msec_now = self.loc_time_this
+			if 'hb' == data_msg:
+				flag_plus  = False
+			else:
+				flag_plus  =  True
 				try:
 					ticker_rec = {
 						'mts':        msec_now,
@@ -117,8 +122,9 @@ class CTDataSet_Ticker(CTDataSet_Base):
 						}
 				except:
 					ticker_rec = None
-					self.logger.error("CTDataSet_Ticker(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
-		self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
+					self.logger.error("CTDataSet_Ticker(onLocRecAdd_impl): add obj_msg=" + str(obj_msg))
+		if flag_plus:
+			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
 
 
 class CTDataSet_ATrades(CTDataSet_Array):

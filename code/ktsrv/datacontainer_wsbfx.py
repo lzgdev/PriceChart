@@ -45,6 +45,13 @@ class CTNetOut_Adapter_ticker_WsBfx(CTNetOut_Adapter_ticker):
 	def onSend_DatArray_impl(self, dat_array):
 		self.obj_netconn.write_message(str([self.obj_dataset.id_chan, dat_array]))
 
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['bid'], doc_rec['bid_size'], doc_rec['ask'], doc_rec['ask_size'],
+					doc_rec['daily_change'], doc_rec['daily_change_perc'], doc_rec['last_price'],
+					doc_rec['volume'], doc_rec['high'], doc_rec['low'],
+				]
+		return dat_unit
+
 
 class CTNetOut_Adapter_trades_WsBfx(CTNetOut_Adapter_trades):
 	def __init__(self, logger, obj_dataset, obj_netconn):
@@ -56,6 +63,10 @@ class CTNetOut_Adapter_trades_WsBfx(CTNetOut_Adapter_trades):
 	def onSend_DatArray_impl(self, dat_array):
 		self.obj_netconn.write_message(str([self.obj_dataset.id_chan, dat_array]))
 
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['tid'], doc_rec['mts'], doc_rec['amount'], doc_rec['price'], ]
+		return dat_unit
+
 
 class CTNetOut_Adapter_book_WsBfx(CTNetOut_Adapter_book):
 	def __init__(self, logger, obj_dataset, obj_netconn):
@@ -66,6 +77,11 @@ class CTNetOut_Adapter_book_WsBfx(CTNetOut_Adapter_book):
 
 	def onSend_DatArray_impl(self, dat_array):
 		self.obj_netconn.write_message(str([self.obj_dataset.id_chan, dat_array]))
+
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['price'], doc_rec['count'],
+					doc_rec['amount'] if doc_rec['type'] == 'bid' else (0.0 - doc_rec['amount']), ]
+		return dat_unit
 
 
 class CTNetOut_Adapter_candles_WsBfx(CTNetOut_Adapter_candles):
@@ -79,4 +95,9 @@ class CTNetOut_Adapter_candles_WsBfx(CTNetOut_Adapter_candles):
 
 	def onSend_DatArray_impl(self, dat_array):
 		self.obj_netconn.write_message(str([self.obj_dataset.id_chan, dat_array]))
+
+	def onTranDoc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['mts'], doc_rec['open'], doc_rec['close'], doc_rec['high'], doc_rec['low'], doc_rec['volume'], ]
+		return dat_unit
+
 
