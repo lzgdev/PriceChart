@@ -115,38 +115,47 @@ class CTDbOut_Adapter_book(CTDbOut_Adapter):
 		self.num_recs_wrap  = 240
 		self.cnt_recs_book  = 0
 		self.mts_recs_last  = 0
-
-	def onSynAppend_impl(self, msec_now):
-		if msec_now == None:
-			msec_now = self.obj_dataset.loc_time_this
-		# add doc of reset
-		out_doc = { 'type': 'reset', 'mts': msec_now, }
-		self.docAppend(out_doc)
-		# add docs from snapshot
-		for book_rec in self.obj_dataset.loc_book_bids:
-			self.docAppend(book_rec)
-		for book_rec in self.obj_dataset.loc_book_asks:
-			self.docAppend(book_rec)
-		# add doc of sync
-		out_doc = { 'type': 'sync', 'mts': msec_now, }
-		self.docAppend(out_doc)
-		# reset self.cnt_recs_book
-		self.cnt_recs_book  = 0
-		self.mts_recs_last  = 0
+		self.mts_sync_now   = None
 
 	def docAppend(self, doc_rec):
 		msec_now = doc_rec['mts']
 		if (msec_now - self.mts_recs_last) >= 500:
 			self.cnt_recs_book += 1
-		flag_new_coll = True if msec_now >= self.msec_dbc_nxt else False
 		flag_new_sync = True if self.cnt_recs_book >= self.num_recs_wrap else False
-		if flag_new_coll or flag_new_sync:
+		if flag_new_sync:
 			self.synAppend(msec_now)
-		out_doc  = copy.copy(doc_rec)
+		else:
+			self.onDocAppend_impl(doc_rec)
+			self.mts_recs_last  = msec_now
+
+	def onSynAppend_impl(self, msec_now):
+		if msec_now == None:
+			msec_now = self.obj_dataset.loc_time_this
+		self.mts_sync_now   = msec_now
+		# add doc of reset
+		out_doc = { 'type': 'reset', }
+		self.onDocAppend_impl(out_doc)
+		# add docs from snapshot
+		for out_doc in self.obj_dataset.loc_book_bids:
+			self.onDocAppend_impl(out_doc)
+		for out_doc in self.obj_dataset.loc_book_asks:
+			self.onDocAppend_impl(out_doc)
+		# add doc of sync
+		out_doc = { 'type': 'sync', }
+		self.onDocAppend_impl(out_doc)
+		# reset self.cnt_recs_book
+		self.cnt_recs_book  = 0
+		self.mts_recs_last  = 0
+		self.mts_recs_last  = msec_now
+		self.mts_sync_now   = None
+
+	def onDocAppend_impl(self, doc_rec):
+		out_doc = copy.copy(doc_rec)
+		if self.mts_sync_now != None:
+			out_doc['mts'] = self.mts_sync_now
 		if 'sumamt' in out_doc:
 			del out_doc['sumamt']
-		if self.onDocAppend_impl(out_doc):
-			self.mts_recs_last  = msec_now
+		return super(CTDbOut_Adapter_book, self).onDocAppend_impl(out_doc)
 
 
 class CTDbOut_Adapter_candles(CTDbOut_Adapter):

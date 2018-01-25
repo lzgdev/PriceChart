@@ -71,8 +71,10 @@ class CTDataSet_Array(CTDataSet_Base):
 				flag_plus  =  True
 		elif fmt_data == DFMT_BFXV2 and isinstance(obj_msg, list):
 			data_msg = obj_msg[len(obj_msg)-1]
-			if isinstance(data_msg[0], list):
+			if   isinstance(data_msg[0], list):
 				flag_array =  True
+			elif 'hb' == data_msg:
+				flag_plus  = False
 			else:
 				flag_plus  =  True
 		if self.flag_dbg_rec:
@@ -180,9 +182,9 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			book_rec   = obj_rec
 		elif (fmt_data == DFMT_BFXV2):
 			msec_now   = self.loc_time_this
-			flag_bids  = True if obj_rec[2] >  0.0 else False
-			amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
 			try:
+				flag_bids  = True if obj_rec[2] >  0.0 else False
+				amount_rec = obj_rec[2] if flag_bids else (0.0 - obj_rec[2])
 				book_rec   = {
 						'mts':    msec_now,
 						'price':  obj_rec[0],

@@ -21,20 +21,20 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		self.flag_data_finish = False
 
 	def ncOP_Send_Subscribe(self):
-		for tup_chan in self.obj_container.list_tups_datachn:
+		for tup_chan in self.obj_container.list_tups_datachan:
 			if tup_chan[0].id_chan != None:
 				continue
 			obj_subscribe = {
 					'event': 'subscribe',
-					'channel': tup_chan[1],
+					'channel': tup_chan[2],
 				}
-			if tup_chan[3] != None:
-				obj_subscribe.update(tup_chan[3])
+			if tup_chan[4] != None:
+				obj_subscribe.update(tup_chan[4])
 			txt_wreq = json.dumps(obj_subscribe)
 			self.send(txt_wreq)
 
 	def ncOP_Send_Unsubscribe(self):
-		for tup_chan in self.obj_container.list_tups_datachn:
+		for tup_chan in self.obj_container.list_tups_datachan:
 			if tup_chan[0].id_chan == None:
 				continue
 			obj_subscribe = {
