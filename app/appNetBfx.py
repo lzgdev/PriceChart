@@ -36,11 +36,13 @@ mapTasks = [ {
 	'class': 'task01',
 	'msec_dur': 3 * 3600 * 1000, 'msec_pre': 20 * 1000,
 	#'msec_dur':   30 * 1000, 'msec_pre': 10 * 1000,
+	#'switch': False,
 	'switch':  True,
-	'url': 'wss://api.bitfinex.com/ws/2',
-	#'url': 'https://api.bitfinex.com/v2',
+	#'url': 'wss://api.bitfinex.com/ws/2',
+	'url': 'https://api.bitfinex.com/v2',
 	'jobs': [
 		{ 'channel':  'trades', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD" }', },
+		{ 'channel': 'candles', 'switch':  True, 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 		]
 	},
     {
@@ -51,7 +53,6 @@ mapTasks = [ {
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'jobs': [
 		{ 'channel':  'ticker', 'switch':  True, 'wreq_args': '{ "symbol": "tBTCUSD" }', },
-		{ 'channel': 'candles', 'switch':  True, 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 		]
 	},
     {
@@ -137,7 +138,7 @@ class Process_Net2Db(multiprocessing.Process, CTDataContainer_DbOut):
 				continue
 			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])
 
-		self.execLoop()
+		self.execMain()
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 dbg_dbg_main  = False

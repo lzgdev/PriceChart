@@ -49,8 +49,13 @@ class CTDataContainer(object):
 		if not gMap_TaskChans_init:
 			gMap_TaskChans_init = self._gmap_TaskChans_init()
 
-	def execLoop(self):
-		self.onExec_Loop_impl()
+	def execMain(self, **kwargs):
+		ret_init = self.onExec_Init_impl(**kwargs)
+		if None != ret_init:
+			return ret_init
+		self.onExec_Prep_impl()
+		self.onExec_Main_impl()
+		return None
 
 	def addArg_DataChannel(self, name_chan, wreq_args, tmp_tokchan):
 		global gMap_TaskChans
@@ -116,7 +121,13 @@ class CTDataContainer(object):
 		if idx_chan >= 0:
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
-	def onExec_Loop_impl(self):
+	def onExec_Init_impl(self, **kwargs):
+		return None
+
+	def onExec_Prep_impl(self):
+		pass
+
+	def onExec_Main_impl(self):
 		while len(self.list_tups_datasrc) >  0:
 			tup_datasrc = self.list_tups_datasrc.pop(0)
 			tup_datasrc[0].prepRead(**tup_datasrc[1])
