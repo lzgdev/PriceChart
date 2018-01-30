@@ -70,14 +70,7 @@ class CTDataContainer(object):
 		idx_chan_new  = len(self.list_tups_datachan)
 		obj_dataset = None
 		obj_dataout = None
-		if   name_chan == 'ticker':
-			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args_map)
-		elif name_chan == 'trades':
-			obj_dataset = CTDataSet_ATrades(512, self.logger, self, wreq_args_map)
-		elif name_chan == 'book':
-			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args_map)
-		elif name_chan == 'candles':
-			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args_map)
+		obj_dataset = self.onChan_DataSet_alloc(name_chan, wreq_args_map)
 		if obj_dataset == None:
 			return -1
 		obj_dataset.locSet_DbTbl(self._gmap_TaskChans_dbtbl(name_chan, gMap_TaskChans[idx_map_find]['dict_args']))
@@ -173,6 +166,20 @@ class CTDataContainer(object):
 		return not self.flag_data_finish
 		"""
 		return False
+
+	def onChan_DataSet_alloc(self, name_chan, wreq_args):
+		obj_dataset = None
+		if   name_chan == 'ticker':
+			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args)
+		elif name_chan == 'trades':
+			obj_dataset = CTDataSet_ATrades(512, self.logger, self, wreq_args)
+		elif name_chan == 'book':
+			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args)
+		elif name_chan == 'candles':
+			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args)
+		else:
+			obj_dataset = None
+		return obj_dataset
 
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args):
 		return None

@@ -6,6 +6,20 @@ class CTDataContainer_NetOut(ktdata.CTDataContainer):
 		ktdata.CTDataContainer.__init__(self, logger)
 		self.obj_netconn = obj_netconn
 
+	def onExec_Init_impl(self, **kwargs):
+		name_chan = kwargs['name_chan']
+		wreq_args = kwargs['wreq_args']
+
+		idx_data_chan = self.addArg_DataChannel(name_chan, wreq_args, None)
+		if idx_data_chan >= 0:
+			self.addObj_DataSource(CTDataInput_Db_NetReader(self.logger, self),
+						name_chan=name_chan, wreq_args=wreq_args)
+
+		return None
+
+	def onExec_Prep_impl(self):
+		pass
+
 	def onDatCB_DataClean_impl(self, idx_chan, obj_dataset):
 		pass
 
@@ -26,41 +40,21 @@ import time
 import math
 import copy
 
-class CTDataInput_DbReader(ktdata.CTDataInput_Db):
-	gid_chan_now = 11
-
+class CTDataInput_Db_NetReader(ktdata.CTDataInput_Db):
 	def __init__(self, logger, obj_container):
 		ktdata.CTDataInput_Db.__init__(self, logger, obj_container)
-		self.obj_dbadapter  = None
-		self.flag_rec_plus  = True
-		self.list_tmp_docs  = []
-
-		self.id_data_chan   = None
-		self.loc_name_chan  = None
-		self.loc_wreq_args  = None
-
-		self.flag_run_num   = 1
 
 	def onPrep_Read_impl(self, **kwargs):
-		#print("CTDataInput_DbReader::onPrep_Read_impl, args:", dict(kwargs))
+		#print("CTDataInput_Db_NetReader::onPrep_Read_impl, args:", dict(kwargs))
 		if self.obj_dbadapter == None:
-			self.obj_dbadapter = KTDataMedia_DbReader_Adp(self.logger, self)
+			self.obj_dbadapter = ktdata.KTDataMedia_DbReader(self.logger, self)
 			self.obj_dbadapter.dbOP_Connect('mongodb://127.0.0.1:27017', 'bfx-pub')
 		self.loc_name_chan  = kwargs['name_chan']
 		self.loc_wreq_args  = kwargs['wreq_args']
 		return True
 
-	def datFwd_Begin(self, id_chan):
-		self.onDat_Begin_impl(id_chan)
-
-	def datFwd_Doc(self, id_chan, obj_doc):
-		self.onDat_FwdDoc_impl(id_chan, obj_doc)
-
-	def datFwd_End(self, id_chan, num_docs):
-		self.onDat_End_impl(id_chan, num_docs)
-
 	def onInit_DbPrep_impl(self):
-		#print("CTDataInput_DbReader::onPrep_Read_impl ...", self.flag_run_num, self.loc_name_chan, self.loc_wreq_args)
+		#print("CTDataInput_Db_NetReader::onPrep_Read_impl ...", self.flag_run_num, self.loc_name_chan, self.loc_wreq_args)
 		if self.id_data_chan == None:
 			self.gid_chan_now += 1
 			self.id_data_chan  = self.gid_chan_now
@@ -71,7 +65,7 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 		return True
 
 	def onExec_DbRead_impl(self):
-		#print("CTDataInput_DbReader::onExec_DbRead_impl ...")
+		#print("CTDataInput_Db_NetReader::onExec_DbRead_impl ...")
 		#self.name_dbtbl = 'candles-tBTCUSD-1m'
 		self.name_dbtbl = ktdata.CTDataContainer._gmap_TaskChans_dbtbl(self.loc_name_chan, self.loc_wreq_args)
 		find_args = {}
@@ -86,54 +80,6 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 		self.obj_db_reader.dbOP_CollLoad(id_chan_sbsc, name_coll, {}, None)
 		"""
 
-	def onDat_Begin_impl(self, id_chan):
-		#print("CTDataInput_DbReader::onDat_Begin_impl", id_chan)
-		self.flag_rec_plus  =  True
-		self.list_tmp_docs.clear()
-
-	def onDat_End_impl(self, id_chan, num_docs):
-		#print("CTDataInput_DbReader::onDat_End_impl", id_chan)
-		self.flag_rec_plus  =  True
-		self.list_tmp_docs.clear()
-
-	def onDat_FwdDoc_impl(self, id_chan, obj_doc):
-		type_rec = None if not 'type' in obj_doc else obj_doc['type']
-		#print("CTDataInput_DbReader::onDat_FwdDoc_impl", id_chan, obj_doc)
-		if   'reset' == type_rec:
-			self.flag_rec_plus  = False
-			self.list_tmp_docs.clear()
-		elif  'sync' == type_rec:
-			self.obj_container.datIN_DataFwd(id_chan, ktdata.DFMT_KKAIPRIV, self.list_tmp_docs)
-			self.flag_rec_plus  =  True
-			self.list_tmp_docs.clear()
-		else:
-			if not self.flag_rec_plus:
-				#print("CTDataInput_DbReader::onDat_FwdDoc_impl b=31", id_chan, obj_doc)
-				self.list_tmp_docs.append(obj_doc)
-			else:
-				#print("CTDataInput_DbReader::onDat_FwdDoc_impl b=32", id_chan, obj_doc)
-				self.obj_container.datIN_DataFwd(id_chan, ktdata.DFMT_KKAIPRIV, obj_doc)
-
-
-class KTDataMedia_DbReader_Adp(ktdata.KTDataMedia_DbReader):
-	def __init__(self, logger, obj_dbreader):
-		ktdata.KTDataMedia_DbReader.__init__(self, logger)
-		self.obj_dbreader = obj_dbreader
-
-	def onDbEV_CollLoad_Begin(self, id_chan):
-		#self.logger.info("DataMedia(load): begin, chan=" + str(id_chan))
-		self.obj_dbreader.datFwd_Begin(id_chan)
-
-	def onDbEV_CollLoad_Doc(self, id_chan, obj_doc):
-		#self.logger.info("DataMedia(load): chan=" + str(id_chan) + ", doc=" + str(obj_doc))
-		self.obj_dbreader.datFwd_Doc(id_chan, obj_doc)
-
-	def onDbEV_CollLoad_End(self, id_chan, num_docs):
-		#self.logger.info("DataMedia(load): end, chan=" + str(id_chan) + ", num=" + str(num_docs))
-		self.obj_dbreader.datFwd_End(id_chan, num_docs)
-
-
-import ktdata
 
 class CTNetOut_Adapter(ktdata.CTDataOutput):
 	def __init__(self, logger, obj_dataset, obj_netconn):

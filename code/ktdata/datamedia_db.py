@@ -148,8 +148,25 @@ class KTDataMedia_DbBase(object):
 
 
 class KTDataMedia_DbReader(KTDataMedia_DbBase):
-	def __init__(self, logger):
+	def __init__(self, logger, obj_dbinput):
 		super(KTDataMedia_DbReader, self).__init__(logger)
+		self.obj_dbinput = obj_dbinput
+
+	def onDbEV_CollLoad_Begin(self, id_chan):
+		#self.logger.info("DataMedia(load): begin, chan=" + str(id_chan))
+		if self.obj_dbinput != None:
+			self.obj_dbinput.datFwd_Begin(id_chan)
+
+	def onDbEV_CollLoad_Doc(self, id_chan, obj_doc):
+		#self.logger.info("DataMedia(load): chan=" + str(id_chan) + ", doc=" + str(obj_doc))
+		if self.obj_dbinput != None:
+			self.obj_dbinput.datFwd_Doc(id_chan, obj_doc)
+
+	def onDbEV_CollLoad_End(self, id_chan, num_docs):
+		#self.logger.info("DataMedia(load): end, chan=" + str(id_chan) + ", num=" + str(num_docs))
+		if self.obj_dbinput != None:
+			self.obj_dbinput.datFwd_End(id_chan, num_docs)
+
 
 class KTDataMedia_DbWriter(KTDataMedia_DbBase):
 	def __init__(self, logger):

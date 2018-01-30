@@ -1,5 +1,6 @@
 
 import time
+import copy
 
 DFMT_KKAIPRIV = 1001
 DFMT_BFXV2    = 2001
@@ -29,10 +30,12 @@ class CTDataSet_Base(object):
 	def locDataClean(self):
 		self.onLocDataClean_impl()
 		self.obj_container.datCB_DataClean(self)
+		self.onCB_DataClean()
 
 	def locDataSync(self):
 		self.onLocDataSync_impl()
 		self.obj_container.datCB_DataSync(self, self.loc_time_this)
+		self.onCB_DataSync()
 
 	def locDataAppend(self, fmt_data, obj_msg):
 		if (self.flag_sys_time):
@@ -40,7 +43,9 @@ class CTDataSet_Base(object):
 		self.onLocDataAppend_impl(fmt_data, obj_msg)
 
 	def locRecAdd(self, flag_plus, fmt_data, obj_rec):
-		self.onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
+		tup_add = self.onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
+		if tup_add != None:
+			self.onCB_RecAdd(flag_plus, tup_add[0], tup_add[1])
 
 	def onLocDataClean_impl(self):
 		pass
@@ -52,6 +57,15 @@ class CTDataSet_Base(object):
 		pass
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
+		return None
+
+	def onCB_DataClean(self):
+		pass
+
+	def onCB_DataSync(self):
+		pass
+
+	def onCB_RecAdd(self, flag_plus, obj_rec, idx_rec):
 		pass
 
 
@@ -98,7 +112,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 		flag_plus  = False
 		if   (fmt_data == DFMT_KKAIPRIV):
 			flag_plus  =  True
-			ticker_rec = obj_msg
+			ticker_rec = copy.copy(obj_msg)
 		elif (fmt_data == DFMT_BFXV2):
 			data_msg = obj_msg[1]
 			msec_now = self.loc_time_this
@@ -125,6 +139,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 					self.logger.error("CTDataSet_Ticker(onLocRecAdd_impl): add obj_msg=" + str(obj_msg))
 		if flag_plus:
 			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
+		return (ticker_rec, 0)
 
 
 class CTDataSet_ATrades(CTDataSet_Array):
@@ -142,7 +157,7 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		if self.flag_dbg_rec:
 			self.logger.info("CTDataSet_ATrades(onLocRecAdd_impl): obj_rec=" + str(obj_rec))
 		if   (fmt_data == DFMT_KKAIPRIV):
-			trade_rec = obj_rec
+			trade_rec = copy.copy(obj_rec)
 		elif (fmt_data == DFMT_BFXV2):
 			try:
 				trade_rec = {
@@ -169,6 +184,7 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		self.loc_trades_recs.insert(rec_index, trade_rec)
 		if flag_plus:
 			self.obj_container.datCB_RecPlus(self, trade_rec, rec_index)
+		return (trade_rec, rec_index)
 
 
 class CTDataSet_ABooks(CTDataSet_Array):
@@ -185,7 +201,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
 		if   (fmt_data == DFMT_KKAIPRIV):
 			flag_bids  = True if obj_rec['type'] == 'bid' else False
-			book_rec   = obj_rec
+			book_rec   = copy.copy(obj_rec)
 		elif (fmt_data == DFMT_BFXV2):
 			msec_now   = self.loc_time_this
 			try:
@@ -244,6 +260,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 			if not flag_del:
 				book_rec = book_recs[idx_book]
 			self.obj_container.datCB_RecPlus(self, book_rec, idx_book)
+		return (book_rec, idx_book)
 
 	# develop/debug support
 	def devCheck_Books(self, err_ses):
@@ -306,7 +323,7 @@ class CTDataSet_ACandles(CTDataSet_Array):
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
 		if   (fmt_data == DFMT_KKAIPRIV):
-			candle_rec = obj_rec
+			candle_rec = copy.copy(obj_rec)
 		elif (fmt_data == DFMT_BFXV2):
 			try:
 				candle_rec = {
@@ -339,5 +356,6 @@ class CTDataSet_ACandles(CTDataSet_Array):
 			flag_chg  = True
 		if flag_plus and flag_chg:
 			self.obj_container.datCB_RecPlus(self, candle_rec, rec_index)
+		return (candle_rec, rec_index)
 
 

@@ -7,6 +7,8 @@ import websocket
 import http.client
 import urllib.parse
 
+from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2
+
 class CTDataInput(object):
 	def __init__(self, logger, obj_container):
 		object.__init__(self)
@@ -121,8 +123,28 @@ class CTDataInput_Http(CTDataInput):
 
 
 class CTDataInput_Db(CTDataInput):
+	gid_chan_now = 11
+
 	def __init__(self, logger, obj_container):
 		CTDataInput.__init__(self, logger, obj_container)
+		self.obj_dbadapter  = None
+		self.flag_rec_plus  = True
+		self.list_tmp_docs  = []
+
+		self.id_data_chan   = None
+		self.loc_name_chan  = None
+		self.loc_wreq_args  = None
+
+		self.flag_run_num   = 1
+
+	def datFwd_Begin(self, id_chan):
+		self.onDat_Begin_impl(id_chan)
+
+	def datFwd_Doc(self, id_chan, obj_doc):
+		self.onDat_FwdDoc_impl(id_chan, obj_doc)
+
+	def datFwd_End(self, id_chan, num_docs):
+		self.onDat_End_impl(id_chan, num_docs)
 
 	def onExec_ReadLoop_impl(self):
 		while True:
@@ -136,5 +158,33 @@ class CTDataInput_Db(CTDataInput):
 
 	def onExec_DbRead_impl(self):
 		pass
+
+	def onDat_Begin_impl(self, id_chan):
+		#print("CTDataInput_Db::onDat_Begin_impl", id_chan)
+		self.flag_rec_plus  =  True
+		self.list_tmp_docs.clear()
+
+	def onDat_End_impl(self, id_chan, num_docs):
+		#print("CTDataInput_Db::onDat_End_impl", id_chan)
+		self.flag_rec_plus  =  True
+		self.list_tmp_docs.clear()
+
+	def onDat_FwdDoc_impl(self, id_chan, obj_doc):
+		type_rec = None if not 'type' in obj_doc else obj_doc['type']
+		#print("CTDataInput_Db::onDat_FwdDoc_impl", id_chan, obj_doc)
+		if   'reset' == type_rec:
+			self.flag_rec_plus  = False
+			self.list_tmp_docs.clear()
+		elif  'sync' == type_rec:
+			self.obj_container.datIN_DataFwd(id_chan, DFMT_KKAIPRIV, self.list_tmp_docs)
+			self.flag_rec_plus  =  True
+			self.list_tmp_docs.clear()
+		else:
+			if not self.flag_rec_plus:
+				#print("CTDataInput_Db::onDat_FwdDoc_impl b=31", id_chan, obj_doc)
+				self.list_tmp_docs.append(obj_doc)
+			else:
+				#print("CTDataInput_Db::onDat_FwdDoc_impl b=32", id_chan, obj_doc)
+				self.obj_container.datIN_DataFwd(id_chan, DFMT_KKAIPRIV, obj_doc)
 
 
