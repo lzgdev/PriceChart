@@ -62,6 +62,9 @@ class CTStatOut_Adapter(ktdata.CTDataOutput):
 		self.wreq_args  = None
 		self.db_doc_last    = None
 
+	def getDoc_OutLast(self):
+		return self.db_doc_last
+
 	def onPrep_OutChan_impl(self, **kwargs):
 		#def onPrep_OutChan_impl(self, name_dbtbl, name_chan, wreq_args):
 		name_dbtbl = kwargs['name_dbtbl']
