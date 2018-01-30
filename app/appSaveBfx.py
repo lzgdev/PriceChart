@@ -7,8 +7,6 @@ import math
 
 import logging
 
-import urllib.parse
-
 import multiprocessing
 
 import ntplib
@@ -119,17 +117,11 @@ class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DbOut):
 		self.logger.info("Process(" + self.info_app + ") begin ...")
 
 		task_unit = mapTasks[self.idx_task]
-		url_parse = urllib.parse.urlparse(task_unit['url'])
-		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(ktdata.CTDataInput_HttpBfx(self.logger, self, task_unit['url']))
-		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(ktdata.CTDataInput_WssBfx(self.logger, self, task_unit['url'],
-								self.tok_task, self.loc_token_this, ntp_msec_off))
 
 		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
-		self.execMain(jobs=task_unit['jobs'])
+		self.execMain(url=task_unit['url'], jobs=task_unit['jobs'])
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 dbg_dbg_main  = False

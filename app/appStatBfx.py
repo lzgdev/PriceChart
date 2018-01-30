@@ -97,7 +97,6 @@ class Process_Net2Db(multiprocessing.Process, ktstat.CTDataContainer_StatOut):
 		self.pid_this = None
 		self.info_app = None
 		self.obj_netclient = None
-		self.obj_dbwriter  = None
 
 		self.name = 'Net2Db' + str(self.idx_task) + '-' + str(self.cnt_procs[self.idx_task])
 
@@ -119,22 +118,8 @@ class Process_Net2Db(multiprocessing.Process, ktstat.CTDataContainer_StatOut):
 		self.logger.info("Process(" + self.info_app + ") begin ...")
 
 		task_unit = mapTasks[self.idx_task]
-		url_parse = urllib.parse.urlparse(task_unit['url'])
-		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(ktdata.CTDataInput_HttpBfx(self.logger, self, task_unit['url']))
-		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(ktdata.CTDataInput_WssBfx(self.logger, self, task_unit['url'],
-								self.tok_task, self.loc_token_this, ntp_msec_off))
 
-		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
-		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
-
-		for map_idx, map_unit in enumerate(task_unit['jobs']):
-			if not map_unit['switch']:
-				continue
-			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])
-
-		self.execMain()
+		self.execMain(url=task_unit['url'], jobs=task_unit['jobs'])
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 dbg_dbg_main  = False
@@ -162,7 +147,7 @@ signal.signal(12, _sighand_usr2)
 
 # debug settings
 dbg_dbg_main  =  True
-#dbg_run_task  = 0
+dbg_run_task  = 0
 
 #
 # Main entrance
