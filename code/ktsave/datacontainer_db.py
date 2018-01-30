@@ -7,6 +7,17 @@ class CTDataContainer_DbOut(ktdata.CTDataContainer):
 	def __init__(self, logger):
 		ktdata.CTDataContainer.__init__(self, logger)
 
+	def onExec_Init_impl(self, **kwargs):
+		task_jobs = kwargs['jobs']
+		for map_idx, map_unit in enumerate(task_jobs):
+			if not map_unit['switch']:
+				continue
+			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])
+		return None
+
+	def onExec_Prep_impl(self):
+		pass
+
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args):
 		obj_dataout = None
 		if   name_chan == 'ticker':

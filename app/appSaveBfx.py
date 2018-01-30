@@ -129,12 +129,7 @@ class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DbOut):
 		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
-		for map_idx, map_unit in enumerate(task_unit['jobs']):
-			if not map_unit['switch']:
-				continue
-			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])
-
-		self.execMain()
+		self.execMain(jobs=task_unit['jobs'])
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 dbg_dbg_main  = False
