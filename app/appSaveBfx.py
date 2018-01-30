@@ -15,12 +15,8 @@ import ntplib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
-from ktdata import CTDataInput_WssBfx, CTDataInput_HttpBfx
-from ktdata import KTDataMedia_DbReader, KTDataMedia_DbWriter
-
-from ktdata import CTDataContainer_DbOut
-
-from pymongo import MongoClient
+import ktdata
+import ktsave
 
 pid_root = os.getpid()
 flag_sig_usr1 = False
@@ -75,14 +71,14 @@ print("Process id before forking: pid=" + str(pid_root))
 def _util_msec_now():
 	return int(round(time.time() * 1000))
 
-class Process_Net2Db(multiprocessing.Process, CTDataContainer_DbOut):
+class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DbOut):
 	tok_tasks = []
 	tok_chans = []
 	cnt_procs = []
 
 	def __init__(self, logger, idx_task, token_new):
 		multiprocessing.Process.__init__(self)
-		CTDataContainer_DbOut.__init__(self, logger)
+		ktsave.CTDataContainer_DbOut.__init__(self, logger)
 		num_jobs = len(mapTasks[idx_task]['jobs'])
 		# expand static members
 		while len(self.tok_tasks) <= idx_task:
@@ -125,12 +121,12 @@ class Process_Net2Db(multiprocessing.Process, CTDataContainer_DbOut):
 		task_unit = mapTasks[self.idx_task]
 		url_parse = urllib.parse.urlparse(task_unit['url'])
 		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(CTDataInput_HttpBfx(self.logger, self, task_unit['url']))
+			self.addObj_DataSource(ktdata.CTDataInput_HttpBfx(self.logger, self, task_unit['url']))
 		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(CTDataInput_WssBfx(self.logger, self, task_unit['url'],
+			self.addObj_DataSource(ktdata.CTDataInput_WssBfx(self.logger, self, task_unit['url'],
 								self.tok_task, self.loc_token_this, ntp_msec_off))
 
-		self.obj_dbwriter  = KTDataMedia_DbWriter(self.logger)
+		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
 		for map_idx, map_unit in enumerate(task_unit['jobs']):

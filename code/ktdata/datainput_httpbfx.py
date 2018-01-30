@@ -3,7 +3,6 @@ import time
 import json
 
 from .datainput import CTDataInput_Http
-from .datacontainer_db  import CTDataContainer_DbOut
 
 from .dataset   import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 
@@ -51,8 +50,8 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 				self.loc_idx_chan = new_idx_chan
 		# try to load last doc from db
 		rec_last = None
-		if isinstance(self.obj_container, CTDataContainer_DbOut) and self.loc_idx_chan == self.loc_run_chan:
-			rec_last = self.obj_container.list_tups_datachan[self.loc_idx_chan][1].db_doc_last
+		if self.loc_idx_chan == self.loc_run_chan:
+			rec_last = self.obj_container.list_tups_datachan[self.loc_idx_chan][1].getDoc_OutLast()
 		if rec_last != None:
 			mts_rec_new  = rec_last['mts']
 			self.mts_rec_last = mts_rec_new if mts_rec_new >  self.mts_rec_last else (self.mts_rec_last + 1)

@@ -1,12 +1,11 @@
 
 import json
 
-from .datacontainer import CTDataContainer
-from .dataoutput    import CTDataOutput
+import ktdata
 
-class CTDataContainer_DbOut(CTDataContainer):
+class CTDataContainer_DbOut(ktdata.CTDataContainer):
 	def __init__(self, logger):
-		CTDataContainer.__init__(self, logger)
+		ktdata.CTDataContainer.__init__(self, logger)
 
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args):
 		obj_dataout = None
@@ -52,9 +51,9 @@ import time
 import math
 import copy
 
-class CTDbOut_Adapter(CTDataOutput):
+class CTDbOut_Adapter(ktdata.CTDataOutput):
 	def __init__(self, logger, obj_dataset, db_writer):
-		CTDataOutput.__init__(self, logger)
+		ktdata.CTDataOutput.__init__(self, logger)
 		self.obj_dataset    = obj_dataset
 		self.loc_db_writer  = db_writer
 		self.flag_dbg_rec   = False
@@ -62,6 +61,9 @@ class CTDbOut_Adapter(CTDataOutput):
 		self.name_chan  = None
 		self.wreq_args  = None
 		self.db_doc_last    = None
+
+	def getDoc_OutLast(self):
+		return self.db_doc_last
 
 	def onPrep_OutChan_impl(self, **kwargs):
 		#def onPrep_OutChan_impl(self, name_dbtbl, name_chan, wreq_args):

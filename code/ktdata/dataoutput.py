@@ -15,6 +15,9 @@ class CTDataOutput(object):
 		doc_new = self.onDocAppend_impl(doc_rec)
 		return doc_new
 
+	def getDoc_OutLast(self):
+		return None
+
 	def onPrep_OutChan_impl(self, **kwargs):
 		return False
 
