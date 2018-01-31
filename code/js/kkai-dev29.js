@@ -2,6 +2,10 @@
 var obj_netclient = null;
 
 var mapWREQs = [
+        { channel:    'stat', uid: 'container-stat01', visible: false, wreq_args: {   stat: 'stat01', }, },
+        { channel:    'stat', uid: 'container-stat02', visible: false, wreq_args: {   stat: 'stat02', }, },
+        { channel:    'stat', uid: 'container-stat11', visible: false, wreq_args: {   stat: 'stat11', }, },
+        { channel:    'stat', uid: 'container-stat12', visible: false, wreq_args: {   stat: 'stat12', }, },
         { channel:  'ticker', uid: 'container-ticker', visible: false, wreq_args: { symbol: 'tBTCUSD', }, },
         { channel:  'trades', uid:  'container-trade', visible: false, wreq_args: { symbol: 'tBTCUSD', }, },
         { channel:    'book', uid: 'container-bookP0', visible: false, wreq_args: { symbol: 'tBTCUSD', prec: 'P0', freq: 'F1', len: '100', }, },

@@ -271,13 +271,20 @@ class CTDataContainer(object):
 			obj_dataset.locDataAppend(fmt_data, obj_msg)
 
 	def onDatCB_DataClean_impl(self, idx_chan, obj_dataset):
-		pass
+		obj_dataout = self.list_tups_datachan[idx_chan][1]
+		if obj_dataout != None:
+			obj_dataout.clrAppend(None)
 
 	def onDatCB_DataSync_impl(self, idx_chan, obj_dataset, msec_now):
-		pass
+		obj_dataout = self.list_tups_datachan[idx_chan][1]
+		if obj_dataout != None:
+			obj_dataout.synAppend(msec_now)
 
 	def onDatCB_RecPlus_impl(self, idx_chan, obj_dataset, doc_rec, idx_rec):
-		pass
+		obj_dataout = self.list_tups_datachan[idx_chan][1]
+		if obj_dataout != None:
+			obj_dataout.docAppend(doc_rec)
+
 
 	def __priv_Dwreq2Idx(self, name_chan, wreq_args_map):
 		idx_chan_find = -1

@@ -1,0 +1,83 @@
+<html>
+<head>
+  <title>Price Chart</title>
+  <link rel="stylesheet" href="/css/dark.css">
+
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+  <script type="text/javascript" src="https://code.highcharts.com/stock/highstock.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/modules/no-data-to-display.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
+  <script type="text/javascript" src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+
+<!-- -->
+  <script type="text/javascript" src="/js/kkai-add00.js"></script>
+
+  <script type="text/javascript" src="/js/kkai-dev11.js?version={{ dev_js_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev22.js?version={{ dev_js_ver }}"></script>
+  <script type="text/javascript" src="/js/kkai-dev31.js?version={{ dev_js_ver }}"></script>
+
+  <script type="text/javascript" src="/js/kkai-dev29.js?version={{ dev_js_ver }}"></script>
+
+<style>
+body {
+  background-color: #1F1F1F;
+  color: #BFBFBF;
+}
+.div-dep-left  {
+  float: left;
+  width: 49.8%;
+  height: 92%;
+  background-color: green;
+}
+.div-dep-right {
+  float: right;
+  width: 49.8%;
+  height: 92%;
+  background-color: red;
+}
+</style>
+<body>
+<!-- -->
+  <h3>Output log1</h3>
+  <pre id="log_out1">init(html) log1</pre>
+  <button id="_ui_test01" onclick="_onUI_Test01()">Test01</button><br/>
+  <button id="_ui_test02" onclick="_onUI_Test02()">Test02</button><br/>
+  <div id="container-root">
+    <div id="container-stat01" hidden></div>
+    <div id="container-stat02" hidden></div>
+    <div id="container-stat11" hidden></div>
+    <div id="container-stat12" hidden></div>
+    <div id="container-ticker" hidden></div>
+    <div id="container-trade"  hidden></div>
+    <div id="container-bookP0" hidden></div>
+    <div id="container-bookP1" hidden></div>
+    <div id="container-bookP2" hidden></div>
+    <div id="container-bookP3" hidden></div>
+    <div id="container-candle" ></div>
+  </div>
+  <h3>Output log2</h3>
+  <pre id="log_out2">init(html) log2</pre>
+<script type="text/javascript">
+// DepthView code: javascript
+  $('#log_out1').html('init(js) log_out1');
+  $('#log_out2').html('init(js) log_out2');
+
+</script>
+<!-- -->
+<script type="text/javascript">
+
+  $(function () {
+      var url_wss = null;
+      url_wss = 'ws://127.0.0.1:8888/ws/2';
+      cbEV_OnDocReady_prep(url_wss);
+      cbEV_OnDocReady_highcharts();
+      cbEV_OnDocReady_websocket();
+    });
+
+</script>
+
+</body>
+<!-- -->
+</html>
+

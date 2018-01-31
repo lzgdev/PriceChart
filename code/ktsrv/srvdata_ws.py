@@ -7,7 +7,7 @@ import logging
 
 import tornado.websocket
 
-from .datacontainer_wsbfx       import CTDataContainer_WsBfxOut
+import ktstat
 
 class WebSockHandler(tornado.websocket.WebSocketHandler):
 	def __init__(self, application, request, **kwargs):
@@ -24,7 +24,8 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 		self.pid_this = os.getpid()
 		self.logger.info("WebSockHandler: open file=" + ws_file + ", pid=" + str(self.pid_this))
 		if self.obj_container == None:
-			self.obj_container = CTDataContainer_WsBfxOut(self.logger, self)
+			self.obj_container = ktstat.CTDataContainer_StatOut(self.logger, self)
+			self.obj_container.flag_out_wsbfx =  True
 		self.write_message({ 'event': 'info', 'version': 2, 'ext': 'KKAIEX02', })
 
 	def on_close(self):
