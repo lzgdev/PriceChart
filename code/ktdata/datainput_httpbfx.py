@@ -20,6 +20,8 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 
 	def __init__(self, logger, obj_container, url_http_pref):
 		CTDataInput_Http.__init__(self, logger, obj_container, url_http_pref)
+		self.loc_mark_delay = 0
+		self.loc_cnt_resp   = 0
 		self.loc_run_chan   = 0
 		self.loc_run_tmax   = -1
 		self.loc_id_chan    = None
@@ -32,6 +34,10 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 
 	def onInit_HttpUrl_impl(self, url_parse):
 		global dbg_tm_start
+		if self.loc_mark_delay > 0:
+			print("CTDataInput_HttpBfx::onInit_HttpUrl_impl, sleep", self.loc_mark_delay, "seconds.")
+			time.sleep(self.loc_mark_delay)
+			self.loc_mark_delay = 0
 		tup_url = None
 		if self.loc_run_chan >= len(self.obj_container.list_tups_datachan):
 			return tup_url
@@ -80,13 +86,18 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		global num_bfx_trades_recs, num_bfx_candles_recs
 		#print("Resp, status:", status_code, ", Content-Type:", content_type)
 		#print("data:", http_data)
-		flag_chan_end = True
-		try:
-			obj_data  = json.loads(http_data.decode('utf-8'))
-		except:
-			obj_data  = None
-		if obj_data != None:
-			if self.flag_log_intv >  0:
+		flag_data_valid = False
+		flag_rate_lim = False
+		flag_chan_end =  True
+		obj_data  = None
+		if content_type == "application/json; charset=utf-8" or content_type == "application/json":
+			try:
+				obj_data  = json.loads(http_data.decode('utf-8'))
+			except:
+				obj_data  = None
+		len_list  = len(obj_data) if isinstance(obj_data, list) else -1
+		if   len_list >= 1 and 'error' != obj_data[0]:
+			if self.flag_log_intv >  1:
 				#print("data:", obj_data)
 				tm_last = self.mts_rec_last
 				for item in obj_data:
@@ -94,20 +105,34 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 						tm_rec = item[1]
 					elif 'candles' == self.loc_name_chan:
 						tm_rec = item[0]
-					print("diff:", tm_rec - tm_last, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", item)
-				print("data len:", len(obj_data))
+					print("data, diff:", tm_rec - tm_last, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", item)
+			if self.flag_log_intv >  0:
+				print("Data, resp:", self.loc_cnt_resp, ", len:", len_list)
+			flag_data_valid =  True
 			self.obj_container.datIN_DataFwd(self.loc_id_chan, DFMT_BFXV2, [self.loc_id_chan, obj_data])
 			if    'trades' == self.loc_name_chan:
-				if len(obj_data) >=  num_bfx_trades_recs:
+				if len_list >=  num_bfx_trades_recs:
 					flag_chan_end = False
 			elif 'candles' == self.loc_name_chan:
-				if len(obj_data) >= num_bfx_candles_recs:
+				if len_list >= num_bfx_candles_recs:
 					flag_chan_end = False
+			self.loc_cnt_resp += 1
+		elif len_list >= 1 and 'error' == obj_data[0]:
+			print("Error, len:", len_list, ", data:", obj_data)
+			if len_list >= 2 and 11010 == obj_data[1]:
+				flag_rate_lim =  True
+		else:
+			print("Error, code:", status_code, ", type:", content_type, ", data:", http_data)
 		# clean channel data if necessary
-		if flag_chan_end:
+		if   flag_rate_lim:
+			print("Warning, rate limit:", str(obj_data))
+			self.loc_mark_delay = 90
+		elif flag_chan_end:
+			print("Warning, data end:", status_code, http_data)
 			self.loc_run_chan  += 1
 			self.loc_id_chan    = None
 			self.loc_idx_chan   = None
 			self.loc_name_chan  = None
 			self.mts_rec_last   = 0
+		return flag_data_valid
 

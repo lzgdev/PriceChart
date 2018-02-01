@@ -81,6 +81,9 @@ class CTDataInput_Http(CTDataInput):
 		CTDataInput.__init__(self, logger, obj_container)
 		self.url_http_pref = url_http_pref
 
+		self.obj_httpconn  = None
+		self.num_httprest  = 0
+
 	def onExec_ReadLoop_impl(self):
 		while True:
 			url_parse  = urllib.parse.urlparse(self.url_http_pref)
@@ -95,15 +98,18 @@ class CTDataInput_Http(CTDataInput):
 			if url_params != None and url_params != '':
 				url_path += '?' + url_params
 			self.onExec_HttpGet_impl(url_parse.netloc, url_path)
-			time.sleep(5)
+			time.sleep(6)
+			#time.sleep(5)
 
 	def onExec_HttpGet_impl(self, url_netloc, url_path):
 		# compose real http request url
 		if self.flag_log_intv >  1:
 			print("URL, netloc:", url_netloc, ", path:", url_path)
-		http_conn = http.client.HTTPSConnection(url_netloc)
-		http_conn.request("GET", url_path)
-		http_resp = http_conn.getresponse()
+		if self.obj_httpconn == None:
+			self.obj_httpconn = http.client.HTTPSConnection(url_netloc)
+			self.num_httprest = 0
+		self.obj_httpconn.request("GET", url_path)
+		http_resp = self.obj_httpconn.getresponse()
 		content_type = http_resp.getheader('Content-Type')
 		if self.flag_log_intv >  1:
 			print("Resp, Status:", http_resp.status, ", reason:", http_resp.reason, ", Content-Type:", content_type)
@@ -112,8 +118,11 @@ class CTDataInput_Http(CTDataInput):
 			http_data = http_resp.read()
 		if self.flag_log_intv >  1:
 			print("Resp, Data:", http_data)
-		http_conn.close()
-		self.onNcEV_HttpResponse_impl(http_resp.status, content_type, http_data)
+		ret_proc = self.onNcEV_HttpResponse_impl(http_resp.status, content_type, http_data)
+		self.num_httprest += 1
+		if not ret_proc or self.num_httprest >= 10:
+			self.obj_httpconn.close()
+			self.obj_httpconn = None
 
 	def onInit_HttpUrl_impl(self, url_parse):
 		return None
