@@ -1,7 +1,7 @@
 
 import ktdata
 
-class CTDataSet_Stat_Stat01(ktdata.CTDataSet_ACandles):
+class CTDataSet_Stat_Stat01(ktdata.CTDataSet_AStat):
 	def __init__(self, recs_size, logger, obj_container, wreq_args):
 		super(CTDataSet_Stat_Stat01, self).__init__(recs_size, logger, obj_container, wreq_args)
 
