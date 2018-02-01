@@ -67,7 +67,7 @@ function cbEV_OnDocReady_highcharts()
               data: [ ],
               dataGrouping: {
                 enabled: false
-              }
+              },
             },
 /*
             {
@@ -76,7 +76,7 @@ function cbEV_OnDocReady_highcharts()
               data: [ ],
               dataGrouping: {
                 enabled: false
-              }
+              },
             },
 // */
           ],
@@ -171,7 +171,7 @@ function cbEV_OnDocReady_highcharts()
               data: [ ],
               dataGrouping: {
                 enabled: false
-              }
+              },
             },
 /*
             {
@@ -180,7 +180,7 @@ function cbEV_OnDocReady_highcharts()
               data: [ ],
               dataGrouping: {
                 enabled: false
-              }
+              },
             },
 // */
           ],
@@ -275,7 +275,7 @@ function cbEV_OnDocReady_highcharts()
               data: [ ],
               dataGrouping: {
                 enabled: false
-              }
+              },
             },
 /*
             {
@@ -284,7 +284,7 @@ function cbEV_OnDocReady_highcharts()
               data: [ ],
               dataGrouping: {
                 enabled: false
-              }
+              },
             },
 // */
           ],

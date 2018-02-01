@@ -78,7 +78,7 @@ class Process_Net2Db(multiprocessing.Process, ktstat.CTDataContainer_StatOut):
 
 	def __init__(self, logger, idx_task, token_new):
 		multiprocessing.Process.__init__(self)
-		ktstat.CTDataContainer_StatOut.__init__(self, logger)
+		ktstat.CTDataContainer_StatOut.__init__(self, logger, None)
 		num_jobs = len(mapTasks[idx_task]['jobs'])
 		# expand static members
 		while len(self.tok_tasks) <= idx_task:
@@ -119,7 +119,8 @@ class Process_Net2Db(multiprocessing.Process, ktstat.CTDataContainer_StatOut):
 
 		task_unit = mapTasks[self.idx_task]
 
-		self.execMain(url=task_unit['url'], jobs=task_unit['jobs'])
+		#self.execMain(url=task_unit['url'], jobs=task_unit['jobs'])
+		self.execMain(name_chan='candles', wreq_args={ "key": "trade:1m:tBTCUSD" })
 		self.logger.info("Process(" + self.info_app + ") finish.")
 
 dbg_dbg_main  = False

@@ -52,8 +52,14 @@ class ClDataSet_Stat_HighCharts extends ClDataSet_Stat
     if (!flag_plus) {
       return 0;
     }
-    gui_ohlc = (this.loc_gui_chart.series.length <= 0) ? null : this.loc_gui_chart.series[0];
-    gui_vol  = (this.loc_gui_chart.series.length <= 1) ? null : this.loc_gui_chart.series[1];
+    gui_ohlc = null;
+    gui_vol  = null;
+    if ((this.loc_gui_chart.series.length >  0) && (this.loc_gui_chart.series[0].name == 'OHLC')) {
+      gui_ohlc = this.loc_gui_chart.series[0];
+    }
+    if ((this.loc_gui_chart.series.length >  1) && (this.loc_gui_chart.series[1].name == 'VOL')) {
+      gui_vol  = this.loc_gui_chart.series[1];
+    }
     pnt_ohlc = [
         candle_rec.mts,
         candle_rec.open,
@@ -67,15 +73,22 @@ class ClDataSet_Stat_HighCharts extends ClDataSet_Stat
       ];
     if (candle_rec.mts >  this.loc_mts_sync) {
       gui_ohlc.addPoint(pnt_ohlc, true);
+      if (gui_vol != null) {
+        gui_vol.addPoint(pnt_vol, true);
+      }
       this.loc_mts_sync  = candle_rec.mts;
       this.loc_gui_recn ++;
     }
     else
-    if ((idx_gui=gui_ohlc.data.length-1) >= 0) {
+    if ((idx_gui=gui_ohlc.options.data.length-1) >= 0) {
       if (gui_ohlc.data[idx_gui].x == candle_rec.mts) {
         gui_ohlc.data[idx_gui].update(pnt_ohlc, true);
+        if (gui_vol != null) {
+          gui_vol.data[idx_gui].update(pnt_vol, true);
+        }
       }
     }
+
     return 1;
   }
 
@@ -83,8 +96,14 @@ class ClDataSet_Stat_HighCharts extends ClDataSet_Stat
   {
     var idx_rec, num_rec;
     var candle_rec, gui_ohlc, pnt_ohlc, gui_vol, pnt_vol;
-    gui_ohlc = (this.loc_gui_chart.series.length <= 0) ? null : this.loc_gui_chart.series[0];
-    gui_vol  = (this.loc_gui_chart.series.length <= 1) ? null : this.loc_gui_chart.series[1];
+    gui_ohlc = null;
+    gui_vol  = null;
+    if ((this.loc_gui_chart.series.length >  0) && (this.loc_gui_chart.series[0].name == 'OHLC')) {
+      gui_ohlc = this.loc_gui_chart.series[0];
+    }
+    if ((this.loc_gui_chart.series.length >  1) && (this.loc_gui_chart.series[1].name == 'VOL')) {
+      gui_vol  = this.loc_gui_chart.series[1];
+    }
     num_rec  = this.loc_candle_recs.length;
     for (idx_rec=0; idx_rec <  num_rec; idx_rec++)
     {
@@ -158,10 +177,12 @@ class ClDataSet_ATrades_HighCharts extends ClDataSet_ATrades
         candle_rec.low,
         candle_rec.close,
       ];
-    pnt_vol = [
-        candle_rec.mts,
-        candle_rec.volume,
-      ];
+    if (gui_vol != null) {
+      pnt_vol = [
+          candle_rec.mts,
+          candle_rec.volume,
+        ];
+    }
     if (candle_rec.mts >  this.loc_mts_sync) {
       gui_ohlc.addPoint(pnt_ohlc, true);
       this.loc_mts_sync  = candle_rec.mts;
@@ -343,8 +364,14 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
     if (!flag_plus) {
       return 0;
     }
-    gui_ohlc = (this.loc_gui_chart.series.length <= 0) ? null : this.loc_gui_chart.series[0];
-    gui_vol  = (this.loc_gui_chart.series.length <= 1) ? null : this.loc_gui_chart.series[1];
+    gui_ohlc = null;
+    gui_vol  = null;
+    if ((this.loc_gui_chart.series.length >  0) && (this.loc_gui_chart.series[0].name == 'OHLC')) {
+      gui_ohlc = this.loc_gui_chart.series[0];
+    }
+    if ((this.loc_gui_chart.series.length >  1) && (this.loc_gui_chart.series[1].name == 'VOL')) {
+      gui_vol  = this.loc_gui_chart.series[1];
+    }
     pnt_ohlc = [
         candle_rec.mts,
         candle_rec.open,
@@ -358,13 +385,19 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
       ];
     if (candle_rec.mts >  this.loc_mts_sync) {
       gui_ohlc.addPoint(pnt_ohlc, true);
+      if (gui_vol != null) {
+        gui_vol.addPoint(pnt_vol, true);
+      }
       this.loc_mts_sync  = candle_rec.mts;
       this.loc_gui_recn ++;
     }
     else
-    if ((idx_gui=gui_ohlc.data.length-1) >= 0) {
+    if ((idx_gui=gui_ohlc.options.data.length-1) >= 0) {
       if (gui_ohlc.data[idx_gui].x == candle_rec.mts) {
         gui_ohlc.data[idx_gui].update(pnt_ohlc, true);
+        if (gui_vol != null) {
+          gui_vol.data[idx_gui].update(pnt_vol, true);
+        }
       }
     }
     return 1;
@@ -374,8 +407,14 @@ class ClDataSet_ACandles_HighCharts extends ClDataSet_ACandles
   {
     var idx_rec, num_rec;
     var candle_rec, gui_ohlc, pnt_ohlc, gui_vol, pnt_vol;
-    gui_ohlc = (this.loc_gui_chart.series.length <= 0) ? null : this.loc_gui_chart.series[0];
-    gui_vol  = (this.loc_gui_chart.series.length <= 1) ? null : this.loc_gui_chart.series[1];
+    gui_ohlc = null;
+    gui_vol  = null;
+    if ((this.loc_gui_chart.series.length >  0) && (this.loc_gui_chart.series[0].name == 'OHLC')) {
+      gui_ohlc = this.loc_gui_chart.series[0];
+    }
+    if ((this.loc_gui_chart.series.length >  1) && (this.loc_gui_chart.series[1].name == 'VOL')) {
+      gui_vol  = this.loc_gui_chart.series[1];
+    }
     num_rec  = this.loc_candle_recs.length;
     for (idx_rec=0; idx_rec <  num_rec; idx_rec++)
     {
