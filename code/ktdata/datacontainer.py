@@ -33,6 +33,11 @@ gMap_TaskChans = [
 		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-7D', 'wreq_args':  '{ "key": "trade:7D:tBTCUSD" }', },
 		{ 'channel': 'candles', 'name_dbtbl':   'candles-tBTCUSD-14D', 'wreq_args': '{ "key": "trade:14D:tBTCUSD" }', },
 		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-1M', 'wreq_args':  '{ "key": "trade:1M:tBTCUSD" }', },
+		# channel: 18 ~ 21 for statistics
+		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat01" }', },
+		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat02" }', },
+		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat11" }', },
+		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat12" }', },
 	]
 
 
@@ -63,6 +68,7 @@ class CTDataContainer(object):
 		if idx_map_find <  0:
 			return -1
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
+		dict_args_map = gMap_TaskChans[idx_map_find]['dict_args']
 		idx_chan_new  = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_new >= 0:
 			return idx_chan_new
@@ -70,12 +76,12 @@ class CTDataContainer(object):
 		idx_chan_new  = len(self.list_tups_datachan)
 		obj_dataset = None
 		obj_dataout = None
-		obj_dataset = self.onChan_DataSet_alloc(name_chan, wreq_args_map)
+		obj_dataset = self.onChan_DataSet_alloc(name_chan, wreq_args_map, dict_args_map)
 		if obj_dataset == None:
 			return -1
-		obj_dataset.locSet_DbTbl(self._gmap_TaskChans_dbtbl(name_chan, gMap_TaskChans[idx_map_find]['dict_args']))
-		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args_map)
-		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args_map, gMap_TaskChans[idx_map_find]['dict_args']))
+		obj_dataset.locSet_DbTbl(self._gmap_TaskChans_dbtbl(name_chan, dict_args_map))
+		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args_map, dict_args_map)
+		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args_map, dict_args_map))
 		return idx_chan_new
 
 	def addObj_DataSource(self, obj_datasrc, **kwargs):
@@ -167,7 +173,7 @@ class CTDataContainer(object):
 		"""
 		return False
 
-	def onChan_DataSet_alloc(self, name_chan, wreq_args):
+	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
 		obj_dataset = None
 		if   name_chan == 'ticker':
 			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args)
@@ -181,7 +187,7 @@ class CTDataContainer(object):
 			obj_dataset = None
 		return obj_dataset
 
-	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args):
+	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
 		return None
 
 	def onDatIN_ChanAdd_impl(self, id_chan, name_chan, wreq_args):

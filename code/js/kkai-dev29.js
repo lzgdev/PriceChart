@@ -39,6 +39,51 @@ function cbEV_OnDocReady_highcharts()
       continue;
     }
     chan_obj = null;
+    if (map_unit.channel == 'stat') {
+      chart_gui = Highcharts.stockChart(map_unit.uid, {
+        chart: {
+            backgroundColor: '#1F1F1F',
+          },
+        plotOptions: {
+            candlestick: {
+              color:   '#9F0000',
+              upColor: '#009F00',
+	        },
+          },
+        title: {
+            text: 'History: ' + map_unit.key,
+          },
+        subtitle: {
+            text: 'Subtitle ...',
+          },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+          },
+        series: [
+            {
+              type: 'candlestick',
+              name: 'OHLC',
+              data: [ ],
+              dataGrouping: {
+                enabled: false
+              }
+            },
+/*
+            {
+              type: 'column',
+              name: 'VOL',
+              data: [ ],
+              dataGrouping: {
+                enabled: false
+              }
+            },
+// */
+          ],
+        });
+      chan_obj = new ClDataSet_Stat_HighCharts(1000, chart_gui, map_unit.wreq_args);
+    }
+    else
     if (map_unit.channel == 'ticker') {
       chart_gui = Highcharts.chart(map_unit.uid, {
         chart: {

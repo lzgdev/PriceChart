@@ -45,6 +45,21 @@ class CTDataOut_Stat(ktdata.CTDataOutput):
 		return dat_unit
 
 
+
+class CTDataOut_Stat_stat01(CTDataOut_Stat):
+	def __init__(self, logger, obj_dataset, db_writer):
+		CTDataOut_Stat.__init__(self, logger, obj_dataset, db_writer)
+		#self.flag_dbg_rec = True
+
+	def onSynAppend_impl(self, msec_now):
+		dat_array = []
+		for candle_rec in self.obj_dataset.loc_candle_recs:
+			if self.flag_dbg_rec:
+				self.logger.info("CTDataOut_Stat_stat01(onSynAppend_impl): syn_rec=" + str(candle_rec))
+			dat_array.append(self.tranDoc2Dat(candle_rec))
+		self.outDatArray(dat_array)
+
+
 class CTDataOut_Stat_ticker(CTDataOut_Stat):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDataOut_Stat.__init__(self, logger, obj_dataset, db_writer)

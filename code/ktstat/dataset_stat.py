@@ -1,6 +1,21 @@
 
 import ktdata
 
+class CTDataSet_Stat_Stat01(ktdata.CTDataSet_ACandles):
+	def __init__(self, recs_size, logger, obj_container, wreq_args):
+		super(CTDataSet_Stat_Stat01, self).__init__(recs_size, logger, obj_container, wreq_args)
+
+	def onCB_DataClean(self):
+		pass
+
+	def onCB_DataSync(self):
+		pass
+
+	def onCB_RecAdd(self, flag_plus, obj_rec, idx_rec):
+		#print("CTDataSet_Stat_Stat01::onCB_RecAdd", flag_plus, idx_rec, obj_rec)
+		pass
+
+
 class CTDataSet_Ticker_Stat(ktdata.CTDataSet_Ticker):
 	def __init__(self, logger, obj_container, wreq_args):
 		super(CTDataSet_Ticker_Stat, self).__init__(logger, obj_container, wreq_args)

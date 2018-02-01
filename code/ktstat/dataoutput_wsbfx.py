@@ -24,6 +24,17 @@ class CTDataOut_WsBfx(ktdata.CTDataOutput):
 		return dat_array
 
 
+
+class CTDataOut_WsBfx_stat01(CTDataOut_WsBfx):
+	def __init__(self, logger, obj_dataset, obj_netconn):
+		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)
+		#self.flag_dbg_rec =  True
+
+	def onTran_Doc2Dat_impl(self, doc_rec):
+		dat_unit = [ doc_rec['mts'], doc_rec['open'], doc_rec['close'], doc_rec['high'], doc_rec['low'], doc_rec['volume'], ]
+		return dat_unit
+
+
 class CTDataOut_WsBfx_ticker(CTDataOut_WsBfx):
 	def __init__(self, logger, obj_dataset, obj_netconn):
 		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)

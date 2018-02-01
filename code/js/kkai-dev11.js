@@ -111,6 +111,135 @@ class ClDataSet_Array extends ClDataSet_Base
   }
 }
 
+class ClDataSet_Stat extends ClDataSet_Array
+{
+  constructor(recs_size, wreq_args)
+  {
+    super("stat", wreq_args);
+    this.loc_recs_size   = recs_size;
+    this.loc_candle_recs = [];
+  }
+
+  onLocDataClean_impl()
+  {
+    this.loc_candle_recs.length = 0;
+  }
+
+  onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
+  {
+    var  flag_chg, rec_index;
+    var  candle_rec;
+    if (fmt_data == DFMT_KKAIPRIV)
+    {
+      candle_rec = obj_rec;
+    }
+    else
+	if (fmt_data == DFMT_BFXV2)
+    {
+      candle_rec = {
+        mts:    Number(obj_rec[0]),
+        open:   Number(obj_rec[1]),
+        close:  Number(obj_rec[2]),
+        high:   Number(obj_rec[3]),
+        low:    Number(obj_rec[4]),
+        volume: Number(obj_rec[5]),
+      };
+    }
+    flag_chg  = false;
+    for (rec_index=this.loc_candle_recs.length-1; rec_index >= 0; rec_index--) {
+      if (candle_rec.mts >= this.loc_candle_recs[rec_index].mts) {
+        break;
+      }
+    }
+    if ((rec_index >= 0) && (this.loc_candle_recs[rec_index].mts == candle_rec.mts))
+    {
+      if (this.loc_candle_recs[rec_index].volume != candle_rec.volume) {
+        this.loc_candle_recs.splice(rec_index, 1, candle_rec);
+        flag_chg  = true;
+      }
+    }
+    else
+    {
+      if (this.loc_candle_recs.length+1 >  this.loc_recs_size) {
+        this.loc_candle_recs.pop();
+      }
+      if ((rec_index <  0) || (candle_rec.mts >  this.loc_candle_recs[rec_index].mts)) {
+        rec_index ++;
+      }
+      if (rec_index >= this.loc_candle_recs.length) {
+        this.loc_candle_recs.push(candle_rec);
+      }
+      else {
+        this.loc_candle_recs.splice(rec_index, 0, candle_rec);
+      }
+      flag_chg  = true;
+    }
+    if (flag_chg) {
+      this.onLocRecAdd_CB(flag_plus, candle_rec, rec_index);
+    }
+  }
+
+  onLocRecAdd_CB(flag_plus, candle_rec, rec_index)
+  {
+  }
+
+  // develop/debug support
+  devCheck_DataSet(err_ses)
+  {
+    var  arr_errors = [];
+    var  idx_rec, idx_other;
+    var  strErr_pref = this.constructor.name + ' Err' +
+                 ((err_ses == null || err_ses == '') ? ':' : ('(' + err_ses + '):'));
+    // check book of bids
+    for (idx_rec=0; idx_rec < this.loc_book_bids.length; idx_rec++)
+    {
+      var  sum_diff;
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other <  this.loc_book_bids.length) &&
+          (this.loc_book_bids[idx_rec].price <= this.loc_book_bids[idx_other].price)) {
+        arr_errors.push(strErr_pref + "(book bids disorder): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_bids[idx_rec]) +
+                    ", last=" + JSON.stringify(this.loc_book_bids[idx_other]));
+      }
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other <  this.loc_book_bids.length) &&
+          (Math.abs(sum_diff = (this.loc_book_bids[idx_other].sumamt - this.loc_book_bids[idx_other].amount -
+                        this.loc_book_bids[idx_rec].sumamt)) >  0.0001)) {
+        arr_errors.push(strErr_pref + "(book bids sum mistake): "
+                        + "len=" + this.loc_book_bids.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_bids[idx_rec]) +
+                    ", next=" + JSON.stringify(this.loc_book_asks[idx_other]) +
+                    ", diff=" + sum_diff);
+      }
+    }
+    // check book of asks
+    for (idx_rec=0; idx_rec < this.loc_book_asks.length; idx_rec++)
+    {
+      var  sum_diff;
+      idx_other = idx_rec-1;
+      if ((idx_other >= 0) && (idx_other < this.loc_book_asks.length) &&
+          (this.loc_book_asks[idx_rec].price <= this.loc_book_asks[idx_other].price)) {
+        arr_errors.push(strErr_pref + "(book asks disorder): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_asks[idx_rec]) +
+                    ", last=" + JSON.stringify(this.loc_book_asks[idx_other]));
+      }
+      idx_other = idx_rec+1;
+      if ((idx_other >= 0) && (idx_other < this.loc_book_asks.length) &&
+          (Math.abs(sum_diff = (this.loc_book_asks[idx_other].sumamt - this.loc_book_asks[idx_other].amount -
+                        this.loc_book_asks[idx_rec].sumamt)) >  0.0001)) {
+        arr_errors.push(strErr_pref + "(book asks sum mistake): "
+                        + "len=" + this.loc_book_asks.length + ",idx=" + idx_rec +
+                    ", new=" + JSON.stringify(this.loc_book_asks[idx_rec]) +
+                    ", next=" + JSON.stringify(this.loc_book_asks[idx_other]) +
+                    ", diff=" + sum_diff);
+      }
+    }
+    return arr_errors;
+  }
+}
+
 class ClDataSet_Ticker extends ClDataSet_Base
 {
   constructor(wreq_args)
