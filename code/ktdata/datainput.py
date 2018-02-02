@@ -15,7 +15,7 @@ class CTDataInput(object):
 		self.logger   = logger
 		self.obj_container = obj_container
 		self.pid_this = os.getpid()
-		self.inf_this = 'DataInput(pid=' + str(self.pid_this) + ')'
+		self.inf_this = 'Din(pid=' + str(self.pid_this) + ')'
 		self.flag_log_intv = 0
 
 	def prepRead(self, **kwargs):
@@ -45,6 +45,8 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 		self.on_message = CTDataInput_Ws.ncEV_Message
 		self.on_error = CTDataInput_Ws.ncEV_Error
 		self.on_close = CTDataInput_Ws.ncEV_Close
+
+		self.inf_this = 'DinWs(pid=' + str(self.pid_this) + ')'
 
 	def onExec_ReadLoop_impl(self):
 		self.run_forever()

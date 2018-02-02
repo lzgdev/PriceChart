@@ -1,9 +1,9 @@
 
-import os
-
-import hmac
-import hashlib
 import json
+
+import os
+import time
+import multiprocessing
 
 from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 from .dataset       import CTDataSet_Ticker, CTDataSet_ATrades, CTDataSet_ABooks, CTDataSet_ACandles
@@ -46,13 +46,14 @@ class CTDataContainer(object):
 		global gMap_TaskChans_init
 		object.__init__(self)
 		self.logger   = logger
+		self.tok_mono_this = self.mtsNow_mono()
 		self.inf_this = "DataContainer"
 		self.pid_this = os.getpid()
 		self.list_tups_datasrc  = []
 		self.list_tups_datachan = []
 		# init global chans map table
 		if not gMap_TaskChans_init:
-			gMap_TaskChans_init = self._gmap_TaskChans_init()
+			self._gmap_TaskChans_init()
 
 	def execMain(self, **kwargs):
 		ret_init = self.onExec_Init_impl(**kwargs)
@@ -60,9 +61,10 @@ class CTDataContainer(object):
 			return ret_init
 		self.onExec_Prep_impl()
 		self.onExec_Main_impl()
+		self.onExec_Post_impl()
 		return None
 
-	def addArg_DataChannel(self, name_chan, wreq_args, tmp_tokchan):
+	def addArg_DataChannel(self, name_chan, wreq_args):
 		global gMap_TaskChans
 		idx_map_find = self._gmap_TaskChans_index(name_chan, wreq_args)
 		if idx_map_find <  0:
@@ -87,17 +89,14 @@ class CTDataContainer(object):
 	def addObj_DataSource(self, obj_datasrc, **kwargs):
 		self.list_tups_datasrc.append((obj_datasrc, dict(kwargs)))
 
-	def datCHK_IsFinish(self):
-		return self.onDatCHK_IsFinish_impl()
-
 	def datIN_ChanAdd(self, id_chan, name_chan, wreq_args):
 		idx_chan = self.onDatIN_ChanAdd_impl(id_chan, name_chan, wreq_args)
 		if idx_chan >= 0:
 			self.onDatIN_ChanAdd_ext(idx_chan, id_chan)
 		return idx_chan
 
-	def datIN_ChanDel(self, id_chan, name_chan, wreq_args):
-		idx_chan = self.onDatIN_ChanDel_impl(id_chan, name_chan, wreq_args)
+	def datIN_ChanDel(self, id_chan):
+		idx_chan = self.onDatIN_ChanDel_impl(id_chan)
 		if idx_chan >= 0:
 			self.onDatIN_ChanDel_ext(idx_chan, id_chan)
 		return idx_chan
@@ -134,44 +133,8 @@ class CTDataContainer(object):
 			tup_datasrc[0].closeRead()
 			del tup_datasrc
 
-	def onDatCHK_IsFinish_impl(self):
-		"""
-		# __init__ b
-		self.objs_chan_data = []
-		self.toks_chan_data = []
-		self.flag_chan_actv = []
-		# __init__ e
-		# onNcOP_AddReceiver b (self, obj_receiver, tok_channel):
-		if (obj_receiver != None):
-			self.objs_chan_data.append(obj_receiver)
-			self.toks_chan_data.append(tok_channel)
-			self.flag_chan_actv.append(False)
-		# onNcOP_AddReceiver e
-
-		for idx_chan in range(0, len(self.objs_chan_data)):
-			if not self.flag_chan_actv[idx_chan]:
-				continue
-			if self.toks_chan_data[idx_chan].value != self.tok_this:
-				self.flag_chan_actv[idx_chan] =  False
-				if self.flag_log_intv:
-					self.logger.warning(self.inf_this + " (check): chan=" + str(idx_chan) +
-								" no longer active, unsubscribe.")
-				self.send(json.dumps({ 'event': 'unsubscribe', 'chanId': self.objs_chan_data[idx_chan].id_chan, }))
-		if self.flag_task_active:
-			if self.tok_task.value != self.tok_this:
-				self.flag_task_active = False
-				self.cntd_task_finish = 10
-		if not self.flag_data_finish and self.cntd_task_finish >= 0:
-			self.cntd_task_finish -= 1
-			if self.flag_log_intv:
-				self.logger.warning(self.inf_this + " (check): chan=" + str(idx_chan) +
-								" force finish count=" + str(self.cntd_task_finish) + " ...")
-			if self.cntd_task_finish == 0:
-				self.flag_data_finish =  True
-				self.logger.warning(self.inf_this + " (check): chan=" + str(idx_chan) + " force finish.")
-		return not self.flag_data_finish
-		"""
-		return False
+	def onExec_Post_impl(self):
+		pass
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
 		obj_dataset = None
@@ -224,9 +187,12 @@ class CTDataContainer(object):
 	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
 		pass
 
-	def onDatIN_ChanDel_impl(self, id_chan, name_chan, wreq_args):
-		global gMap_TaskChans
-		#print("CTDataContainer::onDatIN_ChanDel_impl() ", id_chan, name_chan, wreq_args)
+	def onDatIN_ChanDel_impl(self, id_chan):
+		idx_chan = self.__priv_Dcid2Idx(id_chan)
+		#print("CTDataContainer::onDatIN_ChanDel_impl() ", id_chan)
+		if idx_chan <  0:
+			return idx_chan
+		self.list_tups_datachan[idx_chan][0].locSet_ChanId(None)
 		"""
 		flag_subscribed   = False
 		flag_unsubscribed = False
@@ -258,19 +224,15 @@ class CTDataContainer(object):
 			self.num_chan_unsubscribed == len(self.objs_chan_data)):
 			self.flag_data_finish = True
 		"""
-		pass
+		return idx_chan
 
 	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
 		pass
 
 	def onDatIN_DataFwd_impl(self, id_chan, fmt_data, obj_msg):
+		idx_chan = self.__priv_Dcid2Idx(id_chan)
 		#print("CTDataContainer::onDatIN_DataFwd_impl() ", id_chan, fmt_data, obj_msg)
-		obj_dataset = None
-		for idx_chan in range(len(self.list_tups_datachan)):
-			tup_chan = self.list_tups_datachan[idx_chan]
-			if tup_chan[0].id_chan == id_chan:
-				obj_dataset = tup_chan[0]
-				break
+		obj_dataset = None if idx_chan <  0 else self.list_tups_datachan[idx_chan][0]
 		if obj_dataset == None:
 			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(id_chan) + ", data:" + str(obj_msg))
 		else:
@@ -307,21 +269,48 @@ class CTDataContainer(object):
 	def __priv_Dset2Idx(self, obj_dataset):
 		idx_chan_find = -1
 		for idx_chan in range(len(self.list_tups_datachan)):
-			if obj_dataset == self.list_tups_datachan[idx_chan][0]:
-				idx_chan_find = idx_chan
-				break
+			if obj_dataset != self.list_tups_datachan[idx_chan][0]:
+				continue
+			idx_chan_find = idx_chan
+			break
+		return idx_chan_find
+
+	def __priv_Dcid2Idx(self, id_chan):
+		idx_chan_find = -1
+		if id_chan == None:
+			return idx_chan_find
+		for idx_chan in range(len(self.list_tups_datachan)):
+			if id_chan != self.list_tups_datachan[idx_chan][0].id_chan:
+				continue
+			idx_chan_find = idx_chan
+			break
 		return idx_chan_find
 
 	@staticmethod
+	def mtsNow_mono():
+		time_now = time.clock_gettime(time.CLOCK_MONOTONIC)
+		return round(time_now * 1000)
+
+	@staticmethod
+	def mtsNow_time():
+		time_now = time.time()
+		return round(time_now * 1000)
+
+	@staticmethod
 	def _gmap_TaskChans_init():
-		global gMap_TaskChans
+		global gMap_TaskChans, gMap_TaskChans_init
+		if gMap_TaskChans_init:
+			return gMap_TaskChans_init
+		print("INFO: init global data channels map in CTDataContainer ...")
 		for idx_map in range(len(gMap_TaskChans)):
 			try:
 				dict_args = json.loads(gMap_TaskChans[idx_map]['wreq_args'])
 			except:
 				dict_args = None
 			gMap_TaskChans[idx_map]['dict_args'] = dict_args
-		return True
+			gMap_TaskChans[idx_map]['tok_task']  = multiprocessing.Value('l', 0)
+		gMap_TaskChans_init = True
+		return gMap_TaskChans_init
 
 	@staticmethod
 	def _gmap_TaskChans_index(name_chan, wreq_args):
@@ -349,6 +338,13 @@ class CTDataContainer(object):
 			if idx_map_find >= 0:
 				break
 		return idx_map_find
+
+	@staticmethod
+	def _gmap_TaskChans_chan(name_chan, wreq_args):
+		global gMap_TaskChans
+		idx_map_find = CTDataContainer._gmap_TaskChans_index(name_chan, wreq_args)
+		unit_chan    = None if idx_map_find <  0 else gMap_TaskChans[idx_map_find]
+		return unit_chan
 
 	@staticmethod
 	def _gmap_TaskChans_dbtbl(name_chan, wreq_args):

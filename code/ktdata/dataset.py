@@ -166,6 +166,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 			msec_now = self.loc_time_this
 			if 'hb' == data_msg:
 				flag_plus  = False
+				ticker_rec = None
 			else:
 				flag_plus  =  True
 				try:

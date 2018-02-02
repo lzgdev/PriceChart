@@ -10,26 +10,31 @@ from .dataoutput_db     import CTDataOut_Db_ticker, CTDataOut_Db_trades, CTDataO
 class CTDataContainer_DbOut(ktdata.CTDataContainer):
 	def __init__(self, logger):
 		ktdata.CTDataContainer.__init__(self, logger)
+		self.obj_dbwriter  = None
 
 	def onExec_Init_impl(self, **kwargs):
-		task_url  = kwargs['url']
-		task_jobs = kwargs['jobs']
+		task_url  = kwargs.get('url', None)
+		task_jobs = kwargs.get('jobs', None)
+		msec_off  = kwargs.get('msec_off', None)
+
+		str_db_uri  = 'mongodb://127.0.0.1:27017'
+		str_db_name = 'bfx-pub'
+		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
+		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 
 		url_parse = urllib.parse.urlparse(task_url)
 		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
 			self.addObj_DataSource(ktdata.CTDataInput_HttpBfx(self.logger, self, task_url))
 		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
 			self.addObj_DataSource(ktdata.CTDataInput_WssBfx(self.logger, self, task_url,
-								self.tok_task, self.loc_token_this, ntp_msec_off))
+								self.tok_mono_this, msec_off))
 
-		for map_idx, map_unit in enumerate(task_jobs):
-			if not map_unit['switch']:
-				continue
-			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'], self.tok_chans[self.idx_task][map_idx])
+		for map_unit in task_jobs:
+			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'])
 
 		return None
 
-	def onExec_Prep_impl(self):
+	def onExec_Post_impl(self):
 		pass
 
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
