@@ -79,7 +79,8 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		else:
 			tup_url = None
 		if self.flag_log_intv >  0:
-			print("URL(impl2) , try:", self.loc_run_tmax, ", ret:", tup_url, ", tup:", tup_chan[2], tup_chan[3], ", parse:", url_parse)
+			#print("URL(impl2) , try:", self.loc_run_tmax, ", ret:", tup_url, ", tup:", tup_chan[2], tup_chan[3], ", parse:", url_parse)
+			print("URL init2, try:", self.loc_run_tmax, ", ret:", tup_url, ", tup_chan(2-3):", (tup_chan[2], tup_chan[3]))
 		return tup_url
 
 	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
