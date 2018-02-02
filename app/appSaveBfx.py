@@ -25,23 +25,36 @@ logger = logging.getLogger()
 
 ktdata.CTDataContainer._gmap_TaskChans_init()
 
-mapTasks = [ {
-	'class': 'task01',
-	'msec_dur': 1 * 3600 * 1000,
-	#'msec_dur':   30 * 1000,
-	'switch': False,
-	#'switch':  True,
-	#'url': 'wss://api.bitfinex.com/ws/2',
+mapTasks = [
+	{
+	'class': 'task11',
+	'msec_nxt_run': 0,
+	'msec_nxt_cfg': 1 * 3600 * 1000,
+	#'msec_nxt_cfg':   30 * 1000,
+	#'switch': False,
+	'switch':  True,
 	'url': 'https://api.bitfinex.com/v2',
 	'jobs': [
 		{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
-		#{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
+		]
+	},
+	{
+	'class': 'task12',
+	'msec_nxt_run': 0,
+	'msec_nxt_cfg': 3 * 3600 * 1000,
+	#'msec_nxt_cfg':   30 * 1000,
+	#'switch': False,
+	'switch':  True,
+	'url': 'https://api.bitfinex.com/v2',
+	'jobs': [
+		{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 		]
 	},
     {
-	'class': 'task02',
-	'msec_dur': 1 * 3600 * 1000,
-	#'msec_dur':   30 * 1000,
+	'class': 'task21',
+	'msec_nxt_run': 0,
+	'msec_nxt_cfg': 1 * 3600 * 1000,
+	#'msec_nxt_cfg':   30 * 1000,
 	#'switch': False,
 	'switch':  True,
 	'url': 'wss://api.bitfinex.com/ws/2',
@@ -50,11 +63,12 @@ mapTasks = [ {
 		]
 	},
     {
-	'class': 'task03',
-	'msec_dur': 1 * 3600 * 1000,
-	#'msec_dur':   30 * 1000,
-	'switch': False,
-	#'switch':  True,
+	'class': 'task22',
+	'msec_nxt_run': 0,
+	'msec_nxt_cfg': 1 * 3600 * 1000,
+	#'msec_nxt_cfg':   30 * 1000,
+	#'switch': False,
+	'switch':  True,
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'jobs': [
 		{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
@@ -71,33 +85,40 @@ class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DbOut):
 	def __init__(self, logger, idx_task):
 		multiprocessing.Process.__init__(self)
 		ktsave.CTDataContainer_DbOut.__init__(self, logger)
-		self.tok_mono_next = 0
-		num_jobs = len(mapTasks[idx_task]['jobs'])
 		# expand static members
 		while len(self.cnt_procs) <= idx_task:
 			self.cnt_procs.append(0)
 		self.cnt_procs[idx_task] += 1
 		# init local members
-		self.logger = logger
-		self.idx_task = idx_task
-		self.info_app = None
-
+		global mapTasks
+		self.idx_task  = idx_task
+		self.task_this = mapTasks[self.idx_task]
+		self.flag_nxt_after = self.isNextRunAfter(self.task_this['url'], self.task_this['jobs'])
 		self.name = 'Net2Db' + str(self.idx_task) + '-' + str(self.cnt_procs[self.idx_task])
 
-		# update self.tok_mono_next
-		unit_task = mapTasks[self.idx_task]
-		msec_next = unit_task['msec_dur'] if 'msec_dur' in unit_task else -1
-		if msec_next > 0:
-			self.tok_mono_next  = self.tok_mono_this + msec_next
-
 	def run(self):
-		self.info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
-		self.logger.info("Process(" + self.info_app + ") begin ...")
+		info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
+		self.logger.info("Process(" + info_app + ") begin ...")
 
-		task_unit = mapTasks[self.idx_task]
+		self.execMain(url=self.task_this['url'], jobs=self.task_this['jobs'], msec_off=ntp_msec_off)
+		self.logger.info("Process(" + info_app + ") finish.")
 
-		self.execMain(url=task_unit['url'], jobs=task_unit['jobs'], msec_off=ntp_msec_off)
-		self.logger.info("Process(" + self.info_app + ") finish.")
+	def start(self):
+		multiprocessing.Process.start(self)
+		if self.flag_nxt_after:
+			self.task_this['msec_nxt_run'] = 0
+		else:
+			self.task_this['msec_nxt_run'] = ktdata.CTDataContainer.mtsNow_mono() + \
+						self.task_this['msec_nxt_cfg']
+
+	def join(self):
+		multiprocessing.Process.join(self)
+		if not self.flag_nxt_after:
+			self.task_this['msec_nxt_run'] = 0
+		else:
+			self.task_this['msec_nxt_run'] = ktdata.CTDataContainer.mtsNow_mono() + \
+						self.task_this['msec_nxt_cfg']
+
 
 dbg_dbg_main  = False
 dbg_run_task  = -1
@@ -145,9 +166,10 @@ if dbg_run_task >= 0:
 
 # Main code(main part)
 flag_main_init = True
+num_next_run = 0
 ntp_syn_msec = 0
 
-while len(g_procs) > 0:
+while len(g_procs) > 0 or num_next_run > 0:
 	# sync time with netclient
 	mono_now  = ktdata.CTDataContainer.mtsNow_mono()
 	new_msec_off = None
@@ -168,22 +190,11 @@ while len(g_procs) > 0:
 		flag_main_init = False
 		for p in range(0, len(g_procs)):
 			g_procs[p].start()
+	# general maintainance
 	num_procs = len(g_procs)
+	mono_now  = ktdata.CTDataContainer.mtsNow_mono()
 	if dbg_dbg_main:
 		print("main(step): num=" + str(num_procs) + ", now=" + format(mono_now, ',') + " ...")
-	# invoke next child process
-	mono_now  = ktdata.CTDataContainer.mtsNow_mono()
-	for p in range(0, num_procs):
-		proc_old = g_procs[p]
-		if proc_old.tok_mono_next <= 0  or mono_now <  proc_old.tok_mono_next:
-			continue
-		if dbg_dbg_main:
-			print("main(p=" + str(p) + "): next=" + str(proc_old.tok_mono_next) +
-					", now=" + str(mono_now))
-		proc_old.tok_mono_next = 0
-		proc_new = Process_Net2Db(logger, proc_old.idx_task)
-		g_procs.append(proc_new)
-		proc_new.start()
 	# join terminated child processes
 	for p in range(num_procs-1, -1, -1):
 		if g_procs[p].is_alive():
@@ -194,6 +205,22 @@ while len(g_procs) > 0:
 			print("main(chld) join process=" + str(proc_pop) + ", pid=" + str(proc_pop.pid_this) +
 						", tok=" + str(proc_pop.tok_mono_this))
 		del proc_pop
+	# invoke next child process
+	num_next_run = 0
+	for idx_task, unit_task in enumerate(mapTasks):
+		if not unit_task['switch']:
+			continue
+		msec_nxt = unit_task['msec_nxt_run']
+		num_next_run += 1 if msec_nxt >  0 else 0
+		if msec_nxt <= 0  or mono_now <  msec_nxt:
+			continue
+		unit_task['msec_nxt_run']  = 0
+		if dbg_dbg_main:
+			print("main(t=" + str(idx_task) + "), new task: nxt=" + str(msec_nxt) +
+					", now=" + str(mono_now))
+		proc_new = Process_Net2Db(logger, idx_task)
+		g_procs.append(proc_new)
+		proc_new.start()
 
 	# sleep
 	time.sleep(2)

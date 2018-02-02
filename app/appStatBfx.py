@@ -70,15 +70,12 @@ class Process_Net2Db(multiprocessing.Process, ktstat.CTDataContainer_StatOut):
 		multiprocessing.Process.__init__(self)
 		ktstat.CTDataContainer_StatOut.__init__(self, logger, None)
 		self.tok_mono_next = 0
-		num_jobs = len(mapTasks[idx_task]['jobs'])
 		# expand static members
 		while len(self.cnt_procs) <= idx_task:
 			self.cnt_procs.append(0)
 		self.cnt_procs[idx_task] += 1
 		# init local members
-		self.logger = logger
 		self.idx_task = idx_task
-		self.info_app = None
 
 		self.name = 'Net2Db' + str(self.idx_task) + '-' + str(self.cnt_procs[self.idx_task])
 
@@ -89,14 +86,14 @@ class Process_Net2Db(multiprocessing.Process, ktstat.CTDataContainer_StatOut):
 			self.tok_mono_next  = self.tok_mono_this + msec_next
 
 	def run(self):
-		self.info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
-		self.logger.info("Process(" + self.info_app + ") begin ...")
+		info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
+		self.logger.info("Process(" + info_app + ") begin ...")
 
 		task_unit = mapTasks[self.idx_task]
 
 		#self.execMain(url=task_unit['url'], jobs=task_unit['jobs'], msec_off=ntp_msec_off)
 		self.execMain(name_chan='candles', wreq_args={ "key": "trade:1m:tBTCUSD" })
-		self.logger.info("Process(" + self.info_app + ") finish.")
+		self.logger.info("Process(" + info_app + ") finish.")
 
 dbg_dbg_main  = False
 dbg_run_task  = -1

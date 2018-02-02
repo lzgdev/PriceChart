@@ -61,4 +61,12 @@ class CTDataContainer_DbOut(ktdata.CTDataContainer):
 	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
 		pass
 
+	@staticmethod
+	def isNextRunAfter(url, jobs):
+		flag_run_after = False
+		url_parse = urllib.parse.urlparse(url)
+		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
+			flag_run_after =  True
+		#flag_run_after = False
+		return  flag_run_after
 
