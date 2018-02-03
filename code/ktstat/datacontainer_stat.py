@@ -1,5 +1,6 @@
 
 import json
+
 import urllib.parse
 
 import ktdata
@@ -21,17 +22,13 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 		self.obj_outconn = obj_outconn
 		self.flag_out_wsbfx = False
 
-	def onExec_Init_impl(self, **kwargs):
-		#print("CTDataContainer_StatOut::onExec_Init_impl", kwargs)
-		name_chan = kwargs['name_chan']
-		wreq_args = kwargs['wreq_args']
-
-		idx_data_chan = self.addArg_DataChannel(name_chan, wreq_args)
-		#print("CTDataContainer_StatOut::onExec_Init_impl", idx_data_chan)
-		if idx_data_chan >= 0:
-			self.addObj_DataSource(CTDataInput_DbReader(self.logger, self),
-						name_chan=name_chan, wreq_args=wreq_args)
-
+	def onExec_Init_impl(self, list_task):
+		for args_task in list_task:
+			#print("CTDataContainer_StatOut::onExec_Init_impl", str(args_task))
+			idx_data_chan = self.addArg_DataChannel(args_task['name_chan'], args_task['wreq_args'])
+			#print("CTDataContainer_StatOut::onExec_Init_impl", idx_data_chan)
+			if idx_data_chan >= 0:
+				self.addObj_DataSource(CTDataInput_DbReader(self.logger, self), **args_task)
 		return None
 
 	def onExec_Prep_impl(self):

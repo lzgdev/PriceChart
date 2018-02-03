@@ -4,6 +4,7 @@ import ktdata
 class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 	def __init__(self, logger, obj_container):
 		ktdata.CTDataInput_Db.__init__(self, logger, obj_container)
+		self.loc_load_args  = None
 
 	def onPrep_Read_impl(self, **kwargs):
 		#print("CTDataInput_DbReader::onPrep_Read_impl, args:", dict(kwargs))
@@ -12,6 +13,7 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 			self.obj_dbadapter.dbOP_Connect('mongodb://127.0.0.1:27017', 'bfx-pub')
 		self.loc_name_chan  = kwargs['name_chan']
 		self.loc_wreq_args  = kwargs['wreq_args']
+		self.loc_load_args  = kwargs.get('load_args', None)
 		return True
 
 	def onInit_DbPrep_impl(self):
@@ -28,12 +30,7 @@ class CTDataInput_DbReader(ktdata.CTDataInput_Db):
 	def onExec_DbRead_impl(self):
 		#print("CTDataInput_DbReader::onExec_DbRead_impl ...")
 		self.name_dbtbl = ktdata.CTDataContainer._gmap_TaskChans_dbtbl(self.loc_name_chan, self.loc_wreq_args)
-		find_args = {}
-		#find_args = { 'mts': { '$gt': 1505413152000, '$lt': 1505413452000, } }
-		#find_args = { 'mts': { '$eq': 1505413376000, } }
-		#find_args = { 'mts': { '$gte': 1505413380000, '$lt': 1505413440000, } }
-		#find_args = { 'mts': { '$gte': 1505413440000, '$lt': 1505413500000, } }
-		sort_args = None
-		self.obj_dbadapter.dbOP_CollLoad(self.id_data_chan, self.name_dbtbl, find_args, sort_args)
+		args_load = self.loc_load_args if self.loc_load_args != None else { }
+		self.obj_dbadapter.dbOP_CollLoad(self.id_data_chan, self.name_dbtbl, **args_load)
 
 

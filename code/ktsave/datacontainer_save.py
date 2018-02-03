@@ -12,10 +12,14 @@ class CTDataContainer_DbOut(ktdata.CTDataContainer):
 		ktdata.CTDataContainer.__init__(self, logger)
 		self.obj_dbwriter  = None
 
-	def onExec_Init_impl(self, **kwargs):
-		task_url  = kwargs.get('url', None)
-		task_jobs = kwargs.get('jobs', None)
-		msec_off  = kwargs.get('msec_off', None)
+	def onExec_Init_impl(self, list_task):
+		if len(list_task) == 0:
+			return None
+		args_task = list_task.pop()
+
+		task_url  = args_task.get('url', None)
+		task_jobs = args_task.get('jobs', None)
+		msec_off  = args_task.get('msec_off', None)
 
 		str_db_uri  = 'mongodb://127.0.0.1:27017'
 		str_db_name = 'bfx-pub'

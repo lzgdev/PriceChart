@@ -55,8 +55,12 @@ class CTDataContainer(object):
 		if not gMap_TaskChans_init:
 			self._gmap_TaskChans_init()
 
-	def execMain(self, **kwargs):
-		ret_init = self.onExec_Init_impl(**kwargs)
+	def execMain(self, list_task=None, **args_task):
+		# append args_task to list_task
+		list_task = [] if list_task == None else list_task
+		if len(args_task) >  0:
+			list_task.append(args_task)
+		ret_init = self.onExec_Init_impl(list_task)
 		if None != ret_init:
 			return ret_init
 		self.onExec_Prep_impl()
@@ -119,7 +123,7 @@ class CTDataContainer(object):
 		if idx_chan >= 0:
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
-	def onExec_Init_impl(self, **kwargs):
+	def onExec_Init_impl(self, list_task):
 		return None
 
 	def onExec_Prep_impl(self):
