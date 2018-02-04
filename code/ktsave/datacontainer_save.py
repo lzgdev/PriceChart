@@ -38,9 +38,6 @@ class CTDataContainer_DbOut(ktdata.CTDataContainer):
 
 		return None
 
-	def onExec_Post_impl(self):
-		pass
-
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
 		obj_dataout = None
 		if   name_chan == 'ticker':

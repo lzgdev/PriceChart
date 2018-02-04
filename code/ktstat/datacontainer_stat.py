@@ -34,7 +34,7 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 				self.list_tups_datachan[idx_data_chan][0].dbg_stat = dbg_stat
 		return None
 
-	def onExec_Prep_impl(self):
+	def onExec_Prep_impl(self, arg_prep):
 		pass
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):

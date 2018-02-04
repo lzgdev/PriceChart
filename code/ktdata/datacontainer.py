@@ -58,14 +58,16 @@ class CTDataContainer(object):
 	def execMain(self, list_task=None, **args_task):
 		# append args_task to list_task
 		list_task = [] if list_task == None else list_task
+		arg_prep  = args_task.pop('prep', None)
+		arg_post  = args_task.pop('post', None)
 		if len(args_task) >  0:
 			list_task.append(args_task)
 		ret_init = self.onExec_Init_impl(list_task)
 		if None != ret_init:
 			return ret_init
-		self.onExec_Prep_impl()
+		self.onExec_Prep_impl(arg_prep)
 		self.onExec_Main_impl()
-		self.onExec_Post_impl()
+		self.onExec_Post_impl(arg_post)
 		return None
 
 	def addArg_DataChannel(self, name_chan, wreq_args):
@@ -126,7 +128,7 @@ class CTDataContainer(object):
 	def onExec_Init_impl(self, list_task):
 		return None
 
-	def onExec_Prep_impl(self):
+	def onExec_Prep_impl(self, arg_prep):
 		pass
 
 	def onExec_Main_impl(self):
@@ -137,7 +139,7 @@ class CTDataContainer(object):
 			tup_datasrc[0].closeRead()
 			del tup_datasrc
 
-	def onExec_Post_impl(self):
+	def onExec_Post_impl(self, arg_post):
 		pass
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
