@@ -95,7 +95,7 @@ appMain = ktstat.CTDataContainer_StatOut(logger, None)
 
 appMain.logger.info("Process(" + appMain.inf_this + ") begin ...")
 
-appMain.execMain(list_tasks_run)
+appMain.execMain(list_tasks_run, prep='stat01', post='stat01')
 
 appMain.logger.info("Process(" + appMain.inf_this + ") finish.")
 

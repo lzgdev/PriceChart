@@ -35,6 +35,11 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 		return None
 
 	def onExec_Prep_impl(self, arg_prep):
+		#print("CTDataContainer_StatOut::onExec_Prep_impl", arg_prep)
+		pass
+
+	def onExec_Post_impl(self, arg_post):
+		#print("CTDataContainer_StatOut::onExec_Post_impl", arg_post)
 		pass
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
