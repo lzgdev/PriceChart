@@ -26,7 +26,7 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 		for args_task in list_task:
 			#print("CTDataContainer_StatOut::onExec_Init_impl", str(args_task))
 			idx_data_chan = self.addArg_DataChannel(args_task['name_chan'], args_task['wreq_args'])
-			#print("CTDataContainer_StatOut::onExec_Init_impl", idx_data_chan)
+			#print("CTDataContainer_StatOut::onExec_Init_impl, chan:", idx_data_chan, ", task:", args_task)
 			if idx_data_chan >= 0:
 				self.addObj_DataSource(CTDataInput_DbReader(self.logger, self), **args_task)
 		return None
