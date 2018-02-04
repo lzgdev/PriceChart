@@ -37,7 +37,7 @@ class CTDataOut_Stat(ktdata.CTDataOutput):
 
 	def onDocAppend_impl(self, doc_rec):
 		mts_doc = doc_rec['mts']
-		print("CTDataOut_Stat::onDocAppend_impl, mts:", format(mts_doc, ","), ", doc:", doc_rec)
+		#print("CTDataOut_Stat::onDocAppend_impl, mts:", format(mts_doc, ","), ", doc:", doc_rec)
 		dat_unit = self.tranDoc2Dat(doc_rec)
 		dat_sent = None
 		self.outDatOne(dat_unit)

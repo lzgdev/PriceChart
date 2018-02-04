@@ -7,7 +7,7 @@ import ktdata
 
 from .datainput_dbreader    import CTDataInput_DbReader
 
-from .dataset_stat      import CTDataSet_Stat_Stat01,  \
+from .dataset_stat      import CTDataSet_Stat_Dbg, CTDataSet_Stat_Stat01,  \
 							CTDataSet_Ticker_Stat, CTDataSet_ATrades_Stat, CTDataSet_ABooks_Stat, CTDataSet_ACandles_Stat
 
 from .dataoutput_stat   import CTDataOut_Stat_stat01,  \
@@ -24,11 +24,14 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 
 	def onExec_Init_impl(self, list_task):
 		for args_task in list_task:
+			dbg_stat = args_task.get('dbg_stat', -1)
 			#print("CTDataContainer_StatOut::onExec_Init_impl", str(args_task))
 			idx_data_chan = self.addArg_DataChannel(args_task['name_chan'], args_task['wreq_args'])
 			#print("CTDataContainer_StatOut::onExec_Init_impl, chan:", idx_data_chan, ", task:", args_task)
 			if idx_data_chan >= 0:
 				self.addObj_DataSource(CTDataInput_DbReader(self.logger, self), **args_task)
+			if idx_data_chan >= 0 and isinstance(self.list_tups_datachan[idx_data_chan][0], CTDataSet_Stat_Dbg):
+				self.list_tups_datachan[idx_data_chan][0].dbg_stat = dbg_stat
 		return None
 
 	def onExec_Prep_impl(self):
