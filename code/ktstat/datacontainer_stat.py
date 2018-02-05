@@ -20,13 +20,17 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 	def __init__(self, logger, obj_outconn):
 		ktdata.CTDataContainer.__init__(self, logger)
 		self.obj_outconn = obj_outconn
+		self.obj_dset_trades  = None
+		self.obj_dset_candles = None
 		self.flag_out_wsbfx = False
 
 	def onExec_Init_impl(self, list_task):
 		for args_task in list_task:
-			dbg_stat = args_task.get('dbg_stat', -1)
+			dbg_stat  = args_task.get( 'dbg_stat', -1)
+			name_chan = args_task.get('name_chan', None)
+			name_src  = args_task.get( 'name_src', None)
 			#print("CTDataContainer_StatOut::onExec_Init_impl", str(args_task))
-			idx_data_chan = self.addArg_DataChannel(args_task['name_chan'], args_task['wreq_args'])
+			idx_data_chan = self.addArg_DataChannel(name_chan, args_task['wreq_args'])
 			#print("CTDataContainer_StatOut::onExec_Init_impl, chan:", idx_data_chan, ", task:", args_task)
 			if idx_data_chan >= 0:
 				self.addObj_DataSource(CTDataInput_DbReader(self.logger, self), **args_task)
@@ -35,7 +39,16 @@ class CTDataContainer_StatOut(ktdata.CTDataContainer):
 		return None
 
 	def onExec_Prep_impl(self, arg_prep):
-		#print("CTDataContainer_StatOut::onExec_Prep_impl", arg_prep)
+		#print("CTDataContainer_StatOut::onExec_Prep_impl(01)", self.obj_dset_trades, self.obj_dset_candles)
+		self.obj_dset_trades  = None
+		self.obj_dset_candles = None
+		num_chans = len(self.list_tups_datachan)
+		for idx_chan in range(num_chans):
+			if   isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ATrades):
+				self.obj_dset_trades  = self.list_tups_datachan[idx_chan][0]
+			elif isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ACandles):
+				self.obj_dset_candles = self.list_tups_datachan[idx_chan][0]
+		#print("CTDataContainer_StatOut::onExec_Prep_impl(11)", self.obj_dset_trades, self.obj_dset_candles)
 		pass
 
 	def onExec_Post_impl(self, arg_post):
