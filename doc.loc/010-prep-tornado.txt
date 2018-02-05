@@ -1,14 +1,35 @@
 
-# for Python3, use following
+1. Setup virtual environment
+# for Python3, use following(Ubuntu)
 sudo apt-get install python3-dev
 virtualenv -p python3 venv
 
-# for Python2, use following
+# for Python2, use following(Ubuntu)
 virtualenv -p python2 venv
 
-# Activate virtual environment
+## for Python3, use following(CentOS7, platform prepare)
+# Install and enable mongodb server
+sudo yum install -y mongodb-server.x86_64 mongodb.x86_64
+sudo systemctl enable mongod.service
+sudo systemctl start mongod
+# Enable the EPEL repository with:
+sudo yum install -y epel-release
+
+
+# Install python34 and python-pip packages with:
+sudo yum install -y python34 python-pip
+# Update pip and install virtualenv with:
+sudo pip install -U pip
+sudo pip install -U virtualenv
+
+## for Python3, use following(CentOS7, virtualenv install)
+# Create and activate a new python3 virtualenv with:
+virtualenv -p python3 venv
+
+2. Activate virtual environment
 . venv/bin/activate
 
+3. Install more packages in local
 # for server
 pip install tornado
 
@@ -23,3 +44,4 @@ pip install ntplib
 
 #pip install websocket-client
 cd contribs/websocket-client; python setup.py install; cd -
+
