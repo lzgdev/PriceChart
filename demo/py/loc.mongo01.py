@@ -30,5 +30,5 @@ import pprint
 #
 pprint.pprint(posts.find_one())
 
-pprint.pprint(posts.find_one({ "_id": post_id, }))
+pprint.pprint(posts.find_one({ "$natural": post_id, }))
 

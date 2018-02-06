@@ -2,6 +2,8 @@
 import time
 import json
 
+import urllib.parse
+
 from .datainput import CTDataInput_Http
 
 from .dataset   import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
@@ -32,19 +34,19 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		#self.loc_run_tmax   = 3
 		#self.flag_log_intv  = 1
 
-	def onInit_HttpUrl_impl(self, url_parse):
+	def onLoop_ReadPrep_impl(self):
 		global dbg_tm_start
+		url_parse  = urllib.parse.urlparse(self.url_http_pref)
 		if self.loc_mark_delay > 0:
-			print("CTDataInput_HttpBfx::onInit_HttpUrl_impl, sleep", self.loc_mark_delay, "seconds.")
+			print("CTDataInput_HttpBfx::onLoop_ReadPrep_impl, sleep", self.loc_mark_delay, "seconds.")
 			time.sleep(self.loc_mark_delay)
 			self.loc_mark_delay = 0
-		tup_url = None
 		if self.loc_run_chan >= len(self.obj_container.list_tups_datachan):
-			return tup_url
+			return False
 		tup_chan = self.obj_container.list_tups_datachan[self.loc_run_chan]
 		if self.loc_run_tmax >= 0:
 			if self.loc_run_tmax == 0:
-				return tup_url
+				return False
 			self.loc_run_tmax -= 1
 		# try to add data channel
 		if self.loc_idx_chan != self.loc_run_chan:
@@ -61,27 +63,29 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		if rec_last != None:
 			mts_rec_new  = rec_last['mts']
 			self.mts_rec_last = mts_rec_new if mts_rec_new >  self.mts_rec_last else (self.mts_rec_last + 1)
-		# compose tup_url
+		# compose self.url_main_netloc and self.url_main_path
+		self.url_main_netloc  = url_parse.netloc
 		if   'trades' == tup_chan[2]:
 			self.loc_name_chan  = tup_chan[2]
 			url_suff   = '/trades/' + tup_chan[4]['symbol'] + '/hist'
 			url_params = 'sort=1&start=' + str(self.mts_rec_last)
 			if self.mts_rec_last == 0 and dbg_tm_start != None:
 				url_params = 'sort=1&start=' + str(dbg_tm_start)
-			tup_url = (url_suff, url_params)
+			self.url_main_path   = url_parse.path + url_suff + '?' + url_params
 		elif 'candles' == tup_chan[2]:
 			self.loc_name_chan  = tup_chan[2]
 			url_suff   = '/candles/' + tup_chan[4]['key'] + '/hist'
 			url_params = 'sort=1&start=' + str(self.mts_rec_last)
 			if self.mts_rec_last == 0 and dbg_tm_start != None:
 				url_params = 'sort=1&start=' + str(dbg_tm_start)
-			tup_url = (url_suff, url_params)
+			self.url_main_path   = url_parse.path + url_suff + '?' + url_params
 		else:
-			tup_url = None
+			self.url_main_path   = None
 		if self.flag_log_intv >  0:
-			#print("URL(impl2) , try:", self.loc_run_tmax, ", ret:", tup_url, ", tup:", tup_chan[2], tup_chan[3], ", parse:", url_parse)
-			print("URL init2, try:", self.loc_run_tmax, ", ret:", tup_url, ", tup_chan(2-3):", (tup_chan[2], tup_chan[3]))
-		return tup_url
+			print("URL init2, try:", self.loc_run_tmax, ", ret:", self.url_main_path, ", tup_chan(2-3):", (tup_chan[2], tup_chan[3]))
+		#time.sleep(6)
+		time.sleep(4)
+		return False if self.url_main_path == None else True
 
 	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
 		global num_bfx_trades_recs, num_bfx_candles_recs

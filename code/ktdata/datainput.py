@@ -5,7 +5,6 @@ import time
 import websocket
 
 import http.client
-import urllib.parse
 
 from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2
 
@@ -22,7 +21,12 @@ class CTDataInput(object):
 		self.onPrep_Read_impl(**kwargs)
 
 	def execReadLoop(self):
-		self.onExec_ReadLoop_impl()
+		while True:
+			ret_prep = self.onLoop_ReadPrep_impl()
+			if not ret_prep:
+				break
+			self.onLoop_ReadMain_impl()
+			self.onLoop_ReadPost_impl()
 
 	def closeRead(self):
 		self.onClose_Read_impl()
@@ -30,10 +34,16 @@ class CTDataInput(object):
 	def onPrep_Read_impl(self, **kwargs):
 		pass
 
-	def onExec_ReadLoop_impl(self):
+	def onClose_Read_impl(self):
 		pass
 
-	def onClose_Read_impl(self):
+	def onLoop_ReadPrep_impl(self):
+		return False
+
+	def onLoop_ReadMain_impl(self):
+		pass
+
+	def onLoop_ReadPost_impl(self):
 		pass
 
 
@@ -46,10 +56,18 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 		self.on_error = CTDataInput_Ws.ncEV_Error
 		self.on_close = CTDataInput_Ws.ncEV_Close
 
+		self.num_loop_read = 1
+
 		self.inf_this = 'DinWs(pid=' + str(self.pid_this) + ')'
 
-	def onExec_ReadLoop_impl(self):
+	def onLoop_ReadPrep_impl(self):
+		return True if self.num_loop_read >  0 else False
+
+	def onLoop_ReadMain_impl(self):
 		self.run_forever()
+
+	def onLoop_ReadPost_impl(self):
+		self.num_loop_read -= 1
 
 	def ncEV_Open(self):
 		self.onNcEV_Open_impl()
@@ -82,35 +100,24 @@ class CTDataInput_Http(CTDataInput):
 	def __init__(self, logger, obj_container, url_http_pref):
 		CTDataInput.__init__(self, logger, obj_container)
 		self.url_http_pref = url_http_pref
+		# arg members for onLoop_ReadMain_impl
+		self.url_main_netloc = None
+		self.url_main_path   = None
 
 		self.obj_httpconn  = None
 		self.num_httprest  = 0
 
-	def onExec_ReadLoop_impl(self):
-		while True:
-			url_parse  = urllib.parse.urlparse(self.url_http_pref)
-			tup_http_req = self.onInit_HttpUrl_impl(url_parse)
-			if tup_http_req == None:
-				break
-			url_path   = url_parse.path
-			url_suff   = tup_http_req[0]
-			url_params = tup_http_req[1]
-			if url_suff != None and url_suff != '':
-				url_path += url_suff
-			if url_params != None and url_params != '':
-				url_path += '?' + url_params
-			self.onExec_HttpGet_impl(url_parse.netloc, url_path)
-			#time.sleep(6)
-			time.sleep(4)
+	def onLoop_ReadPrep_impl(self):
+		return False
 
-	def onExec_HttpGet_impl(self, url_netloc, url_path):
+	def onLoop_ReadMain_impl(self):
 		# compose real http request url
 		if self.flag_log_intv >  1:
-			print("URL, netloc:", url_netloc, ", path:", url_path)
+			print("URL, netloc:", self.url_main_netloc, ", path:", self.url_main_path)
 		if self.obj_httpconn == None:
-			self.obj_httpconn = http.client.HTTPSConnection(url_netloc)
+			self.obj_httpconn = http.client.HTTPSConnection(self.url_main_netloc)
 			self.num_httprest = 0
-		self.obj_httpconn.request("GET", url_path)
+		self.obj_httpconn.request("GET", self.url_main_path)
 		http_resp = self.obj_httpconn.getresponse()
 		content_type = http_resp.getheader('Content-Type')
 		if self.flag_log_intv >  1:
@@ -126,8 +133,8 @@ class CTDataInput_Http(CTDataInput):
 			self.obj_httpconn.close()
 			self.obj_httpconn = None
 
-	def onInit_HttpUrl_impl(self, url_parse):
-		return None
+	def onLoop_ReadPost_impl(self):
+		pass
 
 	def onNcEV_HttpResponse_impl(self, status_code, content_type, http_data):
 		pass
@@ -146,8 +153,6 @@ class CTDataInput_Db(CTDataInput):
 		self.loc_name_chan  = None
 		self.loc_wreq_args  = None
 
-		self.flag_run_num   = 1
-
 	def datFwd_Begin(self, id_chan):
 		self.onDat_Begin_impl(id_chan)
 
@@ -156,19 +161,6 @@ class CTDataInput_Db(CTDataInput):
 
 	def datFwd_End(self, id_chan, num_docs):
 		self.onDat_End_impl(id_chan, num_docs)
-
-	def onExec_ReadLoop_impl(self):
-		while True:
-			ret_prep = self.onInit_DbPrep_impl()
-			if not ret_prep:
-				break
-			self.onExec_DbRead_impl()
-
-	def onInit_DbPrep_impl(self):
-		return False
-
-	def onExec_DbRead_impl(self):
-		pass
 
 	def onDat_Begin_impl(self, id_chan):
 		#print("CTDataInput_Db::onDat_Begin_impl", id_chan)

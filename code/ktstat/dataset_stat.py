@@ -21,9 +21,9 @@ class CTDataSet_Stat_Stat01(ktdata.CTDataSet_AStat, CTDataSet_Stat_Dbg):
 		pass
 
 	def onCB_RecAdd(self, flag_plus, obj_rec, idx_rec):
+		mts_doc  = obj_rec['mts']
 		if self.dbg_stat >= 2:
-			print("CTDataSet_Stat_Stat01::onCB_RecAdd", flag_plus, idx_rec, obj_rec)
-		pass
+			print("CTDataSet_Stat_Stat01::onCB_RecAdd", format(mts_doc, ","), ", doc:", obj_rec)
 
 
 class CTDataSet_Ticker_Stat(ktdata.CTDataSet_Ticker, CTDataSet_Stat_Dbg):
@@ -32,9 +32,9 @@ class CTDataSet_Ticker_Stat(ktdata.CTDataSet_Ticker, CTDataSet_Stat_Dbg):
 		CTDataSet_Stat_Dbg.__init__(self)
 
 	def onCB_RecAdd(self, flag_plus, obj_rec, idx_rec):
+		mts_doc  = obj_rec['mts']
 		if self.dbg_stat >= 2:
-			print("CTDataSet_Ticker_Stat::onCB_RecAdd", flag_plus, idx_rec, obj_rec)
-		pass
+			print("CTDataSet_Ticker_Stat::onCB_RecAdd", format(mts_doc, ","), ", doc:", obj_rec)
 
 
 class CTDataSet_ATrades_Stat(ktdata.CTDataSet_ATrades, CTDataSet_Stat_Dbg):

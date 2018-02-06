@@ -155,9 +155,11 @@ class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, logger, obj_container, wreq_args):
 		super(CTDataSet_Ticker, self).__init__(logger, obj_container, 'ticker', wreq_args)
 		self.flag_sys_time  = True
+		self.loc_ticker_rec = None
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		flag_plus  = False
+		ticker_rec = None
 		if   (fmt_data == DFMT_KKAIPRIV):
 			flag_plus  =  True
 			ticker_rec = copy.copy(obj_msg)
@@ -186,8 +188,12 @@ class CTDataSet_Ticker(CTDataSet_Base):
 				except:
 					ticker_rec = None
 					self.logger.error("CTDataSet_Ticker(onLocRecAdd_impl): add obj_msg=" + str(obj_msg))
-		if flag_plus:
+		if ticker_rec != None:
+			self.loc_ticker_rec = ticker_rec
+		if flag_plus and ticker_rec != None:
 			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
+		if ticker_rec != None:
+			self.onCB_RecAdd(flag_plus, ticker_rec, 0)
 		return (ticker_rec, 0)
 
 
