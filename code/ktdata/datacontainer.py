@@ -95,6 +95,19 @@ class CTDataContainer(object):
 	def addObj_DataSource(self, obj_datasrc, **kwargs):
 		self.list_tups_datasrc.append((obj_datasrc, dict(kwargs)))
 
+	def datIN_ChanGet(self, name_chan, wreq_args):
+		global gMap_TaskChans
+		id_chan = None
+		idx_map_find = self._gmap_TaskChans_index(name_chan, wreq_args)
+		if idx_map_find <  0:
+			return id_chan
+		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
+		idx_chan_get = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
+		if idx_chan_get <  0:
+			return id_chan
+		id_chan = self.list_tups_datachan[idx_chan_get][0].id_chan
+		return id_chan
+
 	def datIN_ChanAdd(self, id_chan, name_chan, wreq_args):
 		idx_chan = self.onDatIN_ChanAdd_impl(id_chan, name_chan, wreq_args)
 		if idx_chan >= 0:
@@ -183,43 +196,14 @@ class CTDataContainer(object):
 		pass
 
 	def onDatIN_ChanDel_impl(self, id_chan):
-		idx_chan = self.__priv_Dcid2Idx(id_chan)
+		idx_chan_del = self.__priv_Dcid2Idx(id_chan)
 		#print("CTDataContainer::onDatIN_ChanDel_impl() ", id_chan)
-		if idx_chan <  0:
-			return idx_chan
-		self.list_tups_datachan[idx_chan][0].locSet_ChanId(None)
-		"""
-		flag_subscribed   = False
-		flag_unsubscribed = False
-
-		for idx_chan, obj_chan in enumerate(self.objs_chan_data):
-			if obj_chan.id_chan != id_chan:
-				continue
-			idx_handler = idx_chan
-		if idx_handler <  0:
-			self.logger.error(self.inf_this + " (sbsc): can't handle unsubscribe, chanId=" + str(id_chan) +
-							", obj=" + str(obj_msg))
-		else:
-			self.objs_chan_data[idx_handler].locSet_ChanId(-1)
-			self.flag_chan_actv[idx_handler] = False
-			self.num_chan_unsubscribed += 1
-			flag_unsubscribed = True
-			if self.flag_log_intv:
-				self.logger.info(self.inf_this + " (sbsc): chan(idx=" + str(idx_handler) +
-						") unsubscribed, chanId=" + str(id_chan))
-
-		if   flag_subscribed and (
-			self.num_chan_subscribed   == len(self.objs_chan_data)):
-				if self.tok_task.value <  self.tok_this:
-					with self.tok_task.get_lock():
-						self.tok_task.value = self.tok_this
-						self.flag_task_active = True
-					#self.logger.info("CTDataInput_WssBfx(onNcEV_Message_sbsc): change token to " + str(self.tok_task))
-		elif flag_unsubscribed and (
-			self.num_chan_unsubscribed == len(self.objs_chan_data)):
-			self.flag_data_finish = True
-		"""
-		return idx_chan
+		if idx_chan_del <  0:
+			self.logger.error(self.inf_this + " Error: can't find channel with chanId=" +
+							str(id_chan))
+			return idx_chan_del
+		self.list_tups_datachan[idx_chan_del][0].locSet_ChanId(None)
+		return idx_chan_del
 
 	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
 		pass
