@@ -168,26 +168,15 @@ class CTDataContainer(object):
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
 		idx_chan_add = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_add <  0:
-			self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
+			self.logger.error(self.inf_this + " Error: can't find channel for new chanId=" +
 								str(id_chan) + ", args=" + str(wreq_args))
 			return -1
 		if self.list_tups_datachan[idx_chan_add][0].id_chan != None:
-			self.logger.error(self.inf_this + " (sbsc): can't handle subscribe, chanId=" +
-								str(id_chan) + " already subscribed!")
+			self.logger.error(self.inf_this + " Error: can't claim chanId=" +
+								str(id_chan) + ", already used as id_chan=" +
+								str(self.list_tups_datachan[idx_chan_add][0].id_chan))
 			return -1
 		self.list_tups_datachan[idx_chan_add][0].locSet_ChanId(id_chan)
-		"""
-		self.objs_chan_data[idx_handler].locSet_ChanId(id_chan)
-		if self.toks_chan_data[idx_handler].value <  self.tok_this:
-			with self.toks_chan_data[idx_handler].get_lock():
-				self.toks_chan_data[idx_handler].value = self.tok_this
-		self.flag_chan_actv[idx_handler] =  True
-		self.num_chan_subscribed += 1
-		flag_subscribed   = True
-		if self.flag_log_intv:
-			self.logger.info(self.inf_this + " (sbsc): chan(idx=" +
-						str(idx_handler) + ") subscribed, chanId=" + str(id_chan))
-		"""
 		return idx_chan_add
 
 	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):

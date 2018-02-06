@@ -28,7 +28,7 @@ class CTDataOut_Db(ktdata.CTDataOutput):
 		self.name_dbtbl = name_dbtbl
 		self.name_chan  = name_chan
 		self.wreq_args  = wreq_args
-		self.db_doc_last    = self.loc_db_writer.dbOP_DocFind_One(self.name_dbtbl, { }, [('_id', -1)])
+		self.db_doc_last    = self.loc_db_writer.dbOP_DocFind_One(self.name_dbtbl, { }, [('$natural', -1)])
 		return True
 
 	def onOut_DatOne_impl(self, dat_one):
