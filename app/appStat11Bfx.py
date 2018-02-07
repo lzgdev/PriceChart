@@ -80,27 +80,42 @@ list_tasks_cfg = [
 		},
 	]
 
-dbg_main_loop =  True
+#dbg_main_loop =  True
 appMain = ktstat.CTDataContainer_StatOut(logger, None)
 
-while True:
+
+while not appMain.flag_stat_end:
 	list_tasks_run = []
+	if dbg_main_loop:
+		print("appMain, tid_last:", appMain.read_trades_tid_last, ", mts_last:", appMain.read_candles_mts_last)
 
 	for task_cfg in list_tasks_cfg:
-		if not task_cfg['switch']:
-			continue
+		flag_run = False
 		task_run = copy.copy(task_cfg)
-		task_run['load_args']['filter'] = { 'mts': { '$gte': appMain.stat_mts_now, } }
+		if task_run['name_chan'] ==  'trades' and  appMain.read_trades_num >  0:
+			if appMain.read_trades_tid_last == None:
+				task_run['load_args']['filter'] = { 'mts': { '$gte': appMain.stat_mts_now, } }
+			else:
+				task_run['load_args']['filter'] = { 'tid': { '$gt': appMain.read_trades_tid_last, } }
+			task_run['load_args']['limit']  =  appMain.read_trades_num
+			flag_run =  True
+		if task_run['name_chan'] == 'candles' and appMain.read_candles_num >  0:
+			if appMain.read_candles_mts_last == None:
+				task_run['load_args']['filter'] = { 'mts': { '$gte': appMain.stat_mts_now, } }
+			else:
+				task_run['load_args']['filter'] = { 'mts': { '$gt': appMain.read_candles_mts_last, } }
+			task_run['load_args']['limit']  = appMain.read_candles_num
+			flag_run =  True
+		if not flag_run:
+			continue
 		if dbg_main_loop:
 			print("appMain, task_run:", task_run)
 		list_tasks_run.append(task_run)
 
 	appMain.logger.info("Process(" + appMain.inf_this + ") begin ...")
 
-	appMain.execMain(list_tasks_run, prep='stat01', post='stat01')
+	appMain.execMain(list_tasks_run, prep='stat11', post='stat11')
 
 	appMain.logger.info("Process(" + appMain.inf_this + ") finish.")
-
-	break
 
 
