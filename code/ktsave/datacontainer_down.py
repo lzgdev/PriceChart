@@ -7,7 +7,7 @@ import ktdata
 from .dataoutput_db     import CTDataOut_Db_ticker, CTDataOut_Db_trades, CTDataOut_Db_book, CTDataOut_Db_candles
 
 
-class CTDataContainer_DbOut(ktdata.CTDataContainer):
+class CTDataContainer_DownOut(ktdata.CTDataContainer):
 	def __init__(self, logger):
 		ktdata.CTDataContainer.__init__(self, logger)
 		self.obj_dbwriter  = None
@@ -54,7 +54,7 @@ class CTDataContainer_DbOut(ktdata.CTDataContainer):
 		tup_chan  = self.list_tups_datachan[idx_chan]
 		obj_dataset = tup_chan[0]
 		obj_dataout = tup_chan[1]
-		#print("CTDataContainer_DbOut::onDatIN_ChanAdd_ext", idx_chan, id_chan)
+		#print("CTDataContainer_DownOut::onDatIN_ChanAdd_ext", idx_chan, id_chan)
 		if obj_dataout != None:
 			obj_dataout.prepOutChan(name_dbtbl=obj_dataset.name_dbtbl,
 								name_chan=obj_dataset.name_chan, wreq_args=obj_dataset.wreq_args)

@@ -77,7 +77,7 @@ class CTDataContainer(object):
 			return -1
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
 		dict_args_map = gMap_TaskChans[idx_map_find]['dict_args']
-		idx_chan_new  = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
+		idx_chan_new  = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_new >= 0:
 			return idx_chan_new
 		# try to add new data channel
@@ -102,7 +102,7 @@ class CTDataContainer(object):
 		if idx_map_find <  0:
 			return id_chan
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
-		idx_chan_get = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
+		idx_chan_get = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_get <  0:
 			return id_chan
 		id_chan = self.list_tups_datachan[idx_chan_get][0].id_chan
@@ -124,17 +124,17 @@ class CTDataContainer(object):
 		self.onDatIN_DataFwd_impl(id_chan, fmt_data, obj_msg)
 
 	def datCB_DataClean(self, obj_dataset):
-		idx_chan = self.__priv_Dset2Idx(obj_dataset)
+		idx_chan = self.__chan_Dset2Idx(obj_dataset)
 		if idx_chan >= 0:
 			self.onDatCB_DataClean_impl(idx_chan, obj_dataset)
 
 	def datCB_DataSync(self, obj_dataset, msec_now):
-		idx_chan = self.__priv_Dset2Idx(obj_dataset)
+		idx_chan = self.__chan_Dset2Idx(obj_dataset)
 		if idx_chan >= 0:
 			self.onDatCB_DataSync_impl(idx_chan, obj_dataset, msec_now)
 
 	def datCB_RecPlus(self, obj_dataset, doc_rec, idx_rec):
-		idx_chan = self.__priv_Dset2Idx(obj_dataset)
+		idx_chan = self.__chan_Dset2Idx(obj_dataset)
 		if idx_chan >= 0:
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
@@ -179,7 +179,7 @@ class CTDataContainer(object):
 		if idx_map_find <  0:
 			return -1
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
-		idx_chan_add = self.__priv_Dwreq2Idx(name_chan, wreq_args_map)
+		idx_chan_add = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_add <  0:
 			self.logger.error(self.inf_this + " Error: can't find channel for new chanId=" +
 								str(id_chan) + ", args=" + str(wreq_args))
@@ -196,7 +196,7 @@ class CTDataContainer(object):
 		pass
 
 	def onDatIN_ChanDel_impl(self, id_chan):
-		idx_chan_del = self.__priv_Dcid2Idx(id_chan)
+		idx_chan_del = self.__chan_Dcid2Idx(id_chan)
 		#print("CTDataContainer::onDatIN_ChanDel_impl() ", id_chan)
 		if idx_chan_del <  0:
 			self.logger.error(self.inf_this + " Error: can't find channel with chanId=" +
@@ -209,7 +209,7 @@ class CTDataContainer(object):
 		pass
 
 	def onDatIN_DataFwd_impl(self, id_chan, fmt_data, obj_msg):
-		idx_chan = self.__priv_Dcid2Idx(id_chan)
+		idx_chan = self.__chan_Dcid2Idx(id_chan)
 		#print("CTDataContainer::onDatIN_DataFwd_impl() ", id_chan, fmt_data, obj_msg)
 		obj_dataset = None if idx_chan <  0 else self.list_tups_datachan[idx_chan][0]
 		if obj_dataset == None:
@@ -233,7 +233,7 @@ class CTDataContainer(object):
 			obj_dataout.docAppend(doc_rec)
 
 
-	def __priv_Dwreq2Idx(self, name_chan, wreq_args_map):
+	def __chan_Dwreq2Idx(self, name_chan, wreq_args_map):
 		idx_chan_find = -1
 		for idx_chan in range(len(self.list_tups_datachan)):
 			tup_chan = self.list_tups_datachan[idx_chan]
@@ -245,7 +245,7 @@ class CTDataContainer(object):
 			break
 		return idx_chan_find
 
-	def __priv_Dset2Idx(self, obj_dataset):
+	def __chan_Dset2Idx(self, obj_dataset):
 		idx_chan_find = -1
 		for idx_chan in range(len(self.list_tups_datachan)):
 			if obj_dataset != self.list_tups_datachan[idx_chan][0]:
@@ -254,7 +254,7 @@ class CTDataContainer(object):
 			break
 		return idx_chan_find
 
-	def __priv_Dcid2Idx(self, id_chan):
+	def __chan_Dcid2Idx(self, id_chan):
 		idx_chan_find = -1
 		if id_chan == None:
 			return idx_chan_find

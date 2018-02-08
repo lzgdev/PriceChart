@@ -55,8 +55,8 @@ mapTasks = [
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 1 * 3600 * 1000,
 	#'msec_nxt_cfg':   30 * 1000,
-	#'switch': False,
-	'switch':  True,
+	'switch': False,
+	#'switch':  True,
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'jobs': [
 		{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
@@ -67,8 +67,8 @@ mapTasks = [
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 1 * 3600 * 1000,
 	#'msec_nxt_cfg':   30 * 1000,
-	#'switch': False,
-	'switch':  True,
+	'switch': False,
+	#'switch':  True,
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'jobs': [
 		{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
@@ -79,12 +79,12 @@ mapTasks = [
 	},
   ]
 
-class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DbOut):
+class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DownOut):
 	cnt_procs = []
 
 	def __init__(self, logger, idx_task):
 		multiprocessing.Process.__init__(self)
-		ktsave.CTDataContainer_DbOut.__init__(self, logger)
+		ktsave.CTDataContainer_DownOut.__init__(self, logger)
 		# expand static members
 		while len(self.cnt_procs) <= idx_task:
 			self.cnt_procs.append(0)

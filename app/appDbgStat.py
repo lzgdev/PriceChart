@@ -85,8 +85,8 @@ for unit_task in list_tasks_cfg:
 		continue
 	list_tasks_run.append(unit_task)
 
-
 appMain = ktstat.CTDataContainer_StatOut(logger, None)
+appMain.flag_dbg  =  True
 
 appMain.logger.info("Process(" + appMain.inf_this + ") begin ...")
 

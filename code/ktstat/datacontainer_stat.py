@@ -19,6 +19,9 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 	def __init__(self, logger, obj_outconn):
 		kthttp.CTDataContainer_HttpOut.__init__(self, logger, obj_outconn)
+		self.flag_stat = False
+		self.flag_dbg  = False
+
 		self.flag_stat_end  = False
 
 		self.stat_mts_step  = 60 * 1000
@@ -33,8 +36,8 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 		self.read_trades_num    = self.num_rec_trades
 		self.read_candles_num   = self.num_rec_candles
 
-		#self.run_loop_left  = 2
-		self.run_loop_left  = 200
+		self.run_loop_left  = 2
+		#self.run_loop_left  = 200
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
 		stat_key  = dict_args['stat'] if 'stat' in dict_args else None
@@ -52,6 +55,8 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 			obj_dataset = CTDataSet_ACandles_Stat(self.num_rec_candles, self.logger, self, wreq_args)
 		else:
 			obj_dataset = None
+		if self.flag_dbg and obj_dataset != None:
+			obj_dataset.dbg_stat = 2
 		if obj_dataset == None:
 			super(CTDataContainer_StatOut, self).onChan_DataSet_alloc(name_chan, wreq_args, dict_args)
 		return obj_dataset
@@ -92,7 +97,7 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 	def onExec_Post_impl(self, arg_post):
 		self.stamp_exec_end = self.mtsNow_time()
 		print("CTDataContainer_StatOut::onExec_Post_impl, time cost:", format(self.stamp_exec_end-self.stamp_exec_bgn, ","))
-		if self.obj_dset_trades  != None and self.obj_dset_candles != None:
+		if self.flag_stat and self.obj_dset_trades != None and self.obj_dset_candles != None:
 			self.onStat_Loop_impl()
 		self.flag_stat_end  = True if self.run_loop_left <  0 else False
 
@@ -205,15 +210,8 @@ class CTStatRec_Stat11(CTStatRec):
 		self.price_open   = None
 		self.price_close  = None
 
-		self.list_trades  = []
-
 	def onFinish_impl(self):
-		"""
-		diff_vol = self.ref_candles['volume'] - self.vol_all
-		print("CTStatRec_Stat11::finish, mts:", format(self.rec_mts, ","), ", diff_vol:", diff_vol,
-								", min:", self.price_low, ", max:", self.price_high,
-								", vol:", self.vol_all, ", sum:", self.sum_all)
-		"""
+		# NEED to check self.ref_candles['volume'] - self.vol_all
 		pass
 
 	def onAdd_RecTrades(self, rec_trades):
@@ -235,8 +233,6 @@ class CTStatRec_Stat11(CTStatRec):
 			self.sum_buy  += sum_add
 			self.vol_buy  += abs_amount
 
-		self.list_trades.append(rec_trades)
-
 	def onAdd_RecCandles(self, rec_candles):
 		if self.flag_dbg_rec >  0:
 			mts_rec = rec_candles['mts']
@@ -248,15 +244,7 @@ class CTStatRec_Stat11(CTStatRec):
 		self.price_close  = rec_candles['close']
 
 	def onDbg_Dump_impl(self):
-		diff_vol = self.ref_candles['volume'] - self.vol_all
-		print("CTStatRec_Stat11::dump(00), mts:", format(self.rec_mts, ","), ", num:", self.num_trades, ", diff_vol:", round(diff_vol, 3),
+		print("CTStatRec_Stat11::dump(00), mts:", format(self.rec_mts, ","), ", num:", self.num_trades,
 								", min:", self.price_low, ", max:", self.price_high,
 								", vol:", self.vol_all, ", sum:", self.sum_all)
-		if abs(diff_vol) >= 0.001:
-			print("CTStatRec_Stat11::dump(11), mts:", format(self.rec_mts, ","), ", candles:", self.ref_candles)
-			for rec_trades in self.list_trades:
-				mts_trades = rec_trades['mts']
-				print("                ::dump(12), mts:", format(mts_trades, ","), ", trades:",  rec_trades)
-
-
 
