@@ -3,8 +3,6 @@ import hmac
 import hashlib
 import json
 
-from .datacontainer     import CTDataContainer
-
 from .datainput         import CTDataInput_Ws
 from .dataset           import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 
@@ -34,7 +32,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		self.list_chan_stat.clear()
 		num_chans = len(self.obj_container.list_tups_datachan)
 		for idx_chan in range(0, num_chans):
-			tsk_chan = CTDataContainer._gmap_TaskChans_chan(self.obj_container.list_tups_datachan[idx_chan][2],
+			tsk_chan = self.obj_container._gmap_TaskChans_chan(self.obj_container.list_tups_datachan[idx_chan][2],
 								self.obj_container.list_tups_datachan[idx_chan][4])
 			self.list_chan_stat.append({ 'tok_chan': tsk_chan.get('tok_task', None),
 								'subsc_sent': None, 'subsc_recv': None, 'unsub_sent': None, 'unsub_recv': None, })
@@ -55,7 +53,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 				obj_subscribe.update(tup_chan[4])
 			txt_wreq = json.dumps(obj_subscribe)
 			self.send(txt_wreq)
-			self.list_chan_stat[idx_chan]['subsc_sent'] = CTDataContainer.mtsNow_mono()
+			self.list_chan_stat[idx_chan]['subsc_sent'] = self.obj_container.mtsNow_mono()
 
 	def ncOP_Send_Unsubscribe(self):
 		for tup_chan in self.obj_container.list_tups_datachan:
@@ -73,7 +71,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 			}
 		txt_wreq = json.dumps(obj_subscribe)
 		self.send(txt_wreq)
-		self.list_chan_stat[idx_chan]['unsub_sent'] = CTDataContainer.mtsNow_mono()
+		self.list_chan_stat[idx_chan]['unsub_sent'] = self.obj_container.mtsNow_mono()
 
 	def onNcEV_Message_impl(self, message):
 		#self.logger.info("CTDataInput_WssBfx(onNcEV_Message_impl): msg=" + message)
@@ -116,7 +114,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 				tok_chan.value = self.tok_mono_this
 			self.logger.info(self.inf_this + " subscribed: chanId=" + str(id_chan) +
 						", chan=" + name_chan + ", tok=" + str(tok_chan.value))
-		self.list_chan_stat[idx_chan]['subsc_recv'] = CTDataContainer.mtsNow_mono()
+		self.list_chan_stat[idx_chan]['subsc_recv'] = self.obj_container.mtsNow_mono()
 		return idx_chan
 
 	def onNcEV_Message_unsubscribed(self, obj_msg):
@@ -128,7 +126,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		if tok_chan != None:
 			self.logger.info(self.inf_this + " unsubscribed: chanId=" + str(id_chan) +
 						", tok=" + str(tok_chan.value))
-		self.list_chan_stat[idx_chan]['unsub_recv'] = CTDataContainer.mtsNow_mono()
+		self.list_chan_stat[idx_chan]['unsub_recv'] = self.obj_container.mtsNow_mono()
 		self.obj_container.datIN_ChanDel(id_chan)
 		return idx_chan
 

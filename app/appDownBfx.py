@@ -34,7 +34,7 @@ mapTasks = [
 	#'switch': False,
 	'switch':  True,
 	'url': 'https://api.bitfinex.com/v2',
-	'jobs': [
+	'chans': [
 		{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
 		]
 	},
@@ -46,7 +46,7 @@ mapTasks = [
 	#'switch': False,
 	'switch':  True,
 	'url': 'https://api.bitfinex.com/v2',
-	'jobs': [
+	'chans': [
 		{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 		]
 	},
@@ -58,7 +58,7 @@ mapTasks = [
 	'switch': False,
 	#'switch':  True,
 	'url': 'wss://api.bitfinex.com/ws/2',
-	'jobs': [
+	'chans': [
 		{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
 		]
 	},
@@ -70,7 +70,7 @@ mapTasks = [
 	'switch': False,
 	#'switch':  True,
 	'url': 'wss://api.bitfinex.com/ws/2',
-	'jobs': [
+	'chans': [
 		{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
 		{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" }', },
 		{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" }', },
@@ -93,14 +93,14 @@ class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DownOut):
 		global mapTasks
 		self.idx_task  = idx_task
 		self.task_this = mapTasks[self.idx_task]
-		self.flag_nxt_after = self.isNextRunAfter(self.task_this['url'], self.task_this['jobs'])
+		self.flag_nxt_after = self.isNextRunAfter(self.task_this['url'], self.task_this['chans'])
 		self.name = 'Net2Db' + str(self.idx_task) + '-' + str(self.cnt_procs[self.idx_task])
 
 	def run(self):
 		info_app = "pid=" + str(self.pid_this) + ", name=" + self.name
 		self.logger.info("Process(" + info_app + ") begin ...")
 
-		self.execMain(url=self.task_this['url'], jobs=self.task_this['jobs'], msec_off=ntp_msec_off)
+		self.execMain(url=self.task_this['url'], chans=self.task_this['chans'], msec_off=ntp_msec_off)
 		self.logger.info("Process(" + info_app + ") finish.")
 
 	def start(self):
@@ -145,7 +145,7 @@ signal.signal(12, _sighand_usr2)
 
 # debug settings
 dbg_dbg_main  =  True
-#dbg_run_task  = 1
+dbg_run_task  = 1
 
 #
 # Main entrance

@@ -42,9 +42,9 @@ class CTDataContainer_BackOut(ktdata.CTDataContainer):
 
 		return None
 
+	"""
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
 		obj_dataout = None
-		"""
 		if   name_chan == 'ticker':
 			obj_dataout = CTDataOut_Db_ticker(self.logger, obj_dataset, self.obj_dbwriter)
 		elif name_chan == 'trades':
@@ -53,10 +53,8 @@ class CTDataContainer_BackOut(ktdata.CTDataContainer):
 			obj_dataout = CTDataOut_Db_book(self.logger, obj_dataset, self.obj_dbwriter)
 		elif name_chan == 'candles':
 			obj_dataout = CTDataOut_Db_candles(self.logger, obj_dataset, self.obj_dbwriter)
-		"""
 		return obj_dataout
 
-	"""
 	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
 		tup_chan  = self.list_tups_datachan[idx_chan]
 		obj_dataset = tup_chan[0]
@@ -143,16 +141,6 @@ class CTDataContainer_BackOut(ktdata.CTDataContainer):
 			self.stat_rec_now.reset(self.stat_mts_now)
 		return flag_next_trade and flag_next_candles
 
-
-
-	@staticmethod
-	def isNextRunAfter(url, jobs):
-		flag_run_after = False
-		url_parse = urllib.parse.urlparse(url)
-		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
-			flag_run_after =  True
-		#flag_run_after = False
-		return  flag_run_after
 
 
 class CTBackRec_Check(object):

@@ -3,10 +3,16 @@ import json
 
 import os
 import time
+
 import multiprocessing
+
+import urllib.parse
 
 from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 from .dataset       import CTDataSet_Ticker, CTDataSet_ATrades, CTDataSet_ABooks, CTDataSet_ACandles
+
+from .datainput_httpbfx     import CTDataInput_HttpBfx
+from .datainput_wssbfx      import CTDataInput_WssBfx
 
 gMap_TaskChans_init = False
 
@@ -55,42 +61,23 @@ class CTDataContainer(object):
 		if not gMap_TaskChans_init:
 			self._gmap_TaskChans_init()
 
-	def execMain(self, list_task=None, **args_task):
-		# append args_task to list_task
-		list_task = [] if list_task == None else list_task
-		arg_prep  = args_task.pop('prep', None)
-		arg_post  = args_task.pop('post', None)
-		if len(args_task) >  0:
-			list_task.append(args_task)
-		ret_init = self.onExec_Init_impl(list_task)
+	def execMain(self, list_exec=None, **args_exec):
+		# append args_exec to list_exec
+		list_exec = [] if list_exec == None else list_exec
+		arg_prep  = args_exec.pop('prep', None)
+		arg_post  = args_exec.pop('post', None)
+		if len(args_exec) >  0:
+			list_exec.append(args_exec)
+		# exec init
+		self.onExec_Init_impl(list_exec)
+		ret_init = self.onExec_Init_ext(list_exec)
 		if None != ret_init:
 			return ret_init
+		# exec main
 		self.onExec_Prep_impl(arg_prep)
 		self.onExec_Main_impl()
 		self.onExec_Post_impl(arg_post)
 		return None
-
-	def addArg_DataChannel(self, name_chan, wreq_args):
-		global gMap_TaskChans
-		idx_map_find = self._gmap_TaskChans_index(name_chan, wreq_args)
-		if idx_map_find <  0:
-			return -1
-		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
-		dict_args_map = gMap_TaskChans[idx_map_find]['dict_args']
-		idx_chan_new  = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
-		if idx_chan_new >= 0:
-			return idx_chan_new
-		# try to add new data channel
-		idx_chan_new  = len(self.list_tups_datachan)
-		obj_dataset = None
-		obj_dataout = None
-		obj_dataset = self.onChan_DataSet_alloc(name_chan, wreq_args_map, dict_args_map)
-		if obj_dataset == None:
-			return -1
-		obj_dataset.locSet_DbTbl(self._gmap_TaskChans_dbtbl(name_chan, dict_args_map))
-		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args_map, dict_args_map)
-		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args_map, dict_args_map))
-		return idx_chan_new
 
 	def addObj_DataSource(self, obj_datasrc, **kwargs):
 		self.list_tups_datasrc.append((obj_datasrc, dict(kwargs)))
@@ -138,7 +125,20 @@ class CTDataContainer(object):
 		if idx_chan >= 0:
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
-	def onExec_Init_impl(self, list_task):
+	def onExec_Init_impl(self, list_exec):
+		for args_dsrc in list_exec:
+			dsrc_url   = args_dsrc.get('url', None)
+			dsrc_chans = args_dsrc.get('chans', None)
+			msec_off   = args_dsrc.get('msec_off', None)
+
+			url_parse = urllib.parse.urlparse(dsrc_url)
+			obj_datasrc = self.onInit_DataSource_alloc(url_parse.scheme, url_parse.netloc, dsrc_url)
+			if obj_datasrc != None:
+				obj_datasrc.setChanCfgs(dsrc_chans)
+				self.addObj_DataSource(obj_datasrc)
+		return None
+
+	def onExec_Init_ext(self, list_exec):
 		return None
 
 	def onExec_Prep_impl(self, arg_prep):
@@ -154,6 +154,15 @@ class CTDataContainer(object):
 
 	def onExec_Post_impl(self, arg_post):
 		pass
+
+	def onInit_DataSource_alloc(self, url_scheme, url_netloc, url):
+		obj_datasrc = None
+		if   url_scheme == 'https' and url_netloc == 'api.bitfinex.com':
+			obj_datasrc = CTDataInput_HttpBfx(self.logger, self, url)
+		elif url_scheme ==   'wss' and url_netloc == 'api.bitfinex.com':
+			obj_datasrc = CTDataInput_WssBfx(self.logger, self, url,
+									self.tok_mono_this, msec_off)
+		return obj_datasrc
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
 		obj_dataset = None
@@ -180,6 +189,9 @@ class CTDataContainer(object):
 			return -1
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
 		idx_chan_add = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
+		if idx_chan_add <  0:
+			idx_chan_add = self._new_DataChannel(name_chan, wreq_args_map,
+								gMap_TaskChans[idx_map_find]['dict_args'])
 		if idx_chan_add <  0:
 			self.logger.error(self.inf_this + " Error: can't find channel for new chanId=" +
 								str(id_chan) + ", args=" + str(wreq_args))
@@ -232,6 +244,22 @@ class CTDataContainer(object):
 		if obj_dataout != None:
 			obj_dataout.docAppend(doc_rec)
 
+	# private method: add new data channel
+	def _new_DataChannel(self, name_chan, wreq_args_map, dict_args_map):
+		idx_chan_new  = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
+		if idx_chan_new >= 0:
+			return idx_chan_new
+		# try to add new data channel
+		idx_chan_new  = len(self.list_tups_datachan)
+		obj_dataset = None
+		obj_dataout = None
+		obj_dataset = self.onChan_DataSet_alloc(name_chan, wreq_args_map, dict_args_map)
+		if obj_dataset == None:
+			return -1
+		obj_dataset.locSet_DbTbl(self._gmap_TaskChans_dbtbl(name_chan, dict_args_map))
+		obj_dataout = self.onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args_map, dict_args_map)
+		self.list_tups_datachan.append((obj_dataset, obj_dataout, name_chan, wreq_args_map, dict_args_map))
+		return idx_chan_new
 
 	def __chan_Dwreq2Idx(self, name_chan, wreq_args_map):
 		idx_chan_find = -1

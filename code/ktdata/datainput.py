@@ -12,10 +12,14 @@ class CTDataInput(object):
 	def __init__(self, logger, obj_container):
 		object.__init__(self)
 		self.logger   = logger
+		self.list_chan_cfg = None
 		self.obj_container = obj_container
 		self.pid_this = os.getpid()
 		self.inf_this = 'Din(pid=' + str(self.pid_this) + ')'
 		self.flag_log_intv = 0
+
+	def setChanCfgs(self, list_cfg):
+		self.list_chan_cfg  = list_cfg
 
 	def prepRead(self, **kwargs):
 		self.onPrep_Read_impl(**kwargs)

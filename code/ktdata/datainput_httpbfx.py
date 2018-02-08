@@ -23,58 +23,66 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 	def __init__(self, logger, obj_container, url_http_pref):
 		CTDataInput_Http.__init__(self, logger, obj_container, url_http_pref)
 		self.loc_mark_delay = 0
+		self.num_chan_cfg   = -1
 		self.loc_cnt_resp   = 0
 		self.loc_run_chan   = 0
-		self.loc_run_tmax   = -1
+		self.loc_dbg_tmax   = -1
 		self.loc_id_chan    = None
 		self.loc_idx_chan   = None
 		self.loc_name_chan  = None
 		self.mts_rec_last   = 0
 
-		#self.loc_run_tmax   = 3
+		#self.loc_dbg_tmax   = 3
 		#self.flag_log_intv  = 1
 
 	def onLoop_ReadPrep_impl(self):
 		global dbg_tm_start
-		url_parse  = urllib.parse.urlparse(self.url_http_pref)
-		if self.loc_mark_delay > 0:
-			print("CTDataInput_HttpBfx::onLoop_ReadPrep_impl, sleep", self.loc_mark_delay, "seconds.")
-			time.sleep(self.loc_mark_delay)
-			self.loc_mark_delay = 0
-		if self.loc_run_chan >= len(self.obj_container.list_tups_datachan):
-			return False
-		tup_chan = self.obj_container.list_tups_datachan[self.loc_run_chan]
-		if self.loc_run_tmax >= 0:
-			if self.loc_run_tmax == 0:
+		# update self.loc_dbg_tmax, try maximum self.loc_dbg_tmax times
+		if self.loc_dbg_tmax >= 0:
+			if self.loc_dbg_tmax == 0:
 				return False
-			self.loc_run_tmax -= 1
+			self.loc_dbg_tmax -= 1
+		# init self.num_chan_cfg
+		if self.num_chan_cfg <  0 and isinstance(self.list_chan_cfg, list):
+			self.num_chan_cfg = len(self.list_chan_cfg)
+		if self.loc_run_chan >= self.num_chan_cfg:
+			return False
+		cfg_chan  = self.list_chan_cfg[self.loc_run_chan]
+		map_chan  = self.obj_container._gmap_TaskChans_chan(cfg_chan.get('channel', None),
+								cfg_chan.get('wreq_args', None))
+		if map_chan == None:
+			return False
+		name_chan = map_chan['channel']
+		wreq_args = map_chan['wreq_args']
+		dict_args = map_chan['dict_args']
 		# try to add data channel
-		if self.loc_idx_chan != self.loc_run_chan:
-			self.num_chans += 1
-			new_id_chan  = self.id_chan_off + self.num_chans
-			new_idx_chan = self.obj_container.datIN_ChanAdd(new_id_chan, tup_chan[2], tup_chan[3])
-			if new_idx_chan == self.loc_run_chan:
+		if self.loc_idx_chan == None:
+			CTDataInput_HttpBfx.num_chans += 1
+			new_id_chan  = self.id_chan_off + CTDataInput_HttpBfx.num_chans
+			new_idx_chan = self.obj_container.datIN_ChanAdd(new_id_chan, name_chan, wreq_args)
+			if new_idx_chan >= 0:
 				self.loc_id_chan  = new_id_chan
 				self.loc_idx_chan = new_idx_chan
 		# try to load last doc from db
 		rec_last = None
-		if self.loc_idx_chan == self.loc_run_chan:
+		if self.loc_idx_chan != None:
 			rec_last = self.obj_container.list_tups_datachan[self.loc_idx_chan][1].getDoc_OutLast()
 		if rec_last != None:
 			mts_rec_new  = rec_last['mts']
 			self.mts_rec_last = mts_rec_new if mts_rec_new >  self.mts_rec_last else (self.mts_rec_last + 1)
 		# compose self.url_main_netloc and self.url_main_path
+		url_parse  = urllib.parse.urlparse(self.url_http_pref)
 		self.url_main_netloc  = url_parse.netloc
-		if   'trades' == tup_chan[2]:
-			self.loc_name_chan  = tup_chan[2]
-			url_suff   = '/trades/' + tup_chan[4]['symbol'] + '/hist'
+		if   'trades' == name_chan:
+			self.loc_name_chan  = name_chan
+			url_suff   = '/trades/' + dict_args['symbol'] + '/hist'
 			url_params = 'sort=1&start=' + str(self.mts_rec_last)
 			if self.mts_rec_last == 0 and dbg_tm_start != None:
 				url_params = 'sort=1&start=' + str(dbg_tm_start)
 			self.url_main_path   = url_parse.path + url_suff + '?' + url_params
-		elif 'candles' == tup_chan[2]:
-			self.loc_name_chan  = tup_chan[2]
-			url_suff   = '/candles/' + tup_chan[4]['key'] + '/hist'
+		elif 'candles' == name_chan:
+			self.loc_name_chan  = name_chan
+			url_suff   = '/candles/' + dict_args['key'] + '/hist'
 			url_params = 'sort=1&start=' + str(self.mts_rec_last)
 			if self.mts_rec_last == 0 and dbg_tm_start != None:
 				url_params = 'sort=1&start=' + str(dbg_tm_start)
@@ -82,7 +90,12 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		else:
 			self.url_main_path   = None
 		if self.flag_log_intv >  0:
-			print("URL init2, try:", self.loc_run_tmax, ", ret:", self.url_main_path, ", tup_chan(2-3):", (tup_chan[2], tup_chan[3]))
+			print("URL init2, try:", self.loc_run_tmax, ", ret:", self.url_main_path, ", chan:", name_chan, ", args:", wreq_args)
+		# sleep for a while
+		if self.loc_mark_delay > 0:
+			print("CTDataInput_HttpBfx::onLoop_ReadPrep_impl, sleep", self.loc_mark_delay, "seconds.")
+			time.sleep(self.loc_mark_delay)
+			self.loc_mark_delay = 0
 		#time.sleep(6)
 		time.sleep(4)
 		return False if self.url_main_path == None else True

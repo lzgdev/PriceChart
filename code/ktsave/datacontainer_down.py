@@ -12,30 +12,11 @@ class CTDataContainer_DownOut(ktdata.CTDataContainer):
 		ktdata.CTDataContainer.__init__(self, logger)
 		self.obj_dbwriter  = None
 
-	def onExec_Init_impl(self, list_task):
-		if len(list_task) == 0:
-			return None
-		args_task = list_task.pop()
-
-		task_url  = args_task.get('url', None)
-		task_jobs = args_task.get('jobs', None)
-		msec_off  = args_task.get('msec_off', None)
-
+	def onExec_Init_ext(self, list_exec):
 		str_db_uri  = 'mongodb://127.0.0.1:27017'
 		str_db_name = 'bfx-pub'
 		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
-
-		url_parse = urllib.parse.urlparse(task_url)
-		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(ktdata.CTDataInput_HttpBfx(self.logger, self, task_url))
-		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
-			self.addObj_DataSource(ktdata.CTDataInput_WssBfx(self.logger, self, task_url,
-								self.tok_mono_this, msec_off))
-
-		for map_unit in task_jobs:
-			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'])
-
 		return None
 
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
