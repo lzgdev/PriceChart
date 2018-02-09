@@ -64,6 +64,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 				self.loc_id_chan  = new_id_chan
 				self.loc_idx_chan = new_idx_chan
 		# try to load last doc from db
+		self.mts_rec_last = None
 		rec_last = None
 		if self.loc_idx_chan != None:
 			rec_last = self.obj_container.list_tups_datachan[self.loc_idx_chan][1].getDoc_OutLast()

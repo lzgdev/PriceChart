@@ -21,76 +21,85 @@ mts_off   = 1510685491435
 mts_begin = 60*1000 * round(mts_off / (60*1000))
 mts_end   = mts_begin + 60*1000
 
+dsrc_db_trades = {
+			'switch':     True,
+			#'switch':    False,
+			'dbg_stat':   3,
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'sort': [('$natural', 1)], }, },
+			],
+		}
 
-list_tasks_cfg = [
+list_dsrc_cfg = [
 		{
-			'name_chan': 'ticker',
-			'switch':     True,
-			'dbg_stat':   2,
-			'wreq_args': { "symbol": "tBTCUSD" },
-			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }',
+					'load_args': { 'limit':   1, 'sort': [('$natural', -1)], }, },
+			],
 		},
 		{
-			'name_chan': 'trades',
-			'switch':     True,
-			'dbg_stat':   2,
-			'wreq_args': { "symbol": "tBTCUSD" },
-			'load_args': { 'filter': { }, 'limit':   5, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }',
+					'load_args': { 'limit':   5, 'sort': [('$natural', -1)], }, },
+			],
 		},
 		{
-			'name_chan': 'book',
-			#'switch':     True,
 			'switch':    False,
-			'dbg_stat':   2,
-			'wreq_args': { "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" },
-			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }',
+					'load_args': { 'limit':   1, 'sort': [('$natural', -1)], }, },
+			],
 		},
 		{
-			'name_chan': 'book',
-			#'switch':     True,
 			'switch':    False,
-			'dbg_stat':   2,
-			'wreq_args': { "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" },
-			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" }',
+					'load_args': { 'limit':   1, 'sort': [('$natural', -1)], }, },
+			],
 		},
 		{
-			'name_chan': 'book',
-			#'switch':     True,
 			'switch':    False,
-			'dbg_stat':   2,
-			'wreq_args': { "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" },
-			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" }',
+					'load_args': { 'limit':   1, 'sort': [('$natural', -1)], }, },
+			],
 		},
 		{
-			'name_chan': 'book',
-			#'switch':     True,
 			'switch':    False,
-			'dbg_stat':   2,
-			'wreq_args': { "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" },
-			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" }',
+					'load_args': { 'limit':   1, 'sort': [('$natural', -1)], }, },
+			],
 		},
 		{
-			'name_chan': 'candles',
-			'switch':     True,
-			'dbg_stat':   2,
-			'wreq_args': { "key": "trade:1m:tBTCUSD" },
-			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', -1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }',
+					'load_args': { 'limit':   1, 'sort': [('$natural', -1)], }, },
+			],
 		},
 	]
 
-list_tasks_run = []
+list_dsrc_run = []
 
-for unit_task in list_tasks_cfg:
-	if not unit_task['switch']:
+for dsrc_cfg in list_dsrc_cfg:
+	if not dsrc_cfg.get('switch', True):
 		continue
-	list_tasks_run.append(unit_task)
+	list_dsrc_run.append(dsrc_cfg)
 
 appMain = ktstat.CTDataContainer_StatOut(logger, None)
 appMain.flag_dbg  =  True
 
 appMain.logger.info("Process(" + appMain.inf_this + ") begin ...")
 
-appMain.execMain(list_tasks_run)
+appMain.execMain(list_dsrc_run)
 
 appMain.logger.info("Process(" + appMain.inf_this + ") finish.")
 

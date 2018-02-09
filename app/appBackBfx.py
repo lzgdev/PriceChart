@@ -19,102 +19,128 @@ ktdata.CTDataContainer._gmap_TaskChans_init()
 
 dbg_main_loop = False
 
-input_cfg_ticker =
+"""
+dsrc_cfg_ticker =
 		{
 			'name_chan': 'ticker',
 			#'switch':     True,
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		}
+"""
 
-input_cfg_trades =
-		{
-			'name_chan': 'trades',
+dsrc_db_trades = {
 			'switch':     True,
 			#'switch':    False,
 			'dbg_stat':   3,
-			'wreq_args': { "symbol": "tBTCUSD" },
-			'load_args': { 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'sort': [('$natural', 1)], }, },
+			],
 		}
 
-input_cfg_bookP0 =
+"""
+dsrc_cfg_bookP0 =
 		{
 			'name_chan': 'book',
 			#'switch':     True,
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		}
 
-input_cfg_bookP1 =
+dsrc_cfg_bookP1 =
 		{
 			'name_chan': 'book',
 			#'switch':     True,
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		}
 
-input_cfg_bookP2 =
+dsrc_cfg_bookP2 =
 		{
 			'name_chan': 'book',
 			#'switch':     True,
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		}
 
-input_cfg_bookP3 =
+dsrc_cfg_bookP3 =
 		{
 			'name_chan': 'book',
 			#'switch':     True,
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" },
 			'load_args': { 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 			#'load_args': { 'filter': { }, 'limit':  50, 'sort': [('$natural', 1)], },
 		}
+"""
 
-input_cfg_candles =
-		{
-			'name_chan': 'candles',
+dsrc_db_candles = {
 			'switch':     True,
 			#'switch':    False,
 			#'dbg_stat':   2,
-			'wreq_args': { "key": "trade:1m:tBTCUSD" },
-			'load_args': { 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', 'load_args': { 'sort': [('$natural', 1)], }, },
+			],
 		}
 
-#dbg_main_loop =  True
-appMain = ktsave.CTDataContainer_BackOut(logger, None)
+dbg_main_loop =  True
+appMain = ktsave.CTDataContainer_BackOut(logger)
 
 
-while not appMain.flag_stat_end:
+while not appMain.flag_back_end:
 	list_tasks_run = []
 	if dbg_main_loop:
 		print("appMain, tid_last:", appMain.read_trades_tid_last, ", mts_last:", appMain.read_candles_mts_last)
 
 	if appMain.read_trades_num >  0:
-		input_run = copy.copy(input_cfg_trades)
+		dsrc_cfg = copy.copy(dsrc_db_trades)
+		dsrc_db_load = dsrc_cfg['chans'][0]['load_args']
 		if appMain.read_trades_tid_last == None:
-			input_run['load_args']['filter'] = { 'mts': { '$gte': appMain.stat_mts_now, } }
+			dsrc_db_load['filter'] = { 'mts': { '$gte': appMain.back_mts_now, } }
 		else:
-			input_run['load_args']['filter'] = { 'tid': { '$gt': appMain.read_trades_tid_last, } }
-		input_run['load_args']['limit']  =  appMain.read_trades_num
-		list_tasks_run.append(input_run)
+			dsrc_db_load['filter'] = { 'tid': { '$gt': appMain.read_trades_tid_last, } }
+		dsrc_db_load['limit']  =  appMain.read_trades_num
+		list_tasks_run.append(dsrc_cfg)
 
 	if appMain.read_candles_num >  0:
-		input_run = copy.copy(input_cfg_candles)
+		dsrc_cfg = copy.copy(dsrc_db_candles)
+		dsrc_db_load = dsrc_cfg['chans'][0]['load_args']
 		if appMain.read_candles_mts_last == None:
-			input_run['load_args']['filter'] = { 'mts': { '$gte': appMain.stat_mts_now, } }
+			dsrc_db_load['filter'] = { 'mts': { '$gte': appMain.back_mts_now, } }
 		else:
-			input_run['load_args']['filter'] = { 'mts': { '$gt': appMain.read_candles_mts_last, } }
-		input_run['load_args']['limit']  = appMain.read_candles_num
-		list_tasks_run.append(input_run)
+			dsrc_db_load['filter'] = { 'mts': { '$gt': appMain.read_candles_mts_last, } }
+		dsrc_db_load['limit']  = appMain.read_candles_num
+		list_tasks_run.append(dsrc_cfg)
 
 	if dbg_main_loop:
-		for input_run in list_tasks_run:
-			print("appMain, input_run:", input_run)
+		for dsrc_cfg in list_tasks_run:
+			print("appMain, dsrc_cfg:", dsrc_cfg)
 
 	appMain.logger.info("Process(" + appMain.inf_this + ") begin ...")
 

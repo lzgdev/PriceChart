@@ -14,9 +14,6 @@ from .dataoutput_stat   import CTDataOut_Stat_stat01,  \
 
 
 class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
-	num_rec_trades  = 512
-	num_rec_candles = 512
-
 	def __init__(self, logger, obj_outconn):
 		kthttp.CTDataContainer_HttpOut.__init__(self, logger, obj_outconn)
 		self.flag_stat = False
@@ -33,8 +30,8 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 		self.read_trades_tid_last   = None
 		self.read_candles_mts_last  = None
-		self.read_trades_num    = self.num_rec_trades
-		self.read_candles_num   = self.num_rec_candles
+		self.read_trades_num    = 0
+		self.read_candles_num   = 0
 
 		self.run_loop_left  = 2
 		#self.run_loop_left  = 200
@@ -48,11 +45,11 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 		elif name_chan == 'ticker':
 			obj_dataset = CTDataSet_Ticker_Stat(self.logger, self, wreq_args)
 		elif name_chan == 'trades':
-			obj_dataset = CTDataSet_ATrades_Stat(self.num_rec_trades, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ATrades_Stat(self.size_dset_trades, self.logger, self, wreq_args)
 		elif name_chan == 'book':
 			obj_dataset = CTDataSet_ABooks_Stat(self.logger, self, wreq_args)
 		elif name_chan == 'candles':
-			obj_dataset = CTDataSet_ACandles_Stat(self.num_rec_candles, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ACandles_Stat(self.size_dset_candles, self.logger, self, wreq_args)
 		else:
 			obj_dataset = None
 		if self.flag_dbg and obj_dataset != None:
@@ -130,20 +127,20 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 		# update self.read_trades_tid_last and self.read_trades_num
 		len_list  = len(self.obj_dset_trades.loc_trades_recs)
-		if len_list <  self.num_rec_trades/2:
+		if len_list <  self.size_dset_trades/2:
 			if len_list >  0:
 				rec_trades = self.obj_dset_trades.loc_trades_recs[len_list-1]
 			if rec_trades != None:
 				self.read_trades_tid_last  = rec_trades['tid']
-			self.read_trades_num   = self.num_rec_trades  - len_list
+			self.read_trades_num   = self.size_dset_trades  - len_list
 		# update self.read_candles_mts_last and self.read_candles_num 
 		len_list  = len(self.obj_dset_candles.loc_candle_recs)
-		if len_list <  self.num_rec_candles/2:
+		if len_list <  self.size_dset_candles/2:
 			if len_list >  0:
 				rec_candles = self.obj_dset_candles.loc_candle_recs[len_list-1]
 			if rec_candles != None:
 				self.read_candles_mts_last = rec_candles['mts']
-			self.read_candles_num  = self.num_rec_candles - len_list
+			self.read_candles_num  = self.size_dset_candles - len_list
 
 		if flag_next_trade and flag_next_candles:
 			self.stat_mts_now = mts_next

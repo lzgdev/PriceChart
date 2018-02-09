@@ -13,6 +13,8 @@ from .dataset       import CTDataSet_Ticker, CTDataSet_ATrades, CTDataSet_ABooks
 
 from .datainput_httpbfx     import CTDataInput_HttpBfx
 from .datainput_wssbfx      import CTDataInput_WssBfx
+from .datainput_dbreader    import CTDataInput_DbReader
+
 
 gMap_TaskChans_init = False
 
@@ -48,6 +50,9 @@ gMap_TaskChans = [
 
 
 class CTDataContainer(object):
+	size_dset_trades   = 512
+	size_dset_candles  = 512
+
 	def __init__(self, logger):
 		global gMap_TaskChans_init
 		object.__init__(self)
@@ -162,6 +167,8 @@ class CTDataContainer(object):
 		elif url_scheme ==   'wss' and url_netloc == 'api.bitfinex.com':
 			obj_datasrc = CTDataInput_WssBfx(self.logger, self, url,
 									self.tok_mono_this, msec_off)
+		elif url_scheme == 'mongodb':
+			obj_datasrc = CTDataInput_DbReader(self.logger, self, url)
 		return obj_datasrc
 
 	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
@@ -169,11 +176,11 @@ class CTDataContainer(object):
 		if   name_chan == 'ticker':
 			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args)
 		elif name_chan == 'trades':
-			obj_dataset = CTDataSet_ATrades(512, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ATrades(self.size_dset_trades, self.logger, self, wreq_args)
 		elif name_chan == 'book':
 			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args)
 		elif name_chan == 'candles':
-			obj_dataset = CTDataSet_ACandles(512, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ACandles(self.size_dset_candles, self.logger, self, wreq_args)
 		else:
 			obj_dataset = None
 		return obj_dataset

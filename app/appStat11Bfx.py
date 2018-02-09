@@ -32,6 +32,10 @@ list_tasks_cfg = [
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		},
 		{
 			'name_chan': 'trades',
@@ -40,6 +44,10 @@ list_tasks_cfg = [
 			'dbg_stat':   3,
 			'wreq_args': { "symbol": "tBTCUSD" },
 			'load_args': { 'filter': { 'mts': { '$gte': mts_begin, } }, 'limit':  10, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		},
 		{
 			'name_chan': 'book',
@@ -47,6 +55,10 @@ list_tasks_cfg = [
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		},
 		{
 			'name_chan': 'book',
@@ -54,6 +66,10 @@ list_tasks_cfg = [
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P1", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		},
 		{
 			'name_chan': 'book',
@@ -61,6 +77,10 @@ list_tasks_cfg = [
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P2", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		},
 		{
 			'name_chan': 'book',
@@ -68,6 +88,10 @@ list_tasks_cfg = [
 			'switch':    False,
 			'wreq_args': { "symbol": "tBTCUSD", "prec": "P3", "freq": "F1", "len": "100" },
 			'load_args': { 'filter': { }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 			#'load_args': { 'filter': { }, 'limit':  50, 'sort': [('$natural', 1)], },
 		},
 		{
@@ -77,6 +101,10 @@ list_tasks_cfg = [
 			#'dbg_stat':   2,
 			'wreq_args': { "key": "trade:1m:tBTCUSD" },
 			'load_args': { 'filter': { 'mts': { '$gte': mts_begin, } }, 'limit':   1, 'sort': [('$natural', 1)], },
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'filter': { }, 'limit':   0, 'sort': [('$natural', 1)], }, },
+			],
 		},
 	]
 
