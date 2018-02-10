@@ -19,6 +19,14 @@ class CTDataContainer_DownOut(ktdata.CTDataContainer):
 		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
 		return None
 
+	def onInit_DataSource_alloc(self, url_scheme, url_netloc, url):
+		obj_datasrc = None
+		if   url_scheme == 'https' and url_netloc == 'api.bitfinex.com':
+			obj_datasrc = CTDataInput_HttpBfx_Down(self.logger, self, url)
+		if obj_datasrc == None:
+			obj_datasrc = super(CTDataContainer_DownOut, self).onInit_DataSource_alloc(url_scheme, url_netloc, url)
+		return obj_datasrc
+
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
 		obj_dataout = None
 		if   name_chan == 'ticker':
@@ -51,4 +59,24 @@ class CTDataContainer_DownOut(ktdata.CTDataContainer):
 			flag_run_after =  True
 		#flag_run_after = False
 		return  flag_run_after
+
+
+class CTDataInput_HttpBfx_Down(ktdata.CTDataInput_HttpBfx):
+	def __init__(self, logger, obj_container, url_http_pref):
+		ktdata.CTDataInput_HttpBfx.__init__(self, logger, obj_container, url_http_pref)
+		self.loc_mark_end   = -1
+
+	def onMark_ChanEnd_impl(self):
+		self.loc_mark_end   = self.tup_run_stat[1]
+
+	def onMts_ReqStart_impl(self):
+		if self.loc_mark_end == self.tup_run_stat[1]:
+			return -1
+		mts_rec_last = 0
+		# try to load last doc from db
+		rec_last = self.obj_container.list_tups_datachan[self.tup_run_stat[2]][1].getDoc_OutLast()
+		if rec_last != None:
+			mts_rec_last = rec_last['mts']
+		return mts_rec_last
+
 

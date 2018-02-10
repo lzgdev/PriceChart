@@ -162,9 +162,7 @@ class CTDataContainer(object):
 
 	def onInit_DataSource_alloc(self, url_scheme, url_netloc, url):
 		obj_datasrc = None
-		if   url_scheme == 'https' and url_netloc == 'api.bitfinex.com':
-			obj_datasrc = CTDataInput_HttpBfx(self.logger, self, url)
-		elif url_scheme ==   'wss' and url_netloc == 'api.bitfinex.com':
+		if   url_scheme ==   'wss' and url_netloc == 'api.bitfinex.com':
 			obj_datasrc = CTDataInput_WssBfx(self.logger, self, url,
 									self.tok_mono_this, msec_off)
 		elif url_scheme == 'mongodb':
