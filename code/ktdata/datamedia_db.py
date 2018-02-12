@@ -31,7 +31,7 @@ class KTDataMedia_DbBase(object):
 			return True
 		self.db_dburi  = db_uri
 		self.db_dbname = db_name
-		self.onDbOP_Connect_impl(self.db_dburi, self.db_dbname)
+		return self.onDbOP_Connect_impl(self.db_dburi, self.db_dbname)
 
 	def dbOP_Close(self):
 		self.onDbOP_Close_impl()
@@ -95,6 +95,7 @@ class KTDataMedia_DbBase(object):
 		self.db_client = pymongo.MongoClient(db_uri)
 		self.db_database = pymongo.database.Database(self.db_client, db_name)
 		self.dbOP_CollAdd(COLLNAME_CollSet, None, None)
+		return True if self.db_database != None else False
 
 	def onDbOP_Close_impl(self):
 		self.logger.info("KTDataMedia_DbBase(onDbOP_Close_impl): ...")
@@ -122,7 +123,6 @@ class KTDataMedia_DbBase(object):
 							'channel': wreq_chan,
 							'reqargs': wreq_args,
 						})
-				#db_coll.create_index([('_id', pymongo.ASCENDING), ('mts', pymongo.ASCENDING)])
 				db_coll.create_index([('mts', pymongo.ASCENDING)])
 				self.onDbEV_CollAdd(name_coll)
 		return self.dbChk_Coll_Ready(name_coll)

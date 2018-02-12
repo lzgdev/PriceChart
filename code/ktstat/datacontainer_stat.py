@@ -6,9 +6,6 @@ import math
 import ktdata
 import kthttp
 
-from .dataset_stat      import CTDataSet_Stat_Dbg, CTDataSet_Stat_Stat01,  \
-							CTDataSet_Ticker_Stat, CTDataSet_ATrades_Stat, CTDataSet_ABooks_Stat, CTDataSet_ACandles_Stat
-
 from .dataoutput_stat   import CTDataOut_Stat_stat01,  \
 							CTDataOut_Stat_ticker, CTDataOut_Stat_trades, CTDataOut_Stat_book, CTDataOut_Stat_candles
 
@@ -35,28 +32,6 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 		self.run_loop_left  = 2
 		#self.run_loop_left  = 200
-
-	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
-		stat_key  = dict_args['stat'] if 'stat' in dict_args else None
-		#print("CTDataContainer_StatOut::onChan_DataSet_alloc", name_chan, wreq_args, stat_key)
-		obj_dataset = None
-		if   name_chan == 'stat' and stat_key == 'stat01':
-			obj_dataset = CTDataSet_Stat_Stat01(512, self.logger, self, wreq_args)
-		elif name_chan == 'ticker':
-			obj_dataset = CTDataSet_Ticker_Stat(self.logger, self, wreq_args)
-		elif name_chan == 'trades':
-			obj_dataset = CTDataSet_ATrades_Stat(self.size_dset_trades, self.logger, self, wreq_args)
-		elif name_chan == 'book':
-			obj_dataset = CTDataSet_ABooks_Stat(self.logger, self, wreq_args)
-		elif name_chan == 'candles':
-			obj_dataset = CTDataSet_ACandles_Stat(self.size_dset_candles, self.logger, self, wreq_args)
-		else:
-			obj_dataset = None
-		if self.flag_dbg and obj_dataset != None:
-			obj_dataset.dbg_stat = 2
-		if obj_dataset == None:
-			super(CTDataContainer_StatOut, self).onChan_DataSet_alloc(name_chan, wreq_args, dict_args)
-		return obj_dataset
 
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
 		#print("CTDataContainer_StatOut::onChan_DataOut_alloc", name_chan, wreq_args)

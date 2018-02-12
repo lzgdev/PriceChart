@@ -1,6 +1,5 @@
 
 from ktdata.dataset             import DFMT_KKAIPRIV, DFMT_BFXV2, \
-									CTDataSet_AStat,  \
 									CTDataSet_Ticker, CTDataSet_ATrades, CTDataSet_ABooks, CTDataSet_ACandles
 
 from ktdata.datacontainer       import CTDataContainer

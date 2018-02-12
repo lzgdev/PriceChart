@@ -103,54 +103,6 @@ class CTDataSet_Array(CTDataSet_Base):
 			self.locDataSync()
 
 
-class CTDataSet_AStat(CTDataSet_Array):
-	def __init__(self, recs_size, logger, obj_container, wreq_args):
-		super(CTDataSet_AStat, self).__init__(logger, obj_container, "stat", wreq_args)
-		self.loc_recs_size   = recs_size
-		self.loc_candle_recs = []
-		#self.flag_dbg_rec    =  True
-
-	def onLocDataClean_impl(self):
-		self.loc_candle_recs.clear()
-
-	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
-		if   (fmt_data == DFMT_KKAIPRIV):
-			candle_rec = copy.copy(obj_rec)
-		elif (fmt_data == DFMT_BFXV2):
-			try:
-				candle_rec = {
-						'mts':    obj_rec[0],
-						'open':   obj_rec[1],
-						'close':  obj_rec[2],
-						'high':   obj_rec[3],
-						'low':    obj_rec[4],
-						'volume': obj_rec[5],
-					}
-			except:
-				candle_rec = None
-				self.logger.error("CTDataSet_ACandles(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
-		flag_chg  = False
-		if (len(self.loc_candle_recs)+1 >  self.loc_recs_size):
-			self.loc_candle_recs.pop(0)
-		rec_index = len(self.loc_candle_recs) - 1
-		while rec_index >= 0:
-			if candle_rec['mts'] >= self.loc_candle_recs[rec_index]['mts']:
-				break
-			rec_index -= 1
-		if ((rec_index >= 0) and (self.loc_candle_recs[rec_index]['mts'] == candle_rec['mts'])):
-			if (self.loc_candle_recs[rec_index]['volume'] != candle_rec['volume']):
-				self.loc_candle_recs[rec_index] = candle_rec
-				flag_chg  = True
-		else:
-			if ((rec_index <  0) or (candle_rec['mts'] >  self.loc_candle_recs[rec_index]['mts'])):
-				rec_index += 1
-			self.loc_candle_recs.insert(rec_index, candle_rec)
-			flag_chg  = True
-		if flag_plus and flag_chg:
-			self.obj_container.datCB_RecPlus(self, candle_rec, rec_index)
-		return (candle_rec, rec_index)
-
-
 class CTDataSet_Ticker(CTDataSet_Base):
 	def __init__(self, logger, obj_container, wreq_args):
 		super(CTDataSet_Ticker, self).__init__(logger, obj_container, 'ticker', wreq_args)
@@ -198,7 +150,7 @@ class CTDataSet_Ticker(CTDataSet_Base):
 
 
 class CTDataSet_ATrades(CTDataSet_Array):
-	def __init__(self, recs_size, logger, obj_container, wreq_args):
+	def __init__(self, logger, recs_size, obj_container, wreq_args):
 		super(CTDataSet_ATrades, self).__init__(logger, obj_container, "trades", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_trades_recs = []
@@ -229,16 +181,20 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		new_tid = trade_rec['tid']
 		rec_index = len(self.loc_trades_recs) - 1
 		while rec_index >= 0:
-			if new_mts >= self.loc_trades_recs[rec_index]['mts'] or new_tid >= self.loc_trades_recs[rec_index]['tid']:
+			if new_tid >= self.loc_trades_recs[rec_index]['tid']:
+				break
+			if new_mts >  self.loc_trades_recs[rec_index]['mts']:
 				break
 			rec_index -= 1
-		if ((rec_index <  0) or
-			(new_mts >  self.loc_trades_recs[rec_index]['mts']) or (new_tid >  self.loc_trades_recs[rec_index]['tid'])):
-			rec_index += 1
-		self.loc_trades_recs.insert(rec_index, trade_rec)
-		if flag_plus:
+		if rec_index >= 0 and new_tid == self.loc_trades_recs[rec_index]['tid']:
+			rec_index  = -1
+		else:
+			rec_index +=  1
+		if rec_index >= 0:
+			self.loc_trades_recs.insert(rec_index, trade_rec)
+		if flag_plus and rec_index >= 0:
 			self.obj_container.datCB_RecPlus(self, trade_rec, rec_index)
-		return (trade_rec, rec_index)
+		return None if rec_index <  0 else (trade_rec, rec_index)
 
 
 class CTDataSet_ABooks(CTDataSet_Array):
@@ -365,7 +321,7 @@ class CTDataSet_ABooks(CTDataSet_Array):
 
 
 class CTDataSet_ACandles(CTDataSet_Array):
-	def __init__(self, recs_size, logger, obj_container, wreq_args):
+	def __init__(self, logger, recs_size, obj_container, wreq_args):
 		super(CTDataSet_ACandles, self).__init__(logger, obj_container, "candles", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_candle_recs = []

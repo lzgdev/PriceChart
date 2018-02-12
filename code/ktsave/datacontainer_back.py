@@ -1,81 +1,109 @@
 
 import json
+import copy
 import math
 
 import urllib.parse
 
 import ktdata
 
+from .dataset_back      import CTDataSet_Ticker_back, CTDataSet_ATrades_back, CTDataSet_ABooks_back, CTDataSet_ACandles_back
+
 from .dataoutput_db     import CTDataOut_Db_ticker, CTDataOut_Db_trades, CTDataOut_Db_book, CTDataOut_Db_candles
+
+
+dsrc_db_trades = {
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'sort': [('$natural', 1)], }, },
+			],
+		}
+
+dsrc_db_candles = {
+			'url': 'mongodb://127.0.0.1:27017/bfx-pub',
+			'chans': [
+				{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', 'load_args': { 'sort': [('$natural', 1)], }, },
+			],
+		}
+
+dsrc_http_trades = {
+			'url': 'https://api.bitfinex.com/v2',
+			'chans': [
+				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
+			],
+		}
+
+dsrc_http_candles = {
+			'url': 'https://api.bitfinex.com/v2',
+			'chans': [
+				{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
+			],
+		}
 
 
 class CTDataContainer_BackOut(ktdata.CTDataContainer):
 	def __init__(self, logger):
 		ktdata.CTDataContainer.__init__(self, logger)
-		self.back_mts_step = 60000
-
-		self.obj_dbwriter   = None
+		self.back_mts_step  = 60000
 
 		self.flag_back_end  = False
 
 		self.back_mts_step  = 60 * 1000
 		self.back_mts_bgn   = 1510685520000
+		#self.back_mts_bgn   = 1510686960000
+		#self.back_mts_bgn   = 1510709100000
 
-		self.back_mts_now   = self.back_mts_bgn
+		self.back_mts_now   = None
 		self.back_rec_now   = CTBackRec_Check(self.logger, self.back_mts_step)
-		self.back_rec_now.reset(self.back_mts_now)
 
-		self.read_trades_tid_last   = None
-		self.read_candles_mts_last  = None
-		self.read_trades_num    = 0
-		self.read_candles_num   = 0
+		self.flag_http_mode = False
+
+		self.obj_dset_trades    = None
+		self.obj_dset_candles   = None
 
 		self.run_loop_main  = 200
 
 		#self.run_loop_main  =   2
+		#self.size_dset_trades  = 8
+		#self.size_dset_candles = 8
 
-		# debug settings
-		#self.read_trades_num    = 20
-		#self.read_candles_num   = 20
+	def getBack_ExecCfg(self):
+		return self.onBack_ExecCfg_init()
 
-#	def onExec_Init_impl(self, list_task):
-#		if len(list_task) == 0:
-#			return None
-#		args_task = list_task.pop()
-#
-#		task_url  = args_task.get('url', None)
-#		task_jobs = args_task.get('jobs', None)
-#		msec_off  = args_task.get('msec_off', None)
-#
-#		str_db_uri  = 'mongodb://127.0.0.1:27017'
-#		str_db_name = 'bfx-pub'
-#		self.obj_dbwriter  = ktdata.KTDataMedia_DbWriter(self.logger)
-#		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
-#
-#		url_parse = urllib.parse.urlparse(task_url)
-#		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
-#			self.addObj_DataSource(ktdata.CTDataInput_HttpBfx(self.logger, self, task_url))
-#		elif url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
-#			self.addObj_DataSource(ktdata.CTDataInput_WssBfx(self.logger, self, task_url,
-#								self.tok_mono_this, msec_off))
-#
-#		for map_unit in task_jobs:
-#			self.addArg_DataChannel(map_unit['channel'], map_unit['wreq_args'])
-#
-#		return None
-#
-#	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
-#		obj_dataout = None
-#		if   name_chan == 'ticker':
-#			obj_dataout = CTDataOut_Db_ticker(self.logger, obj_dataset, self.obj_dbwriter)
-#		elif name_chan == 'trades':
-#			obj_dataout = CTDataOut_Db_trades(self.logger, obj_dataset, self.obj_dbwriter)
-#		elif name_chan == 'book':
-#			obj_dataout = CTDataOut_Db_book(self.logger, obj_dataset, self.obj_dbwriter)
-#		elif name_chan == 'candles':
-#			obj_dataout = CTDataOut_Db_candles(self.logger, obj_dataset, self.obj_dbwriter)
-#		return obj_dataout
-#
+	def onExec_Init_ext(self, list_exec):
+		if self.back_mts_now == None:
+			self.back_rec_now.dbInit(self)
+			self.back_mts_now = self.back_mts_bgn
+			self.back_rec_now.recReset(self.back_mts_now)
+		return None
+
+	def onInit_DataSource_alloc(self, url_scheme, url_netloc, url):
+		obj_datasrc = None
+		if   url_scheme == 'https' and url_netloc == 'api.bitfinex.com':
+			obj_datasrc = CTDataInput_HttpBfx_Back(self.logger, self, url,
+								self.back_mts_now, self.back_mts_now+self.back_mts_step)
+		if obj_datasrc == None:
+			obj_datasrc = super(CTDataContainer_BackOut, self).onInit_DataSource_alloc(url_scheme, url_netloc, url)
+		return obj_datasrc
+
+	def onChan_DataSet_alloc(self, name_chan, wreq_args, dict_args):
+		obj_dataset = None
+		if   name_chan == 'ticker':
+			obj_dataset = CTDataSet_Ticker_back(self.logger, self, wreq_args)
+		elif name_chan == 'trades':
+			obj_dataset = CTDataSet_ATrades_back(self.logger, self.size_dset_trades, self, wreq_args)
+			self.obj_dset_trades   = obj_dataset
+		elif name_chan == 'book':
+			obj_dataset = CTDataSet_ABooks_back(self.logger, self, wreq_args)
+		elif name_chan == 'candles':
+			obj_dataset = CTDataSet_ACandles_back(self.logger, self.size_dset_candles, self, wreq_args)
+			self.obj_dset_candles  = obj_dataset
+		else:
+			obj_dataset = None
+		if obj_dataset == None:
+			obj_dataset = super(CTDataContainer_BackOut, self).onChan_DataSet_alloc(name_chan, wreq_args, dict_args)
+		return obj_dataset
+
 #	def onDatIN_ChanAdd_ext(self, idx_chan, id_chan):
 #		tup_chan  = self.list_tups_datachan[idx_chan]
 #		obj_dataset = tup_chan[0]
@@ -86,64 +114,79 @@ class CTDataContainer_BackOut(ktdata.CTDataContainer):
 #								name_chan=obj_dataset.name_chan, wreq_args=obj_dataset.wreq_args)
 
 	def onExec_Prep_impl(self, arg_prep):
-		#print("CTDataContainer_BackOut::onExec_Prep_impl(01)", self.obj_dset_trades, self.obj_dset_candles)
+		#print("CTDataContainer_BackOut::onExec_Prep_impl(01)")
 		self.run_loop_main    -= 1
-
-		self.read_trades_num   = 0
-		self.read_candles_num  = 0
-
 		self.stamp_exec_bgn = self.mtsNow_time()
 
 	def onExec_Post_impl(self, arg_post):
 		self.stamp_exec_end = self.mtsNow_time()
 		print("CTDataContainer_BackOut::onExec_Post_impl, time cost:", format(self.stamp_exec_end-self.stamp_exec_bgn, ","))
-
-		self.obj_dset_trades  = None
-		self.obj_dset_candles = None
-		num_chans = len(self.list_tups_datachan)
-		for idx_chan in range(num_chans):
-			if   isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ATrades):
-				self.obj_dset_trades  = self.list_tups_datachan[idx_chan][0]
-			elif isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ACandles):
-				self.obj_dset_candles = self.list_tups_datachan[idx_chan][0]
-		#print("CTDataContainer_BackOut::onExec_Post_impl(11)", self.obj_dset_trades, self.obj_dset_candles)
-
 		if self.obj_dset_trades != None and self.obj_dset_candles != None:
 			self.onBack_Loop_impl()
 
-		# update self.read_trades_tid_last and self.read_trades_num
-		self.read_trades_num   = 0
-		len_list  = 0 if self.obj_dset_trades == None else len(self.obj_dset_trades.loc_trades_recs)
-		if len_list <  self.size_dset_trades/2:
-			if len_list >  0:
-				rec_trades = self.obj_dset_trades.loc_trades_recs[len_list-1]
-				self.read_trades_tid_last  = rec_trades['tid']
-			self.read_trades_num   = self.size_dset_trades  - len_list
-		# update self.read_candles_mts_last and self.read_candles_num
-		self.read_candles_num  = 0
+		self.flag_back_end  = True if self.run_loop_main <  0 else False
+
+	def onBack_ExecCfg_init(self):
+		#print("CTDataContainer_BackOut::onBack_ExecCfg_init(00)")
+		list_tasks_run = []
+		if self.flag_http_mode:
+			dsrc_cfg = copy.copy(dsrc_http_candles)
+			list_tasks_run.append(dsrc_cfg)
+			dsrc_cfg = copy.copy(dsrc_http_trades)
+			list_tasks_run.append(dsrc_cfg)
+			return list_tasks_run
+
+		# evaluate num_rec_read for candles
+		num_rec_read = 0
 		len_list  = 0 if self.obj_dset_candles == None else len(self.obj_dset_candles.loc_candle_recs)
 		if len_list <  self.size_dset_candles/2:
-			if len_list >  0:
-				rec_candles = self.obj_dset_candles.loc_candle_recs[len_list-1]
-				self.read_candles_mts_last = rec_candles['mts']
-			self.read_candles_num  = self.size_dset_candles - len_list
+			num_rec_read = self.size_dset_candles - len_list
+		#
+		if num_rec_read > 0:
+			dsrc_cfg = copy.copy(dsrc_db_candles)
+			dsrc_db_load = dsrc_cfg['chans'][0]['load_args']
+			mts_last = None
+			if self.obj_dset_candles != None and self.obj_dset_candles.back_rec_last != None:
+				mts_last = self.obj_dset_candles.back_rec_last.get('mts', None)
+			if mts_last == None:
+				dsrc_db_load['filter'] = { 'mts': { '$gte': self.back_mts_now, } }
+			else:
+				dsrc_db_load['filter'] = { 'mts': { '$gt': mts_last, } }
+			dsrc_db_load['limit']  = num_rec_read
+			list_tasks_run.append(dsrc_cfg)
+		# evaluate num_rec_read for trades
+		num_rec_read = 0
+		len_list  = 0 if self.obj_dset_trades == None else len(self.obj_dset_trades.loc_trades_recs)
+		if len_list <  self.size_dset_trades/2:
+			num_rec_read = self.size_dset_trades  - len_list
+		#
+		if num_rec_read >  0:
+			dsrc_cfg = copy.copy(dsrc_db_trades)
+			dsrc_db_load = dsrc_cfg['chans'][0]['load_args']
+			tid_last = None
+			if self.obj_dset_trades != None and self.obj_dset_trades.back_rec_last != None:
+				tid_last = self.obj_dset_trades.back_rec_last.get('tid', None)
+			if tid_last == None:
+				dsrc_db_load['filter'] = { 'mts': { '$gte': self.back_mts_now, } }
+			else:
+				dsrc_db_load['filter'] = { 'tid': { '$gt': tid_last, } }
+			dsrc_db_load['limit']  =  num_rec_read
+			list_tasks_run.append(dsrc_cfg)
 
-		#print("CTDataContainer_BackOut::onExec_Post_impl(99)",
-		#		", trades:", self.read_trades_num, self.read_trades_tid_last,
-		#		", candles:", self.read_candles_num, self.read_candles_mts_last)
-		self.flag_back_end  = True if self.run_loop_main <  0 else False
+		return list_tasks_run
 
 	def onBack_Loop_impl(self):
 		#print("CTDataContainer_BackOut::onBack_Loop_impl ...")
 		while True:
-			ret_step = self.onBack_Step_impl()
-			if not ret_step:
+			ret_next = self.onBack_Step_impl()
+			if not ret_next:
 				break
+			self.back_mts_now += self.back_mts_step
+			self.back_rec_now.recReset(self.back_mts_now)
 
 	def onBack_Step_impl(self):
 		#print("CTDataContainer_BackOut::onBack_Step_impl ...")
 		flag_next_trade = flag_next_candles = False
-		mts_stat = self.back_mts_now
 		mts_next = self.back_mts_now + self.back_mts_step
 
 		while len(self.obj_dset_trades.loc_trades_recs) >  0:
@@ -151,25 +194,55 @@ class CTDataContainer_BackOut(ktdata.CTDataContainer):
 				flag_next_trade  = True
 				break
 			rec_trades = self.obj_dset_trades.loc_trades_recs.pop(0)
-			ret_add = self.back_rec_now.addRec_Trades(ktdata.DFMT_KKAIPRIV, rec_trades)
-			if ret_add:
-				self.read_trades_tid_last  = rec_trades['tid']
+			self.back_rec_now.addRec_Trades(ktdata.DFMT_KKAIPRIV, rec_trades)
 
 		while len(self.obj_dset_candles.loc_candle_recs) >  0:
 			if self.obj_dset_candles.loc_candle_recs[0]['mts'] >= mts_next:
 				flag_next_candles = True
 				break
 			rec_candles = self.obj_dset_candles.loc_candle_recs.pop(0)
-			ret_add = self.back_rec_now.addRec_Candles(ktdata.DFMT_KKAIPRIV, rec_candles)
-			if ret_add:
-				self.read_candles_mts_last = rec_candles['mts']
+			self.back_rec_now.addRec_Candles(ktdata.DFMT_KKAIPRIV, rec_candles)
 
+		flag_next = False
 		if flag_next_trade and flag_next_candles:
-			self.back_mts_now = mts_next
-			self.back_rec_now.check()
+			flag_next = self.back_rec_now.recCheck()
 			self.back_rec_now.dbgDump(1)
-			self.back_rec_now.reset(self.back_mts_now)
-		return flag_next_trade and flag_next_candles
+			if flag_next:
+				self.back_rec_now.dbRecBack()
+			if   flag_next and self.flag_http_mode:
+				self.obj_dset_trades.locDataClean()
+				self.obj_dset_candles.locDataClean()
+			elif not flag_next:
+				self.back_rec_now.recReset(self.back_mts_now)
+				self.obj_dset_trades.locDataClean()
+				self.obj_dset_candles.locDataClean()
+			self.flag_http_mode = not flag_next
+		return flag_next
+
+
+class CTDataInput_HttpBfx_Back(ktdata.CTDataInput_HttpBfx):
+	def __init__(self, logger, obj_container, url_http_pref, mts_begin, mts_end):
+		ktdata.CTDataInput_HttpBfx.__init__(self, logger, obj_container, url_http_pref)
+		self.loc_mark_end   = -1
+		self.back_mts_begin = mts_begin
+		self.back_mts_end   = mts_end
+
+		#self.flag_log_intv  = 1
+
+	def onMark_ChanEnd_impl(self):
+		self.loc_mark_end   = self.tup_run_stat[1]
+
+	def onMts_ReqStart_impl(self):
+		if self.loc_mark_end == self.tup_run_stat[1]:
+			return -1
+		obj_dataset = self.obj_container.list_tups_datachan[self.tup_run_stat[2]][0]
+		mts_last = None if obj_dataset.back_rec_last == None else obj_dataset.back_rec_last.get('mts', None)
+		#print("CTDataInput_HttpBfx_Back::onMts_ReqStart_impl, mts_last:", mts_last, obj_dataset)
+		if mts_last == None:
+			return self.back_mts_begin
+		if mts_last >= self.back_mts_end:
+			return -1
+		return mts_last
 
 
 class CTBackRec_Check(object):
@@ -178,6 +251,10 @@ class CTBackRec_Check(object):
 		self.inf_this = "CTBackRec_Check"
 		self.rec_mts_step  = 60000 if mts_step == None else round(mts_step)
 		self.flag_dbg_back =  0
+		# members for database
+		self.obj_dbwriter  = None
+		self.name_dbtbl_trades  = None
+		self.name_dbtbl_candles = None
 		# record data/ref members of a period time
 		self.rec_mts_this  = None
 		self.rec_mts_next  = None
@@ -189,11 +266,17 @@ class CTBackRec_Check(object):
 
 		#self.flag_dbg_back =  2
 
-	def reset(self, mts):
-		self.onReset_impl(mts)
+	def dbInit(self, obj_container):
+		return self.onDb_Init_impl(obj_container)
 
-	def check(self):
-		return self.onCheck_impl()
+	def recReset(self, mts):
+		self.onRec_Reset_impl(mts)
+
+	def recCheck(self):
+		return self.onRec_Check_impl()
+
+	def dbRecBack(self):
+		return self.onDb_RecBack_impl()
 
 	def dbgDump(self, dbgLevel):
 		return self.onDbg_Dump_impl(dbgLevel)
@@ -204,7 +287,25 @@ class CTBackRec_Check(object):
 	def addRec_Candles(self, fmt_data, rec_candles):
 		return self.onAdd_RecCandles(fmt_data, rec_candles)
 
-	def onReset_impl(self, mts):
+	def onDb_Init_impl(self, obj_container):
+		# open database
+		str_db_uri  = 'mongodb://127.0.0.1:27017'
+		str_db_name = 'bfx-bck01'
+		self.obj_dbwriter = ktdata.KTDataMedia_DbWriter(self.logger)
+		self.obj_dbwriter.dbOP_Connect(str_db_uri, str_db_name)
+		# create/open db table for trades
+		cfg_chan = dsrc_db_trades['chans'][0]
+		map_chan = obj_container._gmap_TaskChans_chan(cfg_chan['channel'], cfg_chan['wreq_args'])
+		self.name_dbtbl_trades  = map_chan['name_dbtbl']
+		self.obj_dbwriter.dbOP_CollAdd(self.name_dbtbl_trades, map_chan['channel'], map_chan['wreq_args'])
+		# create/open db table for candles
+		cfg_chan = dsrc_db_candles['chans'][0]
+		map_chan = obj_container._gmap_TaskChans_chan(cfg_chan['channel'], cfg_chan['wreq_args'])
+		self.name_dbtbl_candles = map_chan['name_dbtbl']
+		self.obj_dbwriter.dbOP_CollAdd(self.name_dbtbl_candles, map_chan['channel'], map_chan['wreq_args'])
+		return None
+
+	def onRec_Reset_impl(self, mts):
 		self.rec_mts_this  = math.floor(mts / self.rec_mts_step) * self.rec_mts_step
 		self.rec_mts_next  = self.rec_mts_this + self.rec_mts_step
 		self.inf_this = "CTBackRec_Check(mts=" + format(self.rec_mts_this, ",") + ")"
@@ -213,7 +314,7 @@ class CTBackRec_Check(object):
 		self.rec_candles   = None
 		self.loc_vol_trades = 0.0
 
-	def onCheck_impl(self):
+	def onRec_Check_impl(self):
 		if self.rec_candles == None:
 			return False
 		vol_candles = self.rec_candles['volume']
@@ -224,7 +325,7 @@ class CTBackRec_Check(object):
 		return True if vol_diff <  0.001 else False
 
 	def onAdd_RecTrades(self, fmt_data, rec_trades):
-		if self.flag_dbg_back >= 2:
+		if self.flag_dbg_back >= 3:
 			self.logger.debug(self.inf_this + ": add trade=" + str(rec_trades))
 		mts_rec = rec_trades.get('mts', None)
 		if   mts_rec == None:
@@ -266,6 +367,12 @@ class CTBackRec_Check(object):
 		self.rec_candles   = rec_candles
 		return True
 
+	def onDb_RecBack_impl(self):
+		for rec_trades in self.list_trades:
+			self.obj_dbwriter.dbOP_DocAdd(self.name_dbtbl_trades, rec_trades)
+		self.obj_dbwriter.dbOP_DocAdd(self.name_dbtbl_candles, self.rec_candles)
+		return None
+
 	def onDbg_Dump_impl(self, dbgLevel):
 		diff_vol = (self.rec_candles.get('volume', 0.0) if self.rec_candles != None else 0.0) - self.loc_vol_trades
 		if dbgLevel >= 1:
@@ -277,5 +384,6 @@ class CTBackRec_Check(object):
 				rec_trades = self.list_trades[idx_trades]
 				mts_trades = rec_trades['mts']
 				print(self.inf_this, "dump(12), idx:", str(idx_trades).zfill(3), ", trades:",  rec_trades)
+
 
 

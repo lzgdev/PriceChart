@@ -40,7 +40,8 @@ class CTDataInput_DbReader(CTDataInput_Db):
 		self.loc_load_args  = cfg_chan.get('load_args', None)
 
 		if self.id_data_chan == None:
-			self.id_data_chan = self.obj_container.datIN_ChanGet(self.loc_name_chan, self.loc_wreq_args)
+			tup_chan = self.obj_container.datIN_ChanGet(self.loc_name_chan, self.loc_wreq_args)
+			self.id_data_chan = None if tup_chan == None else tup_chan[0]
 		if self.id_data_chan == None:
 			CTDataInput_Db.gid_chan_now += 1
 			self.id_data_chan  = CTDataInput_Db.gid_chan_now

@@ -35,7 +35,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		self.mts_req_start  = 0
 
 		#self.loc_dbg_tmax   = 3
-		self.flag_log_intv  = 1
+		#self.flag_log_intv  = 1
 
 	def mark_ChanEnd(self):
 		self.onMark_ChanEnd_impl()
@@ -109,19 +109,20 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 				obj_data  = None
 		len_list  = len(obj_data) if isinstance(obj_data, list) else -1
 		if   len_list >= 1 and 'error' != obj_data[0]:
-			if self.flag_log_intv >  1:
-				#print("data:", obj_data)
-				tm_last = self.mts_req_start
-				for item in obj_data:
+			flag_data_valid =  True
+			#self.obj_container.datIN_DataFwd(self.tup_run_stat[1], DFMT_BFXV2, [self.tup_run_stat[1], obj_data])
+			id_chan = self.tup_run_stat[1]
+			for idx_item in range(len_list):
+				obj_item = obj_data[idx_item]
+				if self.flag_log_intv >  1:
 					if    'trades' == self.tup_run_stat[3]:
-						tm_rec = item[1]
+						tm_rec = obj_item[1]
 					elif 'candles' == self.tup_run_stat[3]:
-						tm_rec = item[0]
-					print("data, diff:", tm_rec - tm_last, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", item)
+						tm_rec = obj_item[0]
+					print("Data, diff:", tm_rec - self.mts_req_start, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", obj_item)
+				self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, [id_chan, obj_item])
 			if self.flag_log_intv >  0:
 				print("Data, resp:", self.loc_cnt_resp, ", len:", len_list)
-			flag_data_valid =  True
-			self.obj_container.datIN_DataFwd(self.tup_run_stat[1], DFMT_BFXV2, [self.tup_run_stat[1], obj_data])
 			if    'trades' == self.tup_run_stat[3]:
 				if len_list >=  num_bfx_trades_recs:
 					flag_chan_end = False
@@ -154,10 +155,17 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		wreq_args_map = map_chan['wreq_args']
 		dict_args_map = map_chan['dict_args']
 		# try to add data channel
-		CTDataInput_HttpBfx.num_chans += 1
-		id_chan   = CTDataInput_HttpBfx.id_chan_off + CTDataInput_HttpBfx.num_chans
-		idx_chan  = self.obj_container.datIN_ChanAdd(id_chan, name_chan, wreq_args_map)
-		if idx_chan >= 0:
+		tup_chan = self.obj_container.datIN_ChanGet(name_chan, wreq_args_map)
+		if tup_chan != None and tup_chan[0] != None:
+			id_chan  = tup_chan[0]
+			idx_chan = tup_chan[1]
+		else:
+			CTDataInput_HttpBfx.num_chans += 1
+			id_chan   = CTDataInput_HttpBfx.id_chan_off + CTDataInput_HttpBfx.num_chans
+			idx_chan  = self.obj_container.datIN_ChanAdd(id_chan, name_chan, wreq_args_map)
+			if idx_chan <  0:
+				id_chan = None
+		if id_chan != None:
 			self.tup_run_stat = (run_chan, id_chan, idx_chan, name_chan, wreq_args_map, dict_args_map)
 		return True if self.tup_run_stat[0] == run_chan else False
 

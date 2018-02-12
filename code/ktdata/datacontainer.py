@@ -89,16 +89,15 @@ class CTDataContainer(object):
 
 	def datIN_ChanGet(self, name_chan, wreq_args):
 		global gMap_TaskChans
-		id_chan = None
 		idx_map_find = self._gmap_TaskChans_index(name_chan, wreq_args)
 		if idx_map_find <  0:
-			return id_chan
+			return None
 		wreq_args_map = gMap_TaskChans[idx_map_find]['wreq_args']
 		idx_chan_get = self.__chan_Dwreq2Idx(name_chan, wreq_args_map)
 		if idx_chan_get <  0:
-			return id_chan
+			return None
 		id_chan = self.list_tups_datachan[idx_chan_get][0].id_chan
-		return id_chan
+		return (id_chan, idx_chan_get)
 
 	def datIN_ChanAdd(self, id_chan, name_chan, wreq_args):
 		idx_chan = self.onDatIN_ChanAdd_impl(id_chan, name_chan, wreq_args)
@@ -174,11 +173,11 @@ class CTDataContainer(object):
 		if   name_chan == 'ticker':
 			obj_dataset = CTDataSet_Ticker(self.logger, self, wreq_args)
 		elif name_chan == 'trades':
-			obj_dataset = CTDataSet_ATrades(self.size_dset_trades, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ATrades(self.logger, self.size_dset_trades, self, wreq_args)
 		elif name_chan == 'book':
 			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args)
 		elif name_chan == 'candles':
-			obj_dataset = CTDataSet_ACandles(self.size_dset_candles, self.logger, self, wreq_args)
+			obj_dataset = CTDataSet_ACandles(self.logger, self.size_dset_candles, self, wreq_args)
 		else:
 			obj_dataset = None
 		return obj_dataset
