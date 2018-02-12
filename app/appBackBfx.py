@@ -21,6 +21,7 @@ dbg_main_loop = False
 
 dbg_main_loop =  True
 appMain = ktsave.CTDataContainer_BackOut(logger)
+appMain.backInit()
 
 while not appMain.flag_back_end:
 	list_tasks_run = appMain.getBack_ExecCfg()

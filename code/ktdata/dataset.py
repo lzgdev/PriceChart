@@ -177,16 +177,16 @@ class CTDataSet_ATrades(CTDataSet_Array):
 				self.logger.error("CTDataSet_ATrades(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
 		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
 			self.loc_trades_recs.pop(0)
-		new_mts = trade_rec['mts']
-		new_tid = trade_rec['tid']
+		tid_new = trade_rec['tid']
+		mts_new = trade_rec['mts']
 		rec_index = len(self.loc_trades_recs) - 1
 		while rec_index >= 0:
-			if new_tid >= self.loc_trades_recs[rec_index]['tid']:
+			if tid_new >= self.loc_trades_recs[rec_index]['tid']:
 				break
-			if new_mts >  self.loc_trades_recs[rec_index]['mts']:
+			if mts_new >  self.loc_trades_recs[rec_index]['mts']:
 				break
 			rec_index -= 1
-		if rec_index >= 0 and new_tid == self.loc_trades_recs[rec_index]['tid']:
+		if rec_index >= 0 and tid_new == self.loc_trades_recs[rec_index]['tid']:
 			rec_index  = -1
 		else:
 			rec_index +=  1
