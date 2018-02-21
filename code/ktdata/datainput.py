@@ -25,12 +25,16 @@ class CTDataInput(object):
 		self.onPrep_Read_impl(**kwargs)
 
 	def execReadLoop(self):
+		num_step = 0
 		while True:
+			self.obj_container.datCB_ReadPrep(self, num_step)
 			ret_prep = self.onLoop_ReadPrep_impl()
 			if not ret_prep:
 				break
 			self.onLoop_ReadMain_impl()
 			self.onLoop_ReadPost_impl()
+			self.obj_container.datCB_ReadPost(self, num_step)
+			num_step += 1
 
 	def closeRead(self):
 		self.onClose_Read_impl()

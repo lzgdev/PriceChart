@@ -114,6 +114,13 @@ class CTDataContainer(object):
 	def datIN_DataFwd(self, id_chan, fmt_data, obj_msg):
 		self.onDatIN_DataFwd_impl(id_chan, fmt_data, obj_msg)
 
+
+	def datCB_ReadPrep(self, obj_datasrc, idx_step):
+		self.onDatCB_ReadPrep_impl(obj_datasrc, idx_step)
+
+	def datCB_ReadPost(self, obj_datasrc, idx_step):
+		self.onDatCB_ReadPost_impl(obj_datasrc, idx_step)
+
 	def datCB_DataClean(self, obj_dataset):
 		idx_chan = self.__chan_Dset2Idx(obj_dataset)
 		if idx_chan >= 0:
@@ -232,6 +239,13 @@ class CTDataContainer(object):
 			self.logger.error(self.inf_this + " (data): can't handle data, chanId:" + str(id_chan) + ", data:" + str(obj_msg))
 		else:
 			obj_dataset.locDataAppend(fmt_data, obj_msg)
+
+
+	def onDatCB_ReadPrep_impl(self, obj_datasrc, idx_step):
+		pass
+
+	def onDatCB_ReadPost_impl(self, obj_datasrc, idx_step):
+		pass
 
 	def onDatCB_DataClean_impl(self, idx_chan, obj_dataset):
 		obj_dataout = self.list_tups_datachan[idx_chan][1]

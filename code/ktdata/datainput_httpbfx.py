@@ -8,11 +8,6 @@ from .datainput import CTDataInput_Http
 
 from .dataset   import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 
-# v1 time 1516640100
-# v2 time 1516640100000
-dbg_tm_start = None
-#dbg_tm_start = 1516640100000
-
 num_bfx_trades_recs  = 120
 num_bfx_candles_recs = 120
 
@@ -32,7 +27,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		self.tup_run_stat   = ( -1, )
 
 		self.loc_cnt_resp   = 0
-		self.mts_req_start  = 0
+		self.mts_req_range  = None
 
 		#self.loc_dbg_tmax   = 3
 		#self.flag_log_intv  = 1
@@ -40,11 +35,10 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 	def mark_ChanEnd(self):
 		self.onMark_ChanEnd_impl()
 
-	def getMts_ReqStart(self):
-		return self.onMts_ReqStart_impl()
+	def getMts_ReqRange(self):
+		return self.onMts_ReqRange_impl()
 
 	def onLoop_ReadPrep_impl(self):
-		global dbg_tm_start
 		# update self.loc_dbg_tmax, try maximum self.loc_dbg_tmax times
 		if self.loc_dbg_tmax >= 0:
 			if self.loc_dbg_tmax == 0:
@@ -54,32 +48,44 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		if self.num_chan_cfg <  0 and isinstance(self.list_chan_cfg, list):
 			self.num_chan_cfg = len(self.list_chan_cfg)
 
-		self.mts_req_start  = -1
+		self.mts_req_range  = None
 		while self.run_chan_cfg <  self.num_chan_cfg:
 			# init data channel
 			if self.tup_run_stat[0] != self.run_chan_cfg:
 				self.onLoop_ReadPrep_chan_new(self.run_chan_cfg)
 			if self.tup_run_stat[0] != self.run_chan_cfg:
 				return False
-			self.mts_req_start = self.getMts_ReqStart()
-			if self.mts_req_start >= 0:
+			self.mts_req_range = self.getMts_ReqRange()
+			if self.mts_req_range != None:
 				break
 			self.run_chan_cfg += 1
-		if self.mts_req_start <  0:
+		# extrace mts_start and mts_end from self.mts_req_range
+		mts_start = None
+		mts_end   = None
+		if   not isinstance(self.mts_req_range, tuple):
+			pass
+		elif len(self.mts_req_range) >  0 and self.mts_req_range[0] >  0:
+			mts_start = self.mts_req_range[0]
+		elif len(self.mts_req_range) >  1 and self.mts_req_range[1] >  0:
+			mts_end   = self.mts_req_range[1]
+		if mts_start == None and mts_end == None:
 			return False
-		if self.mts_req_start == 0 and dbg_tm_start != None:
-			self.mts_req_start  = dbg_tm_start
-
 		# compose self.url_main_netloc and self.url_main_path
 		url_parse  = urllib.parse.urlparse(self.url_http_pref)
 		self.url_main_netloc  = url_parse.netloc
 		if   'trades' == self.tup_run_stat[3]:
 			url_suff   = '/trades/' + self.tup_run_stat[5]['symbol'] + '/hist'
-			url_params = 'sort=1&start=' + str(self.mts_req_start)
+			if   mts_end   != None:
+				url_params = 'end=' + str(mts_end)
+			else:
+				url_params = 'sort=1&start=' + str(mts_start)
 			self.url_main_path   = url_parse.path + url_suff + '?' + url_params
 		elif 'candles' == self.tup_run_stat[3]:
 			url_suff   = '/candles/' + self.tup_run_stat[5]['key'] + '/hist'
-			url_params = 'sort=1&start=' + str(self.mts_req_start)
+			if   mts_end   != None:
+				url_params = 'end=' + str(mts_end)
+			else:
+				url_params = 'sort=1&start=' + str(mts_start)
 			self.url_main_path   = url_parse.path + url_suff + '?' + url_params
 		else:
 			self.url_main_path   = None
@@ -110,7 +116,13 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		len_list  = len(obj_data) if isinstance(obj_data, list) else -1
 		if   len_list >= 1 and 'error' != obj_data[0]:
 			flag_data_valid =  True
-			#self.obj_container.datIN_DataFwd(self.tup_run_stat[1], DFMT_BFXV2, [self.tup_run_stat[1], obj_data])
+			# extract mts_edge from self.mts_req_range
+			if self.flag_log_intv >  1:
+				if   self.mts_req_range[0] >  0:
+					mts_edge  = self.mts_req_range[0]
+				else:
+					mts_edge  = self.mts_req_range[1]
+			# forward data to container
 			id_chan = self.tup_run_stat[1]
 			for idx_item in range(len_list):
 				obj_item = obj_data[idx_item]
@@ -119,10 +131,11 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 						tm_rec = obj_item[1]
 					elif 'candles' == self.tup_run_stat[3]:
 						tm_rec = obj_item[0]
-					print("Data, diff:", tm_rec - self.mts_req_start, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", obj_item)
+					print("Data, diff:", tm_rec - mts_edge, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", obj_item)
 				self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, [id_chan, obj_item])
 			if self.flag_log_intv >  0:
 				print("Data, resp:", self.loc_cnt_resp, ", len:", len_list)
+			# update flag_chan_end
 			if    'trades' == self.tup_run_stat[3]:
 				if len_list >=  num_bfx_trades_recs:
 					flag_chan_end = False
@@ -172,7 +185,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 	def onMark_ChanEnd_impl(self):
 		pass
 
-	def onMts_ReqStart_impl(self):
-		return -1
+	def onMts_ReqRange_impl(self):
+		return None
 
 

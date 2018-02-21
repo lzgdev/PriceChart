@@ -46,7 +46,9 @@ class CBfxHist(object):
 class CBfxHist_Trades(CBfxHist):
 	def __init__(self, mts_start):
 		super(CBfxHist_Trades, self).__init__(mts_start)
-		self.url_main_path  = '/v2/trades/tBTCUSD/hist?sort=1&start='
+		#self.url_main_path  = '/v2/trades/tBTCUSD/hist?sort=1&start='
+		self.url_main_path  = '/v2/trades/tBTCUSD/hist?&end='
+		#limit_trades
 		self.idx_mts_rec = 1
 
 class CBfxHist_Candles(CBfxHist):
@@ -56,9 +58,16 @@ class CBfxHist_Candles(CBfxHist):
 		self.idx_mts_rec = 0
 
 # price: 1,000
-#mts_start = 1385639340000
+mts_start = 1385639340000
 # price: 2,000
-mts_start = 1497831120000
+#mts_start = 1497831120000
+mts_start = 1498831120000
+
+#mts_start = 1497831120000 + 60000
+
+#mts_start = 1497833040000
+#mts_start = 1497833700000
+#mts_start = 1497833708000
 
 bfxHist = CBfxHist_Candles(mts_start)
 bfxHist.httpGet()
