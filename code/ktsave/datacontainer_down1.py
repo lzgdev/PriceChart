@@ -1,7 +1,8 @@
 
 import json
 import copy
-import math
+
+import time
 
 import urllib.parse
 
@@ -134,7 +135,8 @@ class CTDataContainer_Down1Out(ktdata.CTDataContainer):
 		# update req range in data source
 		if mts_last != None and obj_datasrc != None:
 			obj_datasrc.setMts_ReqEnd(mts_last)
-			print("CTDataContainer_Down1Out::New End:", mts_last)
+			print("CTDataContainer_Down1Out::onDatCB_ReadPost_trades, New End:", mts_last,
+								time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(mts_last/1000))))
 		return num_trades
 
 	def onDatCB_ReadPost_candles(self, obj_datasrc, idx_step):
@@ -157,7 +159,8 @@ class CTDataContainer_Down1Out(ktdata.CTDataContainer):
 		# update req range in data source
 		if mts_last != None and obj_datasrc != None:
 			obj_datasrc.setMts_ReqEnd(mts_last)
-			print("CTDataContainer_Down1Out::New Candles End:", mts_last)
+			print("CTDataContainer_Down1Out::onDatCB_ReadPost_candles, New End:", mts_last,
+								time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(mts_last/1000))))
 		return num_candles
 
 
