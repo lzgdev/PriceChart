@@ -9,7 +9,7 @@ import urllib.parse
 import ktdata
 
 dsrc_http_trades = {
-			'switch': False,
+			#'switch': False,
 			'url': 'https://api.bitfinex.com/v2',
 			'chans': [
 				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
@@ -23,6 +23,9 @@ dsrc_http_candles = {
 				{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 			],
 		}
+
+list_gap_trades  = []
+list_gap_candles = []
 
 
 class CTDataContainer_Down1Out(ktdata.CTDataContainer):
@@ -66,8 +69,13 @@ class CTDataContainer_Down1Out(ktdata.CTDataContainer):
 		self.stamp_exec_bgn = self.mtsNow_time()
 
 	def onExec_Post_impl(self, arg_post):
+		global list_gap_trades, list_gap_candles
 		self.stamp_exec_end = self.mtsNow_time()
 		print("CTDataContainer_Down1Out::onExec_Post_impl, time cost:", format(self.stamp_exec_end-self.stamp_exec_bgn, ","))
+		for gap_idx, gap_trades  in enumerate(list_gap_trades):
+			print("Trades  GAP(idx=" + str(gap_idx).zfill(3) + "):", gap_trades)
+		for gap_idx, gap_candles in enumerate(list_gap_candles):
+			print("Candles GAP(idx=" + str(gap_idx).zfill(3) + "):", gap_candles)
 
 	def onDown_InitEntr_impl(self):
 		self.down_rec_save.dbInit(self)
@@ -190,8 +198,8 @@ class CTDataInput_HttpBfx_Down1(ktdata.CTDataInput_HttpBfx):
 
 class CTDown1Rec_Save(object):
 	set_trades_excp  = { }
-	#set_candles_excp = { 1516498800000, 1515733620000, }
-	set_candles_excp = { 1514721960000, 1513090800000, 1511052480000, }
+	set_candles_excp = { }
+	#set_candles_excp = { 1516498800000, 1515733620000, 1514721960000, 1513090800000, 1511052480000, }
 
 	def __init__(self, logger):
 		self.logger = logger
@@ -241,6 +249,7 @@ class CTDown1Rec_Save(object):
 		return True
 
 	def onAdd_RecTrades(self, fmt_data, rec_trades):
+		global list_gap_trades
 		tid_last = None if self.rec_last_trades == None else self.rec_last_trades.get('tid', None)
 		tid_this = rec_trades.get('tid', -1)
 		mts_last = None if self.rec_last_trades == None else self.rec_last_trades.get('mts', None)
@@ -252,8 +261,10 @@ class CTDown1Rec_Save(object):
 		if mts_diff != None and mts_diff >  60000:
 			self.logger.warning(self.inf_this + " add Trades: record mts GAP reach max, diff: " + str(mts_diff) +
 								", trades=" + str(rec_trades) + ", last=" + str(self.rec_last_trades))
-			if   mts_last in set_trades_excp:
+			if   mts_last in self.set_trades_excp:
 				pass
+			elif mts_diff <= 1800000:
+				list_gap_trades.append((mts_last, mts_diff))
 			else:
 				return False
 		if tid_last != None and tid_this >= tid_last:
@@ -269,6 +280,7 @@ class CTDown1Rec_Save(object):
 		return True
 
 	def onAdd_RecCandles(self, fmt_data, rec_candles):
+		global list_gap_candles
 		mts_last = None if self.rec_last_candles == None else self.rec_last_candles.get('mts', None)
 		mts_this = rec_candles.get('mts', -1)
 		mts_diff = None if mts_last == None else (mts_last - mts_this)
@@ -278,10 +290,10 @@ class CTDown1Rec_Save(object):
 		if mts_diff != None and mts_diff >  60000:
 			self.logger.warning(self.inf_this + " add Candles: record mts GAP reach max, diff: " + str(mts_diff) +
 								", candles=" + str(rec_candles) + ", last= " + str(self.rec_last_candles))
-			if   mts_diff == 120000 or mts_diff == 180000 or mts_diff == 240000:
+			if   mts_last in self.set_candles_excp:
 				pass
-			elif mts_last in self.set_candles_excp:
-				pass
+			elif mts_diff <= 1800000:
+				list_gap_candles.append((mts_last, mts_diff))
 			else:
 				return False
 		if mts_last != None and mts_this >= mts_last:
