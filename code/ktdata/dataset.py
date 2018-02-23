@@ -29,13 +29,13 @@ class CTDataSet_Base(object):
 
 	def locDataClean(self):
 		self.onLocDataClean_impl()
-		self.obj_container.datCB_DataClean(self)
 		self.onCB_DataClean()
+		self.obj_container.datCB_DataClean(self)
 
 	def locDataSync(self):
 		self.onLocDataSync_impl()
-		self.obj_container.datCB_DataSync(self, self.loc_time_this)
 		self.onCB_DataSync()
+		self.obj_container.datCB_DataSync(self, self.loc_time_this)
 
 	def locDataAppend(self, fmt_data, obj_msg):
 		if (self.flag_sys_time):
@@ -46,6 +46,8 @@ class CTDataSet_Base(object):
 		tup_add = self.onLocRecAdd_impl(flag_plus, fmt_data, obj_rec)
 		if tup_add != None:
 			self.onCB_RecAdd(flag_plus, tup_add[0], tup_add[1])
+		if tup_add != None and flag_plus:
+			self.obj_container.datCB_RecPlus(self, tup_add[0], tup_add[1])
 
 	def onLocDataClean_impl(self):
 		pass
@@ -142,10 +144,6 @@ class CTDataSet_Ticker(CTDataSet_Base):
 					self.logger.error("CTDataSet_Ticker(onLocRecAdd_impl): add obj_msg=" + str(obj_msg))
 		if ticker_rec != None:
 			self.loc_ticker_rec = ticker_rec
-		if flag_plus and ticker_rec != None:
-			self.obj_container.datCB_RecPlus(self, ticker_rec, 0)
-		if ticker_rec != None:
-			self.onCB_RecAdd(flag_plus, ticker_rec, 0)
 		return (ticker_rec, 0)
 
 
@@ -192,8 +190,6 @@ class CTDataSet_ATrades(CTDataSet_Array):
 			rec_index +=  1
 		if rec_index >= 0:
 			self.loc_trades_recs.insert(rec_index, trade_rec)
-		if flag_plus and rec_index >= 0:
-			self.obj_container.datCB_RecPlus(self, trade_rec, rec_index)
 		return None if rec_index <  0 else (trade_rec, rec_index)
 
 
@@ -265,11 +261,6 @@ class CTDataSet_ABooks(CTDataSet_Array):
 						0.0 if (idx_last <  0) else book_recs[idx_last]['sumamt'])
 			idx_last = idx_sum
 			idx_sum += -1 if flag_bids else 1
-		# invoke callback
-		if flag_plus:
-			if not flag_del:
-				book_rec = book_recs[idx_book]
-			self.obj_container.datCB_RecPlus(self, book_rec, idx_book)
 		return (book_rec, idx_book)
 
 	# develop/debug support
@@ -346,7 +337,6 @@ class CTDataSet_ACandles(CTDataSet_Array):
 			except:
 				candle_rec = None
 				self.logger.error("CTDataSet_ACandles(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
-		flag_chg  = False
 		if (len(self.loc_candle_recs)+1 >  self.loc_recs_size):
 			self.loc_candle_recs.pop(0)
 		rec_index = len(self.loc_candle_recs) - 1
@@ -355,16 +345,13 @@ class CTDataSet_ACandles(CTDataSet_Array):
 				break
 			rec_index -= 1
 		if ((rec_index >= 0) and (self.loc_candle_recs[rec_index]['mts'] == candle_rec['mts'])):
-			if (self.loc_candle_recs[rec_index]['volume'] != candle_rec['volume']):
-				self.loc_candle_recs[rec_index] = candle_rec
-				flag_chg  = True
+			# replace record in self.loc_candle_recs
+			self.loc_candle_recs[rec_index] = candle_rec
 		else:
+			# insert record in self.loc_candle_recs
 			if ((rec_index <  0) or (candle_rec['mts'] >  self.loc_candle_recs[rec_index]['mts'])):
 				rec_index += 1
 			self.loc_candle_recs.insert(rec_index, candle_rec)
-			flag_chg  = True
-		if flag_plus and flag_chg:
-			self.obj_container.datCB_RecPlus(self, candle_rec, rec_index)
 		return (candle_rec, rec_index)
 
 

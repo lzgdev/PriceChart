@@ -8,9 +8,8 @@ from .dataset           import DFMT_KKAIPRIV, DFMT_BFXV2, MSEC_TIMEOFFSET
 
 
 class CTDataInput_WssBfx(CTDataInput_Ws):
-	def __init__(self, logger, obj_container, url_ws, tok_this, msec_off):
+	def __init__(self, logger, obj_container, url_ws, tok_this):
 		CTDataInput_Ws.__init__(self, logger, obj_container, url_ws)
-		MSEC_TIMEOFFSET = 0 if msec_off == None else msec_off
 		self.tok_mono_this   = tok_this
 		self.list_chan_stat  = [ ]
 

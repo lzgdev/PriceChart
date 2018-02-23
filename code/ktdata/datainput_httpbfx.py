@@ -116,23 +116,22 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		len_list  = len(obj_data) if isinstance(obj_data, list) else -1
 		if   len_list >= 1 and 'error' != obj_data[0]:
 			flag_data_valid =  True
-			# extract mts_edge from self.mts_req_range
+			# forward data to container
+			id_chan = self.tup_run_stat[1]
+			self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, [id_chan, obj_data])
+			# out debug for records
 			if self.flag_log_intv >  1:
 				if   self.mts_req_range[0] >  0:
 					mts_edge  = self.mts_req_range[0]
 				else:
 					mts_edge  = self.mts_req_range[1]
-			# forward data to container
-			id_chan = self.tup_run_stat[1]
-			for idx_item in range(len_list):
-				obj_item = obj_data[idx_item]
-				if self.flag_log_intv >  1:
+				for idx_item in range(len_list):
+					obj_item = obj_data[idx_item]
 					if    'trades' == self.tup_run_stat[3]:
 						tm_rec = obj_item[1]
 					elif 'candles' == self.tup_run_stat[3]:
 						tm_rec = obj_item[0]
 					print("Data, diff:", tm_rec - mts_edge, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", obj_item)
-				self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, [id_chan, obj_item])
 			if self.flag_log_intv >  0:
 				print("Data, resp:", self.loc_cnt_resp, ", len:", len_list)
 			# update flag_chan_end

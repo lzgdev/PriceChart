@@ -61,6 +61,7 @@ class CTDataContainer(object):
 		self.inf_this = "DataContainer"
 		self.pid_this = os.getpid()
 		self.list_tups_datasrc  = []
+		# (0:obj_dataset, 1:obj_dataout, 2:name_chan, 3:wreq_args_map, 4:dict_args_map)
 		self.list_tups_datachan = []
 		# init global chans map table
 		if not gMap_TaskChans_init:
@@ -69,8 +70,10 @@ class CTDataContainer(object):
 	def execMain(self, list_exec=None, **args_exec):
 		# append args_exec to list_exec
 		list_exec = [] if list_exec == None else list_exec
+		msec_off  = args_exec.pop('msec_off', None)
 		arg_prep  = args_exec.pop('prep', None)
 		arg_post  = args_exec.pop('post', None)
+		MSEC_TIMEOFFSET = 0 if msec_off == None else msec_off
 		if len(args_exec) >  0:
 			list_exec.append(args_exec)
 		# exec init
@@ -83,9 +86,6 @@ class CTDataContainer(object):
 		self.onExec_Main_impl()
 		self.onExec_Post_impl(arg_post)
 		return None
-
-	def addObj_DataSource(self, obj_datasrc, **kwargs):
-		self.list_tups_datasrc.append((obj_datasrc, dict(kwargs)))
 
 	def datIN_ChanGet(self, name_chan, wreq_args):
 		global gMap_TaskChans
@@ -140,13 +140,12 @@ class CTDataContainer(object):
 		for args_dsrc in list_exec:
 			dsrc_url   = args_dsrc.get('url', None)
 			dsrc_chans = args_dsrc.get('chans', None)
-			msec_off   = args_dsrc.get('msec_off', None)
 
 			url_parse = urllib.parse.urlparse(dsrc_url)
 			obj_datasrc = self.onInit_DataSource_alloc(url_parse.scheme, url_parse.netloc, dsrc_url)
 			if obj_datasrc != None:
 				obj_datasrc.setChanCfgs(dsrc_chans)
-				self.addObj_DataSource(obj_datasrc)
+				self.list_tups_datasrc.append((obj_datasrc, { }))
 		return None
 
 	def onExec_Init_ext(self, list_exec):
@@ -169,8 +168,7 @@ class CTDataContainer(object):
 	def onInit_DataSource_alloc(self, url_scheme, url_netloc, url):
 		obj_datasrc = None
 		if   url_scheme ==   'wss' and url_netloc == 'api.bitfinex.com':
-			obj_datasrc = CTDataInput_WssBfx(self.logger, self, url,
-									self.tok_mono_this, msec_off)
+			obj_datasrc = CTDataInput_WssBfx(self.logger, self, url, self.tok_mono_this)
 		elif url_scheme == 'mongodb':
 			obj_datasrc = CTDataInput_DbReader(self.logger, self, url)
 		return obj_datasrc
