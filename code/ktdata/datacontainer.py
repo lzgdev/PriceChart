@@ -137,15 +137,25 @@ class CTDataContainer(object):
 			self.onDatCB_RecPlus_impl(idx_chan, obj_dataset, doc_rec, idx_rec)
 
 	def onExec_Init_impl(self, list_exec):
+		global gMap_TaskChans
 		for args_dsrc in list_exec:
 			dsrc_url   = args_dsrc.get('url', None)
-			dsrc_chans = args_dsrc.get('chans', None)
-
 			url_parse = urllib.parse.urlparse(dsrc_url)
 			obj_datasrc = self.onInit_DataSource_alloc(url_parse.scheme, url_parse.netloc, dsrc_url)
-			if obj_datasrc != None:
-				obj_datasrc.setChanCfgs(dsrc_chans)
-				self.list_tups_datasrc.append((obj_datasrc, { }))
+			if obj_datasrc == None:
+				continue
+			#
+			dsrc_chans = []
+			for cfg_chan in args_dsrc.get('chans', [ ]):
+				idx_map_find = self._gmap_TaskChans_index(cfg_chan.get('channel', None), cfg_chan.get('wreq_args', None))
+				if idx_map_find <  0:
+					continue
+				cfg_chan['channel']   = gMap_TaskChans[idx_map_find]['channel']
+				cfg_chan['wreq_args'] = gMap_TaskChans[idx_map_find]['wreq_args']
+				dsrc_chans.append(cfg_chan)
+			#
+			obj_datasrc.setChanCfgs(dsrc_chans)
+			self.list_tups_datasrc.append((obj_datasrc, { }))
 		return None
 
 	def onExec_Init_ext(self, list_exec):

@@ -31,7 +31,7 @@ mapTasks = [
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 1 * 3600 * 1000,
 	#'msec_nxt_cfg':   30 * 1000,
-	#'switch': False,
+	'switch': False,
 	'url': 'https://api.bitfinex.com/v2',
 	'chans': [
 		{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
@@ -42,13 +42,13 @@ mapTasks = [
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 3 * 3600 * 1000,
 	#'msec_nxt_cfg':   30 * 1000,
-	#'switch': False,
+	'switch': False,
 	'url': 'https://api.bitfinex.com/v2',
 	'chans': [
 		{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
 		]
 	},
-    {
+	{
 	'class': 'task21',
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 1 * 3600 * 1000,
@@ -59,12 +59,12 @@ mapTasks = [
 		{ 'channel':  'ticker', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
 		]
 	},
-    {
+	{
 	'class': 'task22',
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 1 * 3600 * 1000,
-	#'msec_nxt_cfg':   30 * 1000,
-	'switch': False,
+	#'msec_nxt_cfg':   10 * 1000,
+	#'switch': False,
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'chans': [
 		{ 'channel':    'book', 'wreq_args': '{ "symbol": "tBTCUSD", "prec": "P0", "freq": "F1", "len": "100" }', },
@@ -141,7 +141,7 @@ signal.signal(12, _sighand_usr2)
 
 # debug settings
 dbg_dbg_main  =  True
-dbg_run_task  = 1
+#dbg_run_task  = 3
 
 #
 # Main entrance
@@ -204,7 +204,7 @@ while len(g_procs) > 0 or num_next_run > 0:
 	# invoke next child process
 	num_next_run = 0
 	for idx_task, unit_task in enumerate(mapTasks):
-		if not unit_task['switch']:
+		if not unit_task.get('switch', True):
 			continue
 		msec_nxt = unit_task['msec_nxt_run']
 		num_next_run += 1 if msec_nxt >  0 else 0

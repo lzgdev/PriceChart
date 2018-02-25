@@ -30,7 +30,7 @@ class CTDataOutput(object):
 		return self.onOut_DatClear_impl()
 
 	def onSynAppend_impl(self, msec_now):
-		list_docs = self.onSynAppend_get_lists(msec_now)
+		list_docs = self.onSynAppend_get_list(msec_now)
 		if not isinstance(list_docs, list):
 			return 0
 		dat_array = []
@@ -47,7 +47,7 @@ class CTDataOutput(object):
 		return self.onOut_DatOne_impl(dat_out)
 
 	# implementaions for data output(internal utility call)
-	def onSynAppend_get_lists(self, msec_now):
+	def onSynAppend_get_list(self, msec_now):
 		return None
 
 	def onTran_Doc2Dat_impl(self, doc_rec):

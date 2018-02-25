@@ -13,7 +13,7 @@ class CTDataOut_Db(ktdata.CTDataOutput):
 		self.wreq_args  = None
 		self.db_doc_last    = None
 
-		self.flag_dbg_rec  = 2
+		#self.flag_dbg_rec  = 2
 
 	def getDoc_OutLast(self):
 		return self.db_doc_last
@@ -33,13 +33,15 @@ class CTDataOut_Db(ktdata.CTDataOutput):
 		return True
 
 	def onOut_DatOne_impl(self, dat_one):
+		num_out = 0
 		# append doc to database
 		doc_new  = self.loc_db_writer.dbOP_DocAdd(self.name_dbtbl, dat_one)
 		if doc_new != None:
 			if self.flag_dbg_rec >= 2:
 				self.logger.info("CTDataOut_Db(onOut_DatOne_impl): doc_new=" + str(doc_new))
 			self.db_doc_last = doc_new
-		return 1
+			num_out  = 1
+		return num_out
 
 	def onOut_DatArray_impl(self, dat_array):
 		num_out = 0
@@ -66,7 +68,7 @@ class CTDataOut_Db_trades(CTDataOut_Db):
 
 		#self.flag_dbg_rec   = 2
 
-	def onSynAppend_get_lists(self, msec_now):
+	def onSynAppend_get_list(self, msec_now):
 		return self.obj_dataset.loc_trades_recs
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
@@ -81,50 +83,41 @@ class CTDataOut_Db_trades(CTDataOut_Db):
 class CTDataOut_Db_book(CTDataOut_Db):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDataOut_Db.__init__(self, logger, obj_dataset, db_writer)
-		self.num_recs_wrap  = 240
-		self.cnt_recs_book  = 0
-		self.mts_recs_last  = 0
 		self.mts_sync_now   = None
+		self.mts_sync_next  = None
 
 		#self.flag_dbg_rec   = 2
 
 	def docAppend(self, doc_rec):
-		return self.onDocAppend_impl(doc_rec)
+		mts_this  = doc_rec.get('mts', 0)
+		if self.mts_sync_next == None or mts_this >= self.mts_sync_next:
+			return self.synAppend(mts_this)
+		else:
+			return super(CTDataOut_Db_book, self).docAppend(doc_rec)
 
-#	def docAppend(self, doc_rec):
-#		msec_now = doc_rec['mts']
-#		if (msec_now - self.mts_recs_last) >= 500:
-#			self.cnt_recs_book += 1
-#		flag_new_sync = True if self.cnt_recs_book >= self.num_recs_wrap else False
-#		if flag_new_sync:
-#			self.synAppend(msec_now)
-#		else:
-#			self.onDocAppend_impl(doc_rec)
-#			self.mts_recs_last  = msec_now
+	def onSynAppend_get_list(self, msec_now):
+		list_books = []
+		# add doc of reset
+		out_doc = { 'type': 'reset', }
+		list_books.append(out_doc)
+		# add docs from snapshot
+		list_books.extend(self.obj_dataset.loc_book_bids)
+		list_books.extend(self.obj_dataset.loc_book_asks)
+		# add doc of sync
+		out_doc = { 'type': 'sync', }
+		list_books.append(out_doc)
+		return list_books
 
-	def onSynAppend_get_lists(self, msec_now):
-		return self.obj_dataset.loc_candle_recs
-
-#	def onSynAppend_impl(self, msec_now):
-#		if msec_now == None:
-#			msec_now = self.obj_dataset.loc_time_this
-#		self.mts_sync_now   = msec_now
-#		# add doc of reset
-#		out_doc = { 'type': 'reset', }
-#		self.onDocAppend_impl(out_doc)
-#		# add docs from snapshot
-#		for out_doc in self.obj_dataset.loc_book_bids:
-#			self.onDocAppend_impl(out_doc)
-#		for out_doc in self.obj_dataset.loc_book_asks:
-#			self.onDocAppend_impl(out_doc)
-#		# add doc of sync
-#		out_doc = { 'type': 'sync', }
-#		self.onDocAppend_impl(out_doc)
-#		# reset self.cnt_recs_book
-#		self.cnt_recs_book  = 0
-#		self.mts_recs_last  = 0
-#		self.mts_recs_last  = msec_now
-#		self.mts_sync_now   = None
+	def onSynAppend_impl(self, msec_now):
+		if msec_now == None:
+			msec_now = self.obj_dataset.loc_time_this
+		self.mts_sync_now   = msec_now
+		# call super class's method
+		ret_super = super(CTDataOut_Db_book, self).onSynAppend_impl(msec_now)
+		# reset self.mts_sync_now and self.self.mts_sync_next
+		self.mts_sync_now   = None
+		self.mts_sync_next  = msec_now + 600000
+		return ret_super
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
 		doc_out = copy.copy(doc_rec)
@@ -138,11 +131,10 @@ class CTDataOut_Db_book(CTDataOut_Db):
 class CTDataOut_Db_candles(CTDataOut_Db):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDataOut_Db.__init__(self, logger, obj_dataset, db_writer)
-		self.doc_rec_output = None
 
 		#self.flag_dbg_rec   = 2
 
-	def onSynAppend_get_lists(self, msec_now):
+	def onSynAppend_get_list(self, msec_now):
 		return self.obj_dataset.loc_candle_recs
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
