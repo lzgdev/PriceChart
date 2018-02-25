@@ -28,6 +28,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		self.inf_this = 'DinWsBfx(pid=' + str(self.pid_this) + ',tok=' + str(self.tok_mono_this) + ')'
 
 		#self.flag_log_intv = 2
+		self.flag_log_intv = 1
 
 	def onPrep_Read_impl(self, **kwargs):
 		self.list_chan_stat.clear()
@@ -39,7 +40,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 								'channel': map_chan['channel'], 'wreq_args': map_chan['wreq_args'], 'dict_args': map_chan['dict_args'],
 								'subsc_sent': None, 'subsc_recv': None, 'unsub_sent': None, 'unsub_recv': None,
 								}
-			if self.flag_log_intv >= 1:
+			if self.flag_log_intv >= 2:
 				self.logger.debug(self.inf_this + " onPrep_Read_impl, stat_chan=" + str(stat_chan))
 			self.list_chan_stat.append(stat_chan)
 
@@ -137,14 +138,15 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 			return idx_chan
 		#print("onNcEV_Message_subscribed, idx_stat:", idx_stat, ", idx_chan:", idx_chan, obj_msg)
 		# update stat members in self.list_chan_stat[idx_stat]
-		self.list_chan_stat[idx_stat]['idx_chan'] = idx_chan
-		self.list_chan_stat[idx_stat]['subsc_recv'] = self.obj_container.mtsNow_mono()
 		tok_chan = self.list_chan_stat[idx_stat]['tok_chan']
 		if tok_chan != None and tok_chan.value <  self.tok_mono_this:
 			with tok_chan.get_lock():
 				tok_chan.value = self.tok_mono_this
-			self.logger.info(self.inf_this + " subscribed: chanId=" + str(id_chan) +
-						", chan=" + name_chan + ", tok=" + str(tok_chan.value))
+			if self.flag_log_intv >= 1:
+				self.logger.info(self.inf_this + " subscribed: chanId=" + str(id_chan) +
+								", tok=" + str(tok_chan.value) + ", chan=" + name_chan)
+		self.list_chan_stat[idx_stat]['idx_chan'] = idx_chan
+		self.list_chan_stat[idx_stat]['subsc_recv'] = self.obj_container.mtsNow_mono()
 		if self.flag_log_intv >= 1:
 			self.logger.debug(self.inf_this + " onNcEV_Message_subscribed, stat_chan=" + str(self.list_chan_stat[idx_stat]))
 		return idx_chan
@@ -156,8 +158,9 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 			return -1
 		tok_chan = self.list_chan_stat[idx_stat]['tok_chan']
 		if tok_chan != None:
-			self.logger.info(self.inf_this + " unsubscribed: chanId=" + str(id_chan) +
-						", tok=" + str(tok_chan.value))
+			if self.flag_log_intv >= 1:
+				self.logger.info(self.inf_this + " unsubscribed: chanId=" + str(id_chan) +
+								", tok=" + str(tok_chan.value))
 		self.list_chan_stat[idx_stat]['unsub_recv'] = self.obj_container.mtsNow_mono()
 		self.obj_container.datIN_ChanDel(id_chan)
 		return self.list_chan_stat[idx_stat]['idx_chan']
@@ -168,17 +171,28 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		if idx_stat <  0:
 			return -1
 		tok_chan = self.list_chan_stat[idx_stat]['tok_chan']
-		if   tok_chan == None:
-			pass
-		elif self.tok_mono_this == tok_chan.value:
-			if self.flag_log_intv >= 3:
-				self.logger.info(self.inf_this + " onNcEV_Message_data, tok=" + str(self.tok_mono_this) + " match new=" + str(tok_chan.value))
-			self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, obj_msg)
+		if tok_chan == None or self.tok_mono_this != tok_chan.value:
+			self.onNcEV_TokOut(idx_stat)
 		else:
-			self.logger.warning(self.inf_this + " chanId=" + str(id_chan) + " tok=" + str(self.tok_mono_this) +
-						" NOT match new=" + str(tok_chan.value))
-			if self.list_chan_stat[idx_stat]['unsub_sent'] == None:
-				self.ncOP_Send_Unsubscribe_chan(id_chan)
+			if self.flag_log_intv >= 3:
+				self.logger.info(self.inf_this + " onNcEV_Message_data, tok=" + str(self.tok_mono_this) +
+								" match new=" + str(tok_chan.value))
+			self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, obj_msg)
+
+	def onNcEV_TokOut(self, idx_stat):
+		stat_chan = self.list_chan_stat[idx_stat]
+		tok_chan  = stat_chan['tok_chan']
+		idx_chan  = stat_chan['idx_chan']
+		id_chan   = self.obj_container.list_tups_datachan[idx_chan][0].id_chan
+		if id_chan == None:
+			return False
+		mono_sent = stat_chan['unsub_sent']
+		mono_now  = self.obj_container.mtsNow_mono()
+		if mono_sent == None or mono_now >= (mono_sent + 1000):
+			if self.flag_log_intv >= 1:
+				self.logger.warning(self.inf_this + " chanId=" + str(id_chan) + " tok=" + str(self.tok_mono_this) +
+								" NOT match new=" + str(tok_chan.value))
+			self.ncOP_Send_Unsubscribe_chan(id_chan)
 
 	# private utility methods
 	def _idxstat_of_idchan(self, id_chan):
@@ -198,12 +212,18 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 	def _run_kkai_step(self):
 		if self.flag_log_intv >= 4:
 			self.logger.warning(self.inf_this + " websocket KKAI Check: " + str(self.list_chan_stat))
-		num_chans   = len(self.list_chan_stat)
+		num_chans   = 0
 		num_finish  = 0
 		num_timeout = 0
-		for idx_chan in range(num_chans):
-			if self.list_chan_stat[idx_chan]['unsub_recv'] != None:
+		for idx_stat, stat_chan in enumerate(self.list_chan_stat):
+			num_chans += 1
+			if stat_chan['unsub_recv'] != None:
 				num_finish += 1
+			if stat_chan['subsc_recv'] == None:
+				continue
+			tok_chan   = stat_chan['tok_chan']
+			if tok_chan == None or self.tok_mono_this != tok_chan.value:
+				self.onNcEV_TokOut(idx_stat)
 		flag_finish =  True if (num_finish + num_timeout) >= num_chans else False
 		return not flag_finish
 

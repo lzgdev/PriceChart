@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 
 import ntplib
+import urllib.parse
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../code')))
 
@@ -62,8 +63,8 @@ mapTasks = [
 	{
 	'class': 'task22',
 	'msec_nxt_run': 0,
-	'msec_nxt_cfg': 1 * 3600 * 1000,
-	#'msec_nxt_cfg':   10 * 1000,
+	#'msec_nxt_cfg': 1 * 3600 * 1000,
+	'msec_nxt_cfg':   20 * 1000,
 	#'switch': False,
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'chans': [
@@ -89,7 +90,6 @@ class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DownOut):
 		global mapTasks
 		self.idx_task  = idx_task
 		self.task_this = mapTasks[self.idx_task]
-		self.flag_nxt_after = self.isNextRunAfter(self.task_this['url'], self.task_this['chans'])
 		self.name = 'Net2Db' + str(self.idx_task) + '-' + str(self.cnt_procs[self.idx_task])
 
 	def run(self):
@@ -100,18 +100,16 @@ class Process_Net2Db(multiprocessing.Process, ktsave.CTDataContainer_DownOut):
 		self.logger.info("Process(" + info_app + ") finish.")
 
 	def start(self):
-		multiprocessing.Process.start(self)
-		if self.flag_nxt_after:
-			self.task_this['msec_nxt_run'] = 0
-		else:
+		url_parse = urllib.parse.urlparse(self.task_this['url'])
+		if   url_parse.scheme ==   'wss' and url_parse.netloc == 'api.bitfinex.com':
 			self.task_this['msec_nxt_run'] = ktdata.CTDataContainer.mtsNow_mono() + \
 						self.task_this['msec_nxt_cfg']
+		multiprocessing.Process.start(self)
 
 	def join(self):
 		multiprocessing.Process.join(self)
-		if not self.flag_nxt_after:
-			self.task_this['msec_nxt_run'] = 0
-		else:
+		url_parse = urllib.parse.urlparse(self.task_this['url'])
+		if   url_parse.scheme == 'https' and url_parse.netloc == 'api.bitfinex.com':
 			self.task_this['msec_nxt_run'] = ktdata.CTDataContainer.mtsNow_mono() + \
 						self.task_this['msec_nxt_cfg']
 
