@@ -32,7 +32,7 @@ mapTasks = [
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 1 * 3600 * 1000,
 	#'msec_nxt_cfg':   30 * 1000,
-	'switch': False,
+	#'switch': False,
 	'url': 'https://api.bitfinex.com/v2',
 	'chans': [
 		{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', },
@@ -43,7 +43,7 @@ mapTasks = [
 	'msec_nxt_run': 0,
 	'msec_nxt_cfg': 3 * 3600 * 1000,
 	#'msec_nxt_cfg':   30 * 1000,
-	'switch': False,
+	#'switch': False,
 	'url': 'https://api.bitfinex.com/v2',
 	'chans': [
 		{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', },
@@ -63,8 +63,8 @@ mapTasks = [
 	{
 	'class': 'task22',
 	'msec_nxt_run': 0,
-	#'msec_nxt_cfg': 1 * 3600 * 1000,
-	'msec_nxt_cfg':   20 * 1000,
+	'msec_nxt_cfg': 1 * 3600 * 1000,
+	#'msec_nxt_cfg':   20 * 1000,
 	#'switch': False,
 	'url': 'wss://api.bitfinex.com/ws/2',
 	'chans': [

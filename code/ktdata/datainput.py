@@ -137,7 +137,7 @@ class CTDataInput_Http(CTDataInput):
 			print("Resp, Data:", http_data)
 		ret_proc = self.onNcEV_HttpResponse_impl(http_resp.status, content_type, http_data)
 		self.num_httprest += 1
-		if not ret_proc or self.num_httprest >= 10:
+		if not ret_proc or self.num_httprest >= 4:
 			self.obj_httpconn.close()
 			self.obj_httpconn = None
 

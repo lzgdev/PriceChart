@@ -33,8 +33,6 @@ class CTDataContainer_DownOut(ktdata.CTDataContainer):
 		obj_dataset = None
 		if   name_chan ==  'trades':
 			obj_dataset = CTDataSet_ATrades_down(self.logger, self.size_dset_trades, self, wreq_args)
-#		elif name_chan ==    'book':
-#			obj_dataset = CTDataSet_ABooks(self.logger, self, wreq_args)
 		elif name_chan == 'candles':
 			obj_dataset = CTDataSet_ACandles_down(self.logger, self.size_dset_candles, self, wreq_args)
 		if obj_dataset == None:
