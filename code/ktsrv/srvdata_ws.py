@@ -44,15 +44,21 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 			self.onMsg_sbsc(evt_msg, obj_msg)
 
 	def onMsg_sbsc(self, evt_msg, obj_msg):
-		wreq_args = copy.copy(obj_msg)
-		try:
-			name_channel = wreq_args['channel']
-		except:
-			name_channel = None
-		self.logger.info("WebSockHandler(sbsc): chan=" + str(name_channel) + ", wreq_args=" + str(wreq_args))
-		#filt_args = { 'channel': name_channel, }
-		#filt_args = { 'coll': { '$regex': 'candles-1m-.*', } }
+		name_channel = obj_msg.get('channel', None)
+		self.logger.info("WebSockHandler(sbsc): chan=" + str(name_channel) + ", args=" + str(obj_msg))
 		if 'subscribe' == evt_msg:
-			self.obj_container.execMain(name_chan=name_channel, wreq_args=obj_msg)
+			cfg_url   = 'mongodb://127.0.0.1:27017/bfx-down'
+			#cfg_chan  = { 'load_args': { 'limit': 256, 'sort': [('$natural', 1)], }, }
+			cfg_chan  = { 'load_args': { 'limit':  64, 'sort': [('$natural', 1)], }, }
+			dict_args = { }
+			for req_key, req_val in obj_msg.items():
+				if req_key ==   'event':
+					continue
+				if req_key == 'channel':
+					continue
+				dict_args[req_key] = req_val
+			cfg_chan['channel']   = name_channel
+			cfg_chan['wreq_args'] = json.dumps(dict_args)
+			self.obj_container.execMain(url=cfg_url, chans=[ cfg_chan, ])
 
 

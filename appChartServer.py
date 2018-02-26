@@ -16,7 +16,7 @@ gDir_ui_static = os.path.join(gDir_root, 'ui/static')
 
 sys.path.insert(0, os.path.abspath(os.path.join(gDir_root, 'code')))
 
-from ktsrv  import WebSockHandler
+import ktsrv
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -68,7 +68,7 @@ class AppChartServer(tornado.web.Application):
 		handlers = [
 			(r'/views/.*\.html',    MainHandler, { 'code_entry': 'views', }),
 			(r'/demo/.*\.html',     DemoHandler),
-			(r'/ws/(.*)',           WebSockHandler),
+			(r'/ws/(.*)',           ktsrv.WebSockHandler),
 			(r'/(css/.+\.css)',     MiscHandler, { 'path': settings['static_path'] }),
 			(r'/(js/.+\.js)',       MiscHandler, { 'path': settings['static_path'] }),
 			(r'/(favicon.ico)',     MiscHandler, { 'path': settings['static_path'] }),

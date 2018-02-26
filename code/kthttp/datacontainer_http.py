@@ -35,8 +35,8 @@ class CTDataContainer_HttpOut(ktdata.CTDataContainer):
 		obj_dataout = tup_chan[1]
 		if obj_dataout != None:
 			obj_dataout.prepOutChan(id_chan=id_chan, name_dbtbl=obj_dataset.name_dbtbl,
-								name_chan=obj_dataset.name_chan, wreq_args=tup_chan[4])
+								name_chan=obj_dataset.name_chan, dict_args=tup_chan[4])
 
-	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
-		pass
+#	def onDatIN_ChanDel_ext(self, idx_chan, id_chan):
+#		pass
 

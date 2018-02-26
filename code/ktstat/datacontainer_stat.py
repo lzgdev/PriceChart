@@ -36,14 +36,15 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
 		#print("CTDataContainer_StatOut::onChan_DataOut_alloc", name_chan, wreq_args)
 		obj_dataout = None
-		if   name_chan == 'ticker':
-			obj_dataout = CTDataOut_Stat_ticker(self.logger, obj_dataset, self.obj_outconn)
-		elif name_chan == 'trades':
-			obj_dataout = CTDataOut_Stat_trades(self.logger, obj_dataset, self.obj_outconn)
-		elif name_chan == 'book':
-			obj_dataout = CTDataOut_Stat_book(self.logger, obj_dataset, self.obj_outconn)
-		elif name_chan == 'candles':
-			obj_dataout = CTDataOut_Stat_candles(self.logger, obj_dataset, self.obj_outconn)
+		if not self.flag_out_wsbfx:
+			if   name_chan ==  'ticker':
+				obj_dataout = CTDataOut_Stat_ticker(self.logger, obj_dataset, self.obj_outconn)
+			elif name_chan ==  'trades':
+				obj_dataout = CTDataOut_Stat_trades(self.logger, obj_dataset, self.obj_outconn)
+			elif name_chan ==    'book':
+				obj_dataout = CTDataOut_Stat_book(self.logger, obj_dataset, self.obj_outconn)
+			elif name_chan == 'candles':
+				obj_dataout = CTDataOut_Stat_candles(self.logger, obj_dataset, self.obj_outconn)
 		if obj_dataout == None:
 			obj_dataout = super(CTDataContainer_StatOut, self).onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args, dict_args)
 		return obj_dataout
