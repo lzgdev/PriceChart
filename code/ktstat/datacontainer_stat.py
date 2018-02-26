@@ -129,9 +129,9 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 class CTStatRec(object):
 	def __init__(self, logger):
 		self.logger = logger
-		self.flag_dbg_rec =  0
+		self.flag_dbg_stat =  0
 
-		#self.flag_dbg_rec =  1
+		#self.flag_dbg_stat =  1
 
 	def reset(self, mts):
 		self.onReset_impl(mts)
@@ -188,7 +188,7 @@ class CTStatRec_Stat11(CTStatRec):
 		pass
 
 	def onAdd_RecTrades(self, rec_trades):
-		if self.flag_dbg_rec >  0:
+		if self.flag_dbg_stat >  0:
 			mts_rec = rec_trades['mts']
 			print("CTStatRec_Stat11::onAdd_RecTrades, mts:", format(mts_rec, ","), ", trade:", rec_trades)
 		rec_price  = rec_trades['price']
@@ -207,7 +207,7 @@ class CTStatRec_Stat11(CTStatRec):
 			self.vol_buy  += abs_amount
 
 	def onAdd_RecCandles(self, rec_candles):
-		if self.flag_dbg_rec >  0:
+		if self.flag_dbg_stat >  0:
 			mts_rec = rec_candles['mts']
 			print("CTStatRec_Stat11::onAdd_RecCandles, mts:", format(mts_rec, ","), ", candle:", rec_candles)
 		self.ref_candles  = rec_candles

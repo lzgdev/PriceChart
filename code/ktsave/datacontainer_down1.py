@@ -164,7 +164,7 @@ class CTDataInput_HttpBfx_Down1(ktdata.CTDataInput_HttpBfx):
 		self.loc_mark_end   = -1
 		self.down_mts_end   = None
 
-		self.flag_log_intv  = 1
+		self.flag_dbg_in  = 1
 
 	def setMts_ReqEnd(self, mts_end):
 		self.down_mts_end   = mts_end

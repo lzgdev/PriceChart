@@ -69,28 +69,25 @@ class CTDataInput_HttpBfx_Down(ktdata.CTDataInput_HttpBfx):
 		ktdata.CTDataInput_HttpBfx.__init__(self, logger, obj_container, url_http_pref)
 		self.loc_mark_end   = -1
 
-		self.flag_log_intv  = 1
+		#self.flag_dbg_in  = 1
 
 	def onMark_ChanEnd_impl(self):
 		self.loc_mark_end   = self.tup_run_stat[1]
 
 	def onMts_ReqRange_impl(self):
-		#print("CTDataInput_HttpBfx_Down::onMts_ReqRange_impl")
 		if self.loc_mark_end == self.tup_run_stat[1]:
 			return None
 		# WARNING: call ktdata.CTDataContainer.__chan_Dwreq2Idx(...) here
 		idx_chan = self.obj_container._CTDataContainer__chan_Dwreq2Idx(self.tup_run_stat[3], self.tup_run_stat[4])
-		#print("CTDataInput_HttpBfx_Down::onMts_ReqRange_impl, idx_chan:", idx_chan)
 		if idx_chan <  0:
 			return None
 		rec_last = None
 		if self.obj_container.list_tups_datachan[idx_chan][1] != None:
 			rec_last = self.obj_container.list_tups_datachan[idx_chan][1].getDoc_OutLast()
 		mts_last = None if rec_last == None else rec_last.get('mts', None)
-		#print("CTDataInput_HttpBfx_Down::onMts_ReqRange_impl, idx_chan:", idx_chan, ", mts_last:", mts_last, ", rec_last:", rec_last)
-		if mts_last != None and self.flag_log_intv >= 1:
-			print("CTDataInput_HttpBfx_Down::onMts_ReqRange_impl, chan:", self.tup_run_stat[3],
-								", New End:", mts_last,
+		if mts_last != None and self.flag_dbg_in >= 1:
+			self.logger.info(self.inf_this + " onMts_ReqRange_impl, chan=" + str(self.tup_run_stat[3]) +
+								", New End=" + str(mts_last) + " " +
 								time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(mts_last/1000))))
 		return None if mts_last == None else (mts_last, -1)
 
@@ -103,7 +100,8 @@ class CTDataSet_ACandles_down(ktdata.CTDataSet_ACandles):
 		super(CTDataSet_ACandles_down, self).onLocDataSync_impl()
 		if len(self.loc_candle_recs) >  0:
 			rec_ign = self.loc_candle_recs.pop()
-			#print("CTDataSet_ACandles_down::onLocDataSync_impl, rec_ign:", rec_ign)
+			if self.flag_dbg_set >= 1:
+				self.logger.warning(self.inf_this + " onLocDataSync_impl, rec_ign=" + str(rec_ign))
 
 
 class CTDataSet_ATrades_down(ktdata.CTDataSet_ATrades):
@@ -120,10 +118,10 @@ class CTDataSet_ATrades_down(ktdata.CTDataSet_ATrades):
 				break
 			idx_sep  = idx_rec
 			mts_sep  = mts_this
-		#print("CTDataSet_ATrades_down::onLocDataSync_impl", idx_sep, mts_sep)
 		if idx_sep != None and idx_sep >  0:
 			while len(self.loc_trades_recs) >  idx_sep:
 				rec_ign = self.loc_trades_recs.pop()
-				#print("CTDataSet_ATrades_down::onLocDataSync_impl, rec_ign:", rec_ign)
+				if self.flag_dbg_set >= 1:
+					self.logger.warning(self.inf_this + " onLocDataSync_impl, rec_ign=" + str(rec_ign))
 
 

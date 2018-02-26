@@ -10,16 +10,18 @@ def utTime_utcmts_now():
 	return int(round(time.time() * 1000))
 
 class CTDataSet_Base(object):
+	flag_dbg_set = 0
+
 	def __init__(self, logger, obj_container, name_chan, wreq_args):
 		self.logger   = logger
 		self.obj_container = obj_container
 		self.name_chan = name_chan
+		self.inf_this  = "DSet(" + self.name_chan + ")"
 		self.name_dbtbl = None
 		self.wreq_args = wreq_args
 		self.id_chan   = None
 		self.flag_sys_time  = False
 		self.loc_time_this  = 0
-		self.flag_dbg_rec   = False
 
 	def locSet_DbTbl(self, name_dbtbl):
 		self.name_dbtbl = name_dbtbl
@@ -74,6 +76,7 @@ class CTDataSet_Base(object):
 class CTDataSet_Array(CTDataSet_Base):
 	def __init__(self, logger, obj_container, name_chan, wreq_args):
 		super(CTDataSet_Array, self).__init__(logger, obj_container, name_chan, wreq_args)
+		self.inf_this  = "DSetA(" + self.name_chan + ")"
 
 	def onLocDataAppend_impl(self, fmt_data, obj_msg):
 		data_msg   = None
@@ -93,8 +96,8 @@ class CTDataSet_Array(CTDataSet_Base):
 				flag_plus  = False
 			else:
 				flag_plus  =  True
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_Array(onLocDataAppend_impl): data=" + str(data_msg) + ", msg=" + str(obj_msg))
+		if self.flag_dbg_set >= 2:
+			self.logger.info(self.inf_this + " onLocDataAppend_impl, data=" + str(data_msg) + ", msg=" + str(obj_msg))
 		# append data to class data members
 		if flag_plus:
 			self.locRecAdd(True, fmt_data, data_msg)
@@ -152,14 +155,15 @@ class CTDataSet_ATrades(CTDataSet_Array):
 		super(CTDataSet_ATrades, self).__init__(logger, obj_container, "trades", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_trades_recs = []
-		#self.flag_dbg_rec =  True
+
+		#self.flag_dbg_set =  2
 
 	def onLocDataClean_impl(self):
 		self.loc_trades_recs.clear()
 
 	def onLocRecAdd_impl(self, flag_plus, fmt_data, obj_rec):
-		if self.flag_dbg_rec:
-			self.logger.info("CTDataSet_ATrades(onLocRecAdd_impl): obj_rec=" + str(obj_rec))
+		if self.flag_dbg_set >= 1:
+			self.logger.info(self.inf_this + " onLocRecAdd_impl, obj_rec=" + str(obj_rec))
 		if   (fmt_data == DFMT_KKAIPRIV):
 			trade_rec = copy.copy(obj_rec)
 		elif (fmt_data == DFMT_BFXV2):
@@ -172,7 +176,7 @@ class CTDataSet_ATrades(CTDataSet_Array):
 					}
 			except:
 				trade_rec = None
-				self.logger.error("CTDataSet_ATrades(onLocRecAdd_impl): add obj_rec=" + str(obj_rec))
+				self.logger.error(self.inf_this + " onLocRecAdd_impl(Error), add obj_rec=" + str(obj_rec))
 		if (len(self.loc_trades_recs)+1 >  self.loc_recs_size):
 			self.loc_trades_recs.pop(0)
 		tid_new = trade_rec['tid']
@@ -316,7 +320,8 @@ class CTDataSet_ACandles(CTDataSet_Array):
 		super(CTDataSet_ACandles, self).__init__(logger, obj_container, "candles", wreq_args)
 		self.loc_recs_size   = recs_size
 		self.loc_candle_recs = []
-		#self.flag_dbg_rec    =  True
+
+		#self.flag_dbg_set    =  2
 
 	def onLocDataClean_impl(self):
 		self.loc_candle_recs.clear()

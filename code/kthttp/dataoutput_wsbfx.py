@@ -7,6 +7,8 @@ class CTDataOut_WsBfx(ktdata.CTDataOutput):
 		self.obj_dataset    = obj_dataset
 		self.obj_netconn    = obj_netconn
 
+		#self.flag_dbg_out   = 2
+
 	# implementations for DataContainer
 	def onPrep_OutChan_impl(self, **kwargs):
 		#print("CTDataOut_WsBfx::onPrep_OutChan_impl", kwargs)
@@ -27,7 +29,8 @@ class CTDataOut_WsBfx(ktdata.CTDataOutput):
 class CTDataOut_WsBfx_stat01(CTDataOut_WsBfx):
 	def __init__(self, logger, obj_dataset, obj_netconn):
 		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)
-		#self.flag_dbg_rec =  True
+
+		#self.flag_dbg_out   = 2
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
 		dat_unit = [ doc_rec['mts'], doc_rec['open'], doc_rec['close'], doc_rec['high'], doc_rec['low'], doc_rec['volume'], ]
@@ -37,7 +40,8 @@ class CTDataOut_WsBfx_stat01(CTDataOut_WsBfx):
 class CTDataOut_WsBfx_ticker(CTDataOut_WsBfx):
 	def __init__(self, logger, obj_dataset, obj_netconn):
 		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)
-		#self.flag_dbg_rec =  True
+
+		#self.flag_dbg_out   = 2
 
 	def onSynAppend_get_list(self, msec_now):
 		return None
@@ -53,10 +57,11 @@ class CTDataOut_WsBfx_ticker(CTDataOut_WsBfx):
 class CTDataOut_WsBfx_trades(CTDataOut_WsBfx):
 	def __init__(self, logger, obj_dataset, obj_netconn):
 		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)
-		#self.flag_dbg_rec =  True
+
+		#self.flag_dbg_out   = 2
 
 	def onSynAppend_get_list(self, msec_now):
-		return None
+		return self.obj_dataset.loc_trades_recs
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
 		dat_unit = [ doc_rec['tid'], doc_rec['mts'], doc_rec['amount'], doc_rec['price'], ]
@@ -66,10 +71,15 @@ class CTDataOut_WsBfx_trades(CTDataOut_WsBfx):
 class CTDataOut_WsBfx_book(CTDataOut_WsBfx):
 	def __init__(self, logger, obj_dataset, obj_netconn):
 		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)
-		#self.flag_dbg_rec =  True
+
+		#self.flag_dbg_out   = 2
 
 	def onSynAppend_get_list(self, msec_now):
-		return None
+		list_books = []
+		# add docs from snapshot
+		list_books.extend(self.obj_dataset.loc_book_bids)
+		list_books.extend(self.obj_dataset.loc_book_asks)
+		return list_books
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
 		dat_unit = [ doc_rec['price'], doc_rec['count'],
@@ -80,10 +90,11 @@ class CTDataOut_WsBfx_book(CTDataOut_WsBfx):
 class CTDataOut_WsBfx_candles(CTDataOut_WsBfx):
 	def __init__(self, logger, obj_dataset, obj_netconn):
 		CTDataOut_WsBfx.__init__(self, logger, obj_dataset, obj_netconn)
-		#self.flag_dbg_rec =  True
+
+		#self.flag_dbg_out   = 2
 
 	def onSynAppend_get_list(self, msec_now):
-		return None
+		return self.obj_dataset.loc_candle_recs
 
 	def onTran_Doc2Dat_impl(self, doc_rec):
 		dat_unit = [ doc_rec['mts'], doc_rec['open'], doc_rec['close'], doc_rec['high'], doc_rec['low'], doc_rec['volume'], ]

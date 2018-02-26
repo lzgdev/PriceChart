@@ -13,7 +13,7 @@ class CTDataOut_Db(ktdata.CTDataOutput):
 		self.wreq_args  = None
 		self.db_doc_last    = None
 
-		#self.flag_dbg_rec  = 2
+		#self.flag_dbg_out  = 2
 
 	def getDoc_OutLast(self):
 		return self.db_doc_last
@@ -37,7 +37,7 @@ class CTDataOut_Db(ktdata.CTDataOutput):
 		# append doc to database
 		doc_new  = self.loc_db_writer.dbOP_DocAdd(self.name_dbtbl, dat_one)
 		if doc_new != None:
-			if self.flag_dbg_rec >= 2:
+			if self.flag_dbg_out >= 2:
 				self.logger.info("CTDataOut_Db(onOut_DatOne_impl): doc_new=" + str(doc_new))
 			self.db_doc_last = doc_new
 			num_out  = 1
@@ -48,7 +48,7 @@ class CTDataOut_Db(ktdata.CTDataOutput):
 		for dat_out in dat_array:
 			doc_new  = self.loc_db_writer.dbOP_DocAdd(self.name_dbtbl, dat_out)
 			if doc_new != None:
-				if self.flag_dbg_rec >= 2:
+				if self.flag_dbg_out >= 2:
 					self.logger.info("CTDataOut_Db(onOut_DatArray_impl): doc_new=" + str(doc_new))
 				self.db_doc_last = doc_new
 				num_out += 1
@@ -59,14 +59,14 @@ class CTDataOut_Db_ticker(CTDataOut_Db):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDataOut_Db.__init__(self, logger, obj_dataset, db_writer)
 
-		#self.flag_dbg_rec   = 2
+		#self.flag_dbg_out   = 2
 
 
 class CTDataOut_Db_trades(CTDataOut_Db):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDataOut_Db.__init__(self, logger, obj_dataset, db_writer)
 
-		#self.flag_dbg_rec   = 2
+		#self.flag_dbg_out   = 2
 
 	def onSynAppend_get_list(self, msec_now):
 		return self.obj_dataset.loc_trades_recs
@@ -86,7 +86,7 @@ class CTDataOut_Db_book(CTDataOut_Db):
 		self.mts_sync_now   = None
 		self.mts_sync_next  = None
 
-		#self.flag_dbg_rec   = 2
+		#self.flag_dbg_out   = 2
 
 	def docAppend(self, doc_rec):
 		mts_this  = doc_rec.get('mts', 0)
@@ -132,7 +132,7 @@ class CTDataOut_Db_candles(CTDataOut_Db):
 	def __init__(self, logger, obj_dataset, db_writer):
 		CTDataOut_Db.__init__(self, logger, obj_dataset, db_writer)
 
-		#self.flag_dbg_rec   = 2
+		#self.flag_dbg_out   = 2
 
 	def onSynAppend_get_list(self, msec_now):
 		return self.obj_dataset.loc_candle_recs

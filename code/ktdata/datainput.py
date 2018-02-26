@@ -9,6 +9,8 @@ import http.client
 from .dataset       import DFMT_KKAIPRIV, DFMT_BFXV2
 
 class CTDataInput(object):
+	flag_dbg_in  = 0
+
 	def __init__(self, logger, obj_container):
 		object.__init__(self)
 		self.logger   = logger
@@ -16,7 +18,6 @@ class CTDataInput(object):
 		self.obj_container = obj_container
 		self.pid_this = os.getpid()
 		self.inf_this = 'Din(pid=' + str(self.pid_this) + ')'
-		self.flag_log_intv = 0
 
 	def setChanCfgs(self, list_cfg):
 		self.list_chan_cfg  = list_cfg
@@ -90,7 +91,7 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 		self.onNcEV_Close_impl()
 
 	def onNcEV_Open_impl(self):
-		if self.flag_log_intv >  0:
+		if self.flag_dbg_in >  0:
 			self.logger.info(self.inf_this + " websocket Opened!")
 
 	def onNcEV_Message_impl(self, message):
@@ -100,7 +101,7 @@ class CTDataInput_Ws(CTDataInput, websocket.WebSocketApp):
 		self.logger.error(self.inf_this + " websocket Error: " + str(error))
 
 	def onNcEV_Close_impl(self):
-		if self.flag_log_intv >  0:
+		if self.flag_dbg_in >  0:
 			self.logger.info(self.inf_this + " websocket Closed!")
 
 
@@ -115,26 +116,29 @@ class CTDataInput_Http(CTDataInput):
 		self.obj_httpconn  = None
 		self.num_httprest  = 0
 
+		self.inf_this = 'DinHttp(pid=' + str(self.pid_this) + ')'
+
 	def onLoop_ReadPrep_impl(self):
 		return False
 
 	def onLoop_ReadMain_impl(self):
 		# compose real http request url
-		if self.flag_log_intv >  1:
-			print("URL, netloc:", self.url_main_netloc, ", path:", self.url_main_path)
+		if self.flag_dbg_in >  1:
+			self.logger.info(self.inf_this + " onLoop_ReadMain_impl, netloc=" + self.url_main_netloc + ", path:" + self.url_main_path)
 		if self.obj_httpconn == None:
 			self.obj_httpconn = http.client.HTTPSConnection(self.url_main_netloc)
 			self.num_httprest = 0
 		self.obj_httpconn.request("GET", self.url_main_path)
 		http_resp = self.obj_httpconn.getresponse()
 		content_type = http_resp.getheader('Content-Type')
-		if self.flag_log_intv >  1:
-			print("Resp, Status:", http_resp.status, ", reason:", http_resp.reason, ", Content-Type:", content_type)
+		if self.flag_dbg_in >  1:
+			self.logger.info(self.inf_this + " onLoop_ReadMain_impl(Resp), Status=" + str(http_resp.status) +
+								", reason=" + http_resp.reason + ", Content-Type=" + content_type)
 		http_data = None
 		if content_type != None:
 			http_data = http_resp.read()
-		if self.flag_log_intv >  1:
-			print("Resp, Data:", http_data)
+		if self.flag_dbg_in >  1:
+			self.logger.info(self.inf_this + " onLoop_ReadMain_impl(Resp), Data=" + http_data)
 		ret_proc = self.onNcEV_HttpResponse_impl(http_resp.status, content_type, http_data)
 		self.num_httprest += 1
 		if not ret_proc or self.num_httprest >= 4:
@@ -161,6 +165,8 @@ class CTDataInput_Db(CTDataInput):
 		self.loc_name_chan  = None
 		self.loc_wreq_args  = None
 
+		self.inf_this = 'DinDb(pid=' + str(self.pid_this) + ')'
+
 	def datFwd_Begin(self, id_chan):
 		self.onDat_Begin_impl(id_chan)
 
@@ -171,18 +177,21 @@ class CTDataInput_Db(CTDataInput):
 		self.onDat_End_impl(id_chan, num_docs)
 
 	def onDat_Begin_impl(self, id_chan):
-		#print("CTDataInput_Db::onDat_Begin_impl", id_chan)
+		if self.flag_dbg_in >= 2:
+			self.logger.info(self.inf_this + " onDat_Begin_impl, id_chan=" + str(id_chan))
 		self.flag_rec_plus  =  True
 		self.list_tmp_docs.clear()
 
 	def onDat_End_impl(self, id_chan, num_docs):
-		#print("CTDataInput_Db::onDat_End_impl", id_chan)
+		if self.flag_dbg_in >= 2:
+			self.logger.info(self.inf_this + " onDat_End_impl, id_chan=" + str(id_chan) + ", num_docs=" + str(num_docs))
 		self.flag_rec_plus  =  True
 		self.list_tmp_docs.clear()
 
 	def onDat_FwdDoc_impl(self, id_chan, obj_doc):
 		type_rec = None if not 'type' in obj_doc else obj_doc['type']
-		#print("CTDataInput_Db::onDat_FwdDoc_impl", id_chan, obj_doc)
+		if self.flag_dbg_in >= 3:
+			self.logger.info(self.inf_this + " onDat_FwdDoc_impl, id_chan=" + str(id_chan) + ", obj_doc=" + str(obj_doc))
 		if   'reset' == type_rec:
 			self.flag_rec_plus  = False
 			self.list_tmp_docs.clear()
@@ -192,10 +201,12 @@ class CTDataInput_Db(CTDataInput):
 			self.list_tmp_docs.clear()
 		else:
 			if not self.flag_rec_plus:
-				#print("CTDataInput_Db::onDat_FwdDoc_impl b=31", id_chan, obj_doc)
+				if self.flag_dbg_in >= 3:
+					self.logger.info(self.inf_this + " onDat_FwdDoc_impl(NP), id_chan=" + str(id_chan) + ", obj_doc=" + str(obj_doc))
 				self.list_tmp_docs.append(obj_doc)
 			else:
-				#print("CTDataInput_Db::onDat_FwdDoc_impl b=32", id_chan, obj_doc)
+				if self.flag_dbg_in >= 3:
+					self.logger.info(self.inf_this + " onDat_FwdDoc_impl(PL), id_chan=" + str(id_chan) + ", obj_doc=" + str(obj_doc))
 				self.obj_container.datIN_DataFwd(id_chan, DFMT_KKAIPRIV, obj_doc)
 
 

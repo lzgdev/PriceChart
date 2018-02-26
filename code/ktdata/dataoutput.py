@@ -1,10 +1,11 @@
 
 
 class CTDataOutput(object):
+	flag_dbg_out = 0
+
 	def __init__(self, logger):
 		object.__init__(self)
 		self.logger   = logger
-		self.flag_dbg_rec   = -1
 
 	# interfaces for DataContainer
 	def getDoc_OutLast(self):

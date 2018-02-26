@@ -27,8 +27,8 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 
 		self.inf_this = 'DinWsBfx(pid=' + str(self.pid_this) + ',tok=' + str(self.tok_mono_this) + ')'
 
-		#self.flag_log_intv = 2
-		self.flag_log_intv = 1
+		#self.flag_dbg_in = 2
+		self.flag_dbg_in = 1
 
 	def onPrep_Read_impl(self, **kwargs):
 		self.list_chan_stat.clear()
@@ -40,7 +40,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 								'channel': map_chan['channel'], 'wreq_args': map_chan['wreq_args'], 'dict_args': map_chan['dict_args'],
 								'subsc_sent': None, 'subsc_recv': None, 'unsub_sent': None, 'unsub_recv': None,
 								}
-			if self.flag_log_intv >= 2:
+			if self.flag_dbg_in >= 2:
 				self.logger.debug(self.inf_this + " onPrep_Read_impl, stat_chan=" + str(stat_chan))
 			self.list_chan_stat.append(stat_chan)
 
@@ -51,7 +51,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 					'channel': stat_chan['channel'],
 				}
 			obj_subscribe.update(stat_chan['dict_args'])
-			if self.flag_log_intv >= 1:
+			if self.flag_dbg_in >= 1:
 				self.logger.info(self.inf_this + " ncOP_Send_Subscribe, chan=" + str(obj_subscribe))
 			txt_wreq = json.dumps(obj_subscribe)
 			self.send(txt_wreq)
@@ -77,7 +77,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 					'event': 'unsubscribe',
 					'chanId': int(id_chan),
 			}
-		if self.flag_log_intv >= 1:
+		if self.flag_dbg_in >= 1:
 			self.logger.info(self.inf_this + " ncOP_Send_Unsubscribe_chan, chan=" + str(obj_subscribe))
 		txt_wreq = json.dumps(obj_subscribe)
 		self.send(txt_wreq)
@@ -85,7 +85,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		return self.list_chan_stat[idx_stat]['idx_chan']
 
 	def onNcEV_Message_impl(self, message):
-		if self.flag_log_intv >= 2:
+		if self.flag_dbg_in >= 2:
 			self.logger.debug(self.inf_this + " onNcEV_Message_impl, msg=" + message)
 		if not isinstance(message, str):
 			obj_msg  = None
@@ -142,12 +142,12 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		if tok_chan != None and tok_chan.value <  self.tok_mono_this:
 			with tok_chan.get_lock():
 				tok_chan.value = self.tok_mono_this
-			if self.flag_log_intv >= 1:
+			if self.flag_dbg_in >= 1:
 				self.logger.info(self.inf_this + " subscribed: chanId=" + str(id_chan) +
 								", tok=" + str(tok_chan.value) + ", chan=" + name_chan)
 		self.list_chan_stat[idx_stat]['idx_chan'] = idx_chan
 		self.list_chan_stat[idx_stat]['subsc_recv'] = self.obj_container.mtsNow_mono()
-		if self.flag_log_intv >= 1:
+		if self.flag_dbg_in >= 1:
 			self.logger.debug(self.inf_this + " onNcEV_Message_subscribed, stat_chan=" + str(self.list_chan_stat[idx_stat]))
 		return idx_chan
 
@@ -158,7 +158,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 			return -1
 		tok_chan = self.list_chan_stat[idx_stat]['tok_chan']
 		if tok_chan != None:
-			if self.flag_log_intv >= 1:
+			if self.flag_dbg_in >= 1:
 				self.logger.info(self.inf_this + " unsubscribed: chanId=" + str(id_chan) +
 								", tok=" + str(tok_chan.value))
 		self.list_chan_stat[idx_stat]['unsub_recv'] = self.obj_container.mtsNow_mono()
@@ -174,7 +174,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		if tok_chan == None or self.tok_mono_this != tok_chan.value:
 			self.onNcEV_TokOut(idx_stat)
 		else:
-			if self.flag_log_intv >= 3:
+			if self.flag_dbg_in >= 3:
 				self.logger.info(self.inf_this + " onNcEV_Message_data, tok=" + str(self.tok_mono_this) +
 								" match new=" + str(tok_chan.value))
 			self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, obj_msg)
@@ -189,7 +189,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		mono_sent = stat_chan['unsub_sent']
 		mono_now  = self.obj_container.mtsNow_mono()
 		if mono_sent == None or mono_now >= (mono_sent + 1000):
-			if self.flag_log_intv >= 1:
+			if self.flag_dbg_in >= 1:
 				self.logger.warning(self.inf_this + " chanId=" + str(id_chan) + " tok=" + str(self.tok_mono_this) +
 								" NOT match new=" + str(tok_chan.value))
 			self.ncOP_Send_Unsubscribe_chan(id_chan)
@@ -210,7 +210,7 @@ class CTDataInput_WssBfx(CTDataInput_Ws):
 		return idx_stat
 
 	def _run_kkai_step(self):
-		if self.flag_log_intv >= 4:
+		if self.flag_dbg_in >= 4:
 			self.logger.warning(self.inf_this + " websocket KKAI Check: " + str(self.list_chan_stat))
 		num_chans   = 0
 		num_finish  = 0

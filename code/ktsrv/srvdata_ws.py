@@ -48,8 +48,8 @@ class WebSockHandler(tornado.websocket.WebSocketHandler):
 		self.logger.info("WebSockHandler(sbsc): chan=" + str(name_channel) + ", args=" + str(obj_msg))
 		if 'subscribe' == evt_msg:
 			cfg_url   = 'mongodb://127.0.0.1:27017/bfx-down'
-			#cfg_chan  = { 'load_args': { 'limit': 256, 'sort': [('$natural', 1)], }, }
-			cfg_chan  = { 'load_args': { 'limit':  64, 'sort': [('$natural', 1)], }, }
+			cfg_chan  = { 'load_args': { 'limit': 256, 'sort': [('$natural', 1)], }, }
+			#cfg_chan  = { 'load_args': { 'limit':  64, 'sort': [('$natural', 1)], }, }
 			dict_args = { }
 			for req_key, req_val in obj_msg.items():
 				if req_key ==   'event':

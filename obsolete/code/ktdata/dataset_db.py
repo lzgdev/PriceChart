@@ -22,14 +22,14 @@ class CTDataSet_ATrades_DbOut(CTDataSet_ATrades):
 
 	def onLocDataSync_CB(self):
 		for trade_rec in self.loc_trades_recs:
-			if self.flag_dbg_rec:
+			if self.flag_dbg_out >= 1:
 				self.logger.info("CTDataSet_ATrades_DbOut(onLocDataSync_CB): rec=" + str(trade_rec))
 			self.loc_db_adapter.docAppend(trade_rec)
 
 	def onLocRecAdd_CB(self, flag_plus, trade_rec, rec_index):
 		if not flag_plus:
 			return 0
-		if self.flag_dbg_rec:
+		if self.flag_dbg_out >= 1:
 			self.logger.info("CTDataSet_ATrades_DbOut(onLocRecAdd_CB): rec=" + str(trade_rec))
 		self.loc_db_adapter.docAppend(trade_rec)
 

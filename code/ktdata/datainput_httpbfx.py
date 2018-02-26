@@ -30,7 +30,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		self.mts_req_range  = None
 
 		#self.loc_dbg_tmax   = 3
-		#self.flag_log_intv  = 1
+		#self.flag_dbg_in  = 1
 
 	def mark_ChanEnd(self):
 		self.onMark_ChanEnd_impl()
@@ -89,11 +89,12 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 			self.url_main_path   = url_parse.path + url_suff + '?' + url_params
 		else:
 			self.url_main_path   = None
-		if self.flag_log_intv >  0:
-			print("URL init2, try:", self.loc_dbg_tmax, ", ret:", self.url_main_path)
+		if self.flag_dbg_in >= 1:
+			self.logger.info(self.inf_this + " onLoop_ReadPrep_impl, url=" + self.url_main_path)
 		# sleep for a while
 		if self.loc_mark_delay > 0:
-			print("CTDataInput_HttpBfx::onLoop_ReadPrep_impl, sleep", self.loc_mark_delay, "seconds.")
+			if self.flag_dbg_in >= 1:
+				self.logger.info(self.inf_this + " onLoop_ReadPrep_impl, sleep " + str(self.loc_mark_delay) + " seconds.")
 			time.sleep(self.loc_mark_delay)
 			self.loc_mark_delay = 0
 		#time.sleep(6)
@@ -120,7 +121,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 			id_chan = self.tup_run_stat[1]
 			self.obj_container.datIN_DataFwd(id_chan, DFMT_BFXV2, [id_chan, obj_data])
 			# out debug for records
-			if self.flag_log_intv >  1:
+			if self.flag_dbg_in >  1:
 				if   self.mts_req_range[0] >  0:
 					mts_edge  = self.mts_req_range[0]
 				else:
@@ -131,9 +132,10 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 						tm_rec = obj_item[1]
 					elif 'candles' == self.tup_run_stat[3]:
 						tm_rec = obj_item[0]
-					print("Data, diff:", tm_rec - mts_edge, ", mts:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))), ", item:", obj_item)
-			if self.flag_log_intv >  0:
-				print("Data, resp:", self.loc_cnt_resp, ", len:", len_list)
+					self.logger.info(self.inf_this + " onNcEV_HttpResponse_impl(Data), diff=" + str(tm_rec - mts_edge) +
+								", mts=" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))) + ", item=" + str(obj_item))
+			if self.flag_dbg_in >  0:
+				self.logger.info(self.inf_this + " onNcEV_HttpResponse_impl(Data), resp=" + str(self.loc_cnt_resp) + ", len=" + str(len_list))
 			# update flag_chan_end
 			if    'trades' == self.tup_run_stat[3]:
 				if len_list >=  num_bfx_trades_recs:
@@ -143,17 +145,17 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 					flag_chan_end = False
 			self.loc_cnt_resp += 1
 		elif len_list >= 1 and 'error' == obj_data[0]:
-			print("Error, len:", len_list, ", data:", obj_data)
+			self.logger.error(self.inf_this + " onNcEV_HttpResponse_impl(Error), len=" + str(len_list) + ", data=" + str(obj_data))
 			if len_list >= 2 and 11010 == obj_data[1]:
 				flag_rate_lim =  True
 		else:
-			print("Error, code:", status_code, ", type:", content_type, ", data:", http_data)
+			self.logger.error(self.inf_this + " onNcEV_HttpResponse_impl(Error), code=" + str(status_code) + ", type=" + content_type + ", data=" + str(http_data))
 		# clean channel data if necessary
 		if   flag_rate_lim:
-			print("Warning, rate limit:", str(obj_data))
+			self.logger.warning(self.inf_this + " onNcEV_HttpResponse_impl(Warning), rate limit=" + str(obj_data))
 			self.loc_mark_delay = 90
 		elif flag_chan_end:
-			print("Warning, data end:", status_code, http_data)
+			self.logger.warning(self.inf_this + " onNcEV_HttpResponse_impl(Warning), data end=" + str(status_code) + str(http_data))
 			self.mark_ChanEnd()
 		return flag_data_valid
 
