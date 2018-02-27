@@ -198,15 +198,16 @@ class CTDataInput_HttpBfx_Down1(ktdata.CTDataInput_HttpBfx):
 
 class CTDown1Rec_Save(object):
 	set_trades_excp  = { }
-	set_candles_excp = { }
-	#set_candles_excp = { 1516498800000, 1515733620000, 1514721960000, 1513090800000, 1511052480000, }
+	set_candles_excp = {
+						1514721960000, 1513090800000, 1511052480000, 1494954000000,
+						1478202060000, 1477103700000, 1476595680000, 1476057780000, 1475728020000, 1475558220000,
+					}
 
 	def __init__(self, logger):
 		self.logger = logger
 		self.inf_this = "CTDown1Rec_Save"
-		#self.down_mts_bgn = 1358182043000/1358548082000  Trades(Default)
-		#self.down_mts_bgn = 1364774820000/1364827380000 Candles(Default)
-		self.down_mts_bgn  = 1364947200000
+		# 2016-10-03 05:55:00
+		self.down_mts_bgn  = 1475445300000
 		self.down_mts_end  = 1519084800000
 		self.flag_dbg_save =  0
 		# members for database
