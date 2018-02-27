@@ -1,13 +1,28 @@
 
 import sys
 import json
+
 import math
+import copy
 
 import ktdata
 import kthttp
 
-from .dataoutput_stat   import CTDataOut_Stat_stat01,  \
-							CTDataOut_Stat_ticker, CTDataOut_Stat_trades, CTDataOut_Stat_book, CTDataOut_Stat_candles
+dsrc_down_trades = {
+			#'switch': False,
+			'url': 'mongodb://127.0.0.1:27017/bfx-down',
+			'chans': [
+				{ 'channel':  'trades', 'wreq_args': '{ "symbol": "tBTCUSD" }', 'load_args': { 'limit': 256, 'sort': [('$natural', 1)], }, },
+			],
+		}
+
+dsrc_down_candles = {
+			#'switch': False,
+			'url': 'mongodb://127.0.0.1:27017/bfx-down',
+			'chans': [
+				{ 'channel': 'candles', 'wreq_args': '{ "key": "trade:1m:tBTCUSD" }', 'load_args': { 'limit': 256, 'sort': [('$natural', 1)], }, },
+			],
+		}
 
 
 class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
@@ -20,6 +35,8 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 		self.stat_mts_step  = 60 * 1000
 		self.stat_mts_bgn   = 1510685520000
+		#self.stat_mts_bgn   = 1500685520000
+		self.stat_mts_bgn   = round(1518961129634 / self.stat_mts_step) * self.stat_mts_step
 
 		self.stat_mts_now   = self.stat_mts_bgn
 		self.stat_rec_now   = CTStatRec_Stat11(self.logger)
@@ -33,34 +50,32 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 		self.run_loop_left  = 2
 		#self.run_loop_left  = 200
 
-	def onChan_DataOut_alloc(self, obj_dataset, name_chan, wreq_args, dict_args):
-		#print("CTDataContainer_StatOut::onChan_DataOut_alloc", name_chan, wreq_args)
-		obj_dataout = None
-		if not self.flag_out_wsbfx:
-			if   name_chan ==  'ticker':
-				obj_dataout = CTDataOut_Stat_ticker(self.logger, obj_dataset, self.obj_outconn)
-			elif name_chan ==  'trades':
-				obj_dataout = CTDataOut_Stat_trades(self.logger, obj_dataset, self.obj_outconn)
-			elif name_chan ==    'book':
-				obj_dataout = CTDataOut_Stat_book(self.logger, obj_dataset, self.obj_outconn)
-			elif name_chan == 'candles':
-				obj_dataout = CTDataOut_Stat_candles(self.logger, obj_dataset, self.obj_outconn)
-		if obj_dataout == None:
-			obj_dataout = super(CTDataContainer_StatOut, self).onChan_DataOut_alloc(obj_dataset, name_chan, wreq_args, dict_args)
-		return obj_dataout
+	def statInit(self):
+		return self.onStat_InitEntr_impl()
+
+	def getStat_ExecCfg(self):
+		return self.onStat_ExecCfg_init()
+
+	def onStat_InitEntr_impl(self):
+		return None
+
+	def onStat_ExecCfg_init(self):
+		#print("CTDataContainer_Down1Out::onStat_ExecCfg_init(00)")
+		list_dsrc_stat = []
+		dsrc_cfg = copy.copy(dsrc_down_trades)
+		#dsrc_cfg['chans'][0]['load_args'] = { 'filter': { 'mts': { '$gte': mts_begin, } }, 'limit':   1, 'sort': [('$natural', 1)], },
+		dsrc_cfg['chans'][0]['load_args']['filter'] = { 'mts': { '$gte': self.stat_mts_now, } }
+		dsrc_cfg['chans'][0]['load_args']['limit']  = 250
+		list_dsrc_stat.append(dsrc_cfg)
+		dsrc_cfg = copy.copy(dsrc_down_candles)
+		dsrc_cfg['chans'][0]['load_args']['filter'] = { 'mts': { '$gte': self.stat_mts_now, } }
+		dsrc_cfg['chans'][0]['load_args']['limit']  = 250
+		list_dsrc_stat.append(dsrc_cfg)
+		return list_dsrc_stat
 
 	def onExec_Prep_impl(self, arg_prep):
 		#print("CTDataContainer_StatOut::onExec_Prep_impl(01)", self.obj_dset_trades, self.obj_dset_candles)
 		self.run_loop_left   -= 1
-		self.obj_dset_trades  = None
-		self.obj_dset_candles = None
-		num_chans = len(self.list_tups_datachan)
-		for idx_chan in range(num_chans):
-			if   isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ATrades):
-				self.obj_dset_trades  = self.list_tups_datachan[idx_chan][0]
-			elif isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ACandles):
-				self.obj_dset_candles = self.list_tups_datachan[idx_chan][0]
-		#print("CTDataContainer_StatOut::onExec_Prep_impl(11)", self.obj_dset_trades, self.obj_dset_candles)
 
 		self.read_trades_num   = 0
 		self.read_candles_num  = 0
@@ -70,6 +85,16 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 	def onExec_Post_impl(self, arg_post):
 		self.stamp_exec_end = self.mtsNow_time()
 		print("CTDataContainer_StatOut::onExec_Post_impl, time cost:", format(self.stamp_exec_end-self.stamp_exec_bgn, ","))
+
+		self.obj_dset_trades  = None
+		self.obj_dset_candles = None
+		num_chans = len(self.list_tups_datachan)
+		for idx_chan in range(num_chans):
+			if   isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ATrades):
+				self.obj_dset_trades  = self.list_tups_datachan[idx_chan][0]
+			elif isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ACandles):
+				self.obj_dset_candles = self.list_tups_datachan[idx_chan][0]
+		#print("CTDataContainer_StatOut::onExec_Prep_impl(11)", self.obj_dset_trades, self.obj_dset_candles)
 		if self.flag_stat and self.obj_dset_trades != None and self.obj_dset_candles != None:
 			self.onStat_Loop_impl()
 		self.flag_stat_end  = True if self.run_loop_left <  0 else False
@@ -127,11 +152,12 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 
 class CTStatRec(object):
+	flag_dbg_stat  = 0
+
 	def __init__(self, logger):
 		self.logger = logger
-		self.flag_dbg_stat =  0
 
-		#self.flag_dbg_stat =  1
+		self.flag_dbg_stat = 2
 
 	def reset(self, mts):
 		self.onReset_impl(mts)

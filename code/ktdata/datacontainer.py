@@ -42,14 +42,16 @@ gMap_TaskChans = [
 		{ 'channel': 'candles', 'name_dbtbl':   'candles-tBTCUSD-14D', 'wreq_args': '{ "key": "trade:14D:tBTCUSD" }', },
 		{ 'channel': 'candles', 'name_dbtbl':    'candles-tBTCUSD-1M', 'wreq_args':  '{ "key": "trade:1M:tBTCUSD" }', },
 		# channel: 18 ~ 21 for statistics
-		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat01" }', },
-		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat02" }', },
-		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat11" }', },
-		{ 'channel':    'stat', 'name_dbtbl':    'candles-tBTCUSD-1m', 'wreq_args':  '{ "stat": "stat12" }', },
+		{ 'channel':    'stat', 'name_dbtbl':               'stat-01', 'wreq_args':  '{ "stat": "stat01" }', },
+		{ 'channel':    'stat', 'name_dbtbl':               'stat-02', 'wreq_args':  '{ "stat": "stat02" }', },
+		{ 'channel':    'stat', 'name_dbtbl':               'stat-11', 'wreq_args':  '{ "stat": "stat11" }', },
+		{ 'channel':    'stat', 'name_dbtbl':               'stat-12', 'wreq_args':  '{ "stat": "stat12" }', },
 	]
 
 
 class CTDataContainer(object):
+	flag_dbg_cont = 0
+
 	size_dset_trades   = 512
 	size_dset_candles  = 512
 
@@ -58,8 +60,8 @@ class CTDataContainer(object):
 		object.__init__(self)
 		self.logger   = logger
 		self.tok_mono_this = self.mtsNow_mono()
-		self.inf_this = "DataContainer"
 		self.pid_this = os.getpid()
+		self.inf_this = "DataC(pid=" + str(self.pid_this) + ")"
 		self.list_tups_datasrc  = []
 		# (0:obj_dataset, 1:obj_dataout, 2:name_chan, 3:wreq_args_map, 4:dict_args_map)
 		self.list_tups_datachan = []

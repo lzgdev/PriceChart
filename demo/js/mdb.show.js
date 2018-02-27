@@ -15,13 +15,13 @@ if (coll_name != "") {
 
 coll_name = "";
 //coll_name = "ticker-tBTCUSD";
-//coll_name = "trades-tBTCUSD";
-coll_name = "book-tBTCUSD-P0";
+coll_name = "trades-tBTCUSD";
+//coll_name = "book-tBTCUSD-P0";
 //coll_name = "candles-tBTCUSD-1m";
 
 if (coll_name != "") {
   coll_set = db.getCollection(coll_name);
   //coll_set.find();
-  coll_set.find().sort({_id:-1});
+  coll_set.find().sort({$natural:1});
 }
 
