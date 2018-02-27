@@ -90,7 +90,9 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 		else:
 			self.url_main_path   = None
 		if self.flag_dbg_in >= 1:
-			self.logger.info(self.inf_this + " onLoop_ReadPrep_impl, url=" + self.url_main_path)
+			mts_out = mts_end if mts_end != None else mts_start
+			self.logger.info(self.inf_this + " onLoop_ReadPrep_impl, url=" + self.url_main_path +
+								", mts=" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(mts_out/1000))))
 		# sleep for a while
 		if self.loc_mark_delay > 0:
 			if self.flag_dbg_in >= 1:
@@ -135,7 +137,7 @@ class CTDataInput_HttpBfx(CTDataInput_Http):
 					self.logger.info(self.inf_this + " onNcEV_HttpResponse_impl(Data), diff=" + str(tm_rec - mts_edge) +
 								", mts=" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(round(tm_rec/1000))) + ", item=" + str(obj_item))
 			if self.flag_dbg_in >  0:
-				self.logger.info(self.inf_this + " onNcEV_HttpResponse_impl(Data), resp=" + str(self.loc_cnt_resp) + ", len=" + str(len_list))
+				self.logger.info(self.inf_this + " onNcEV_HttpResponse_impl(Data), len=" + str(len_list) + ", cnt_resp=" + str(self.loc_cnt_resp))
 			# update flag_chan_end
 			if    'trades' == self.tup_run_stat[3]:
 				if len_list >=  num_bfx_trades_recs:
