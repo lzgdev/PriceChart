@@ -1,7 +1,8 @@
 
 1. Setup virtual environment
 # for Python3, use following(Ubuntu)
-sudo apt-get install python3-dev
+sudo apt-get install -y python3-dev
+sudo apt-get install -y python3-tk
 virtualenv -p python3 venv
 
 # for Python2, use following(Ubuntu)
@@ -41,6 +42,7 @@ pip install requests
 #
 pip install pymongo
 pip install ntplib
+pip install matplotlib
 
 #pip install websocket-client
 cd contribs/websocket-client; python setup.py install; cd -
