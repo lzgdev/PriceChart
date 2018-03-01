@@ -24,6 +24,11 @@ dsrc_http_candles = {
 			],
 		}
 
+
+# 2016-10-03 05:55:00
+gMts_down_bgn = 1475445300000
+gMts_down_end = 1519084800000
+
 list_gap_trades  = []
 list_gap_candles = []
 
@@ -204,11 +209,12 @@ class CTDown1Rec_Save(object):
 					}
 
 	def __init__(self, logger):
+		global gMts_down_bgn, gMts_down_end
+		# members of parameters
 		self.logger = logger
 		self.inf_this = "CTDown1Rec_Save"
-		# 2016-10-03 05:55:00
-		self.down_mts_bgn  = 1475445300000
-		self.down_mts_end  = 1519084800000
+		self.down_mts_bgn  = gMts_down_bgn
+		self.down_mts_end  = gMts_down_end
 		self.flag_dbg_save =  0
 		# members for database
 		self.obj_dbwriter  = None

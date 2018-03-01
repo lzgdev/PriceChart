@@ -41,4 +41,5 @@ while not appMain.flag_stat_end:
 
 	#appMain.flag_stat_end =  True
 
+appMain.statShow()
 

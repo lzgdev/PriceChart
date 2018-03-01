@@ -8,6 +8,7 @@ import copy
 import ktdata
 import kthttp
 
+
 dsrc_down_trades = {
 			#'switch': False,
 			'url': 'mongodb://127.0.0.1:27017/bfx-down',
@@ -41,7 +42,7 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 
 		self.stat_mts_now   = self.stat_mts_bgn
 		self.stat_rec_now   = CTStatRec_Stat11(self.logger, self.stat_mts_step)
-		self.stat_rec_now.reset(self.stat_mts_now)
+		self.stat_rec_now.initStat(self.stat_mts_now)
 
 		self.read_trades_tid_last   = None
 		self.read_candles_mts_last  = None
@@ -49,10 +50,14 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 		self.read_candles_num   = None
 
 		self.run_loop_left  = 20
+		self.run_loop_left  = 40
 		#self.size_dset_candles = 2
 
 	def statInit(self):
 		return self.onStat_InitEntr_impl()
+
+	def statShow(self):
+		return self.stat_rec_now.statShow()
 
 	def getStat_ExecCfg(self):
 		return self.onStat_ExecCfg_init()
@@ -82,11 +87,7 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 		return list_dsrc_stat
 
 	def onExec_Prep_impl(self, arg_prep):
-		#print("CTDataContainer_StatOut::onExec_Prep_impl(01)", self.obj_dset_trades, self.obj_dset_candles)
-
-		#self.read_trades_num   = 0
-		#self.read_candles_num  = 0
-
+		#print("CTDataContainer_StatOut::onExec_Prep_impl(01)")
 		self.stamp_exec_bgn = self.mtsNow_time()
 
 	def onExec_Post_impl(self, arg_post):
@@ -94,68 +95,58 @@ class CTDataContainer_StatOut(kthttp.CTDataContainer_HttpOut):
 		self.stamp_exec_end = self.mtsNow_time()
 		print("CTDataContainer_StatOut::onExec_Post_impl, time cost:", format(self.stamp_exec_end-self.stamp_exec_bgn, ","))
 
-		self.obj_dset_trades  = None
-		self.obj_dset_candles = None
+		dset_trades  = None
+		dset_candles = None
 		num_chans = len(self.list_tups_datachan)
 		for idx_chan in range(num_chans):
 			if   isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ATrades):
-				self.obj_dset_trades  = self.list_tups_datachan[idx_chan][0]
+				dset_trades  = self.list_tups_datachan[idx_chan][0]
 			elif isinstance(self.list_tups_datachan[idx_chan][0], ktdata.CTDataSet_ACandles):
-				self.obj_dset_candles = self.list_tups_datachan[idx_chan][0]
-		#print("CTDataContainer_StatOut::onExec_Prep_impl(11)", self.obj_dset_trades, self.obj_dset_candles)
-		if self.flag_stat and self.obj_dset_trades != None and self.obj_dset_candles != None:
-			#self.onStat_Loop_impl()
-			while True:
-				ret_stat = self.onStat_Step_impl()
-				if not ret_stat:
-					break
+				dset_candles = self.list_tups_datachan[idx_chan][0]
+		#print("CTDataContainer_StatOut::onExec_Prep_impl(11)", dset_trades, dset_candles)
+		if self.flag_stat and dset_trades != None and dset_candles != None:
+			ret_stat = True
+			while ret_stat:
+				ret_stat = self.onStat_Step_impl(dset_trades, dset_candles)
 
 		# update self.read_trades_tid_last and self.read_trades_num
 		self.read_trades_num   = 0
-		len_list  = len(self.obj_dset_trades.loc_trades_recs)
+		len_list  = len(dset_trades.loc_trades_recs)
 		if len_list <= self.size_dset_trades/2:
 			if len_list >  0:
-				self.read_trades_tid_last  = self.obj_dset_trades.loc_trades_recs[len_list-1].get('tid', None)
+				self.read_trades_tid_last  = dset_trades.loc_trades_recs[len_list-1].get('tid', None)
 			self.read_trades_num   = self.size_dset_trades  - len_list
 		# update self.read_candles_mts_last and self.read_candles_num 
 		self.read_candles_num  = 0
-		len_list  = len(self.obj_dset_candles.loc_candle_recs)
+		len_list  = len(dset_candles.loc_candle_recs)
 		if len_list <= self.size_dset_candles/2:
 			if len_list >  0:
-				self.read_candles_mts_last = self.obj_dset_candles.loc_candle_recs[len_list-1].get('mts', None)
+				self.read_candles_mts_last = dset_candles.loc_candle_recs[len_list-1].get('mts', None)
 			self.read_candles_num  = self.size_dset_candles - len_list
 
-		self.flag_stat_end  = True if self.run_loop_left <= 0 else False
+		if self.run_loop_left <= 0:
+			self.flag_stat_end  = True
 
-	def onStat_Loop_impl(self):
-		while True:
-			ret_stat = self.onStat_Step_impl()
-			if not ret_stat:
-				break
-
-	def onStat_Step_impl(self):
+	def onStat_Step_impl(self, dset_trades, dset_candles):
 		flag_next_trade = flag_next_candles = False
 		mts_stat = self.stat_mts_now
 		mts_next = self.stat_mts_now + self.stat_mts_step
 
-		rec_trades  = None
-		while len(self.obj_dset_trades.loc_trades_recs) >  0:
-			if self.obj_dset_trades.loc_trades_recs[0]['mts'] >= mts_next:
+		while len(dset_trades.loc_trades_recs) >  0:
+			if dset_trades.loc_trades_recs[0]['mts'] >= mts_next:
 				flag_next_trade  = True
 				break
-			rec_trades = self.obj_dset_trades.loc_trades_recs.pop(0)
+			rec_trades = dset_trades.loc_trades_recs.pop(0)
 			self.stat_rec_now.addRec_Trades(rec_trades)
 			self.read_trades_tid_last  = rec_trades.get('tid', None)
 
-		rec_candles = None
-		while len(self.obj_dset_candles.loc_candle_recs) >  0:
-			if self.obj_dset_candles.loc_candle_recs[0]['mts'] >= mts_next:
+		while len(dset_candles.loc_candle_recs) >  0:
+			if dset_candles.loc_candle_recs[0]['mts'] >= mts_next:
 				flag_next_candles = True
 				break
-			rec_candles = self.obj_dset_candles.loc_candle_recs.pop(0)
+			rec_candles = dset_candles.loc_candle_recs.pop(0)
 			self.stat_rec_now.addRec_Candles(rec_candles)
 			self.read_candles_mts_last = rec_candles.get('mts', None)
-
 
 		if flag_next_trade and flag_next_candles:
 			self.stat_mts_now = mts_next
@@ -173,6 +164,13 @@ class CTStatRec(object):
 
 		#self.flag_dbg_stat = 2
 
+	def initStat(self, mts):
+		self.onInit_Stat_impl(mts)
+		self.reset(mts)
+
+	def statShow(self):
+		return self.onShow_Stat_impl()
+
 	def reset(self, mts):
 		return self.onReset_impl(mts)
 
@@ -187,6 +185,9 @@ class CTStatRec(object):
 
 	def addRec_Candles(self, rec_candles):
 		return self.onAdd_RecCandles(rec_candles)
+
+	def onInit_Stat_impl(self, mts):
+		pass
 
 	def onReset_impl(self, mts):
 		pass
@@ -203,12 +204,67 @@ class CTStatRec(object):
 	def onDbg_Dump_impl(self):
 		return 0
 
+import matplotlib
+
+from matplotlib.finance import candlestick_ohlc
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import numpy as np
 
 class CTStatRec_Stat11(CTStatRec):
 	def __init__(self, logger, mts_step):
 		super(CTStatRec_Stat11, self).__init__(logger)
 		self.rec_mts_step = mts_step
+		self.rec_mts_init = None
 		self.rec_mts_this = None
+		self.list_rec_stat = [ ]
+
+	def onInit_Stat_impl(self, mts):
+		self.rec_mts_init = mts
+
+	def onShow_Stat_impl(self):
+		print("onShow_Stat_impl, begin ...")
+
+		dat_tm = []
+		dat_v_a = []
+		dat_v_s = []
+		dat_v_b = []
+		price_off  = 10400.0
+		dat_ohlc = []
+		dat_c = []
+		for rec_stat in self.list_rec_stat:
+			mts_diff = round((rec_stat['mts'] - self.rec_mts_init) / self.rec_mts_step)
+			dat_tm.append(mts_diff)
+			dat_v_a.append(rec_stat['vol_all'])
+			dat_v_s.append(rec_stat['vol_sell'])
+			dat_v_b.append(rec_stat['vol_buy'])
+			dat_ohlc.append((mts_diff, rec_stat['price_open'], rec_stat['price_high'], rec_stat['price_low'], rec_stat['price_close']))
+
+#		fig_ohlc = plt.figure()
+#		ax_ohlc = plt.subplot2grid((1, 1), (0, 0))
+#		#ax_ohlc = fig_stat.add_subplot(2, 2, 1)
+#		candlestick_ohlc(ax_ohlc, dat_ohlc)
+#		fig_ohlc.savefig("fig_ohlc.png")
+
+		fig_stat = plt.figure()
+		#ax_stat  = fig_stat.add_subplot(1, 2, 1, projection='3d')
+		ax_stat  = fig_stat.gca(projection='3d')
+
+		#img_ohlc = matplotlib.image.imread("fig_ohlc.png")
+		#ax_stat.imshow(img_ohlc)
+
+		ax_stat.bar(dat_tm, dat_v_a, zs= 3, zdir='y', alpha=0.8)
+		ax_stat.bar(dat_tm, dat_v_s, zs= 1, zdir='y', alpha=0.8)
+		ax_stat.bar(dat_tm, dat_v_b, zs= 2, zdir='y', alpha=0.8)
+
+		ax_stat.set_xlabel('X')
+		ax_stat.set_ylabel('Y')
+		ax_stat.set_zlabel('Z')
+
+		plt.show()
+
+		print("onShow_Stat_impl, done!")
 
 	def onReset_impl(self, mts):
 		self.rec_mts_this = mts
@@ -221,21 +277,26 @@ class CTStatRec_Stat11(CTStatRec):
 		self.vol_all      = 0.0
 		self.vol_sell     = 0.0
 		self.vol_buy      = 0.0
+		self.price_open   = None
 		self.price_high   = None
 		self.price_low    = None
-		self.price_open   = None
 		self.price_close  = None
 
 	def onFinish_impl(self):
-		# NEED to check self.ref_candles['volume'] - self.vol_all
-		pass
+		self.list_rec_stat.append({
+						'mts': self.rec_mts_this, 'num_trades': self.num_trades,
+						'sum_all': self.sum_all, 'sum_sell': self.sum_sell, 'sum_buy': self.sum_buy,
+						'vol_all': self.vol_all, 'vol_sell': self.vol_sell, 'vol_buy': self.vol_buy,
+						'price_high': self.price_high, 'price_low': self.price_low, 'price_open': self.price_open, 'price_close': self.price_close,
+					})
 
 	def onAdd_RecTrades(self, rec_trades):
 		mts_rec = rec_trades.get('mts', -1)
-		if self.flag_dbg_stat >  0:
-			mts_rec = rec_trades['mts']
-			print("CTStatRec_Stat11::onAdd_RecTrades, mts:", format(mts_rec, ","), ", trade:", rec_trades)
-		if mts_rec <  self.rec_mts_this or mts_rec >= self.rec_mts_next:
+		if mts_rec >= self.rec_mts_this or mts_rec <  self.rec_mts_next:
+			if self.flag_dbg_stat >= 2:
+				print("CTStatRec_Stat11::onAdd_RecTrades(add), mts:", format(mts_rec, ","), ", trade:", rec_trades)
+		else:
+			print("CTStatRec_Stat11::onAdd_RecTrades(ign), mts:", format(mts_rec, ","), ", trade:", rec_trades)
 			return 0
 		rec_price  = rec_trades['price']
 		rec_amount = rec_trades['amount']
@@ -255,9 +316,11 @@ class CTStatRec_Stat11(CTStatRec):
 
 	def onAdd_RecCandles(self, rec_candles):
 		mts_rec = rec_candles.get('mts', -1)
-		if self.flag_dbg_stat >  0:
-			print("CTStatRec_Stat11::onAdd_RecCandles, mts:", format(mts_rec, ","), ", candle:", rec_candles)
-		if mts_rec <  self.rec_mts_this or mts_rec >= self.rec_mts_next:
+		if mts_rec >= self.rec_mts_this or mts_rec <  self.rec_mts_next:
+			if self.flag_dbg_stat >= 2:
+				print("CTStatRec_Stat11::onAdd_RecCandles(add), mts:", format(mts_rec, ","), ", candle:", rec_candles)
+		else:
+			print("CTStatRec_Stat11::onAdd_RecCandles(ign), mts:", format(mts_rec, ","), ", candle:", rec_candles)
 			return 0
 		self.ref_candles  = rec_candles
 		self.price_high   = rec_candles['high']
@@ -268,7 +331,8 @@ class CTStatRec_Stat11(CTStatRec):
 
 	def onDbg_Dump_impl(self):
 		vol_diff = self.vol_all - (0.0 if self.ref_candles == None else self.ref_candles.get('volume', 0.0))
-		print("CTStatRec_Stat11::dump(00), mts:", format(self.rec_mts_this, ","), ", num:", self.num_trades,
+		if self.flag_dbg_stat >= 1:
+			print("CTStatRec_Stat11::dump(00), mts:", format(self.rec_mts_this, ","), ", num:", self.num_trades,
 								", min:", self.price_low, ", max:", self.price_high,
 								", vol:", self.vol_all, ", sum:", self.sum_all,
 								", vol_diff:", vol_diff)
